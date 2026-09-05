@@ -1,0 +1,77 @@
+well_name: "OIL-BAGHEWALA-EOR-V2"
+asset_attribution: "Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited"
+operator: "Oil India Limited"
+basin: "Bikaner-Nagaur Basin, Rajasthan"
+target_formation: "Jodhpur Sandstone"
+depth_tvd_m: 1150.0
+
+reservoir:
+  t_res_c: 48.0
+  t_steam_c: 260.0
+  net_pay_thickness_m: 15.0
+  heated_radius_m: 12.0
+  thermal_diffusivity_m2_hr: 0.0036
+  thermal_diffusivity_m2_s: 1.0e-6
+  convective_delta: 0.05
+  k_ref: 0.7042
+  t_ref_days: 300.0
+
+rheology:
+  mu_1_pa_s: 12.0
+  t_1_c: 50.0
+  mu_2_pa_s: 0.045
+  t_2_c: 200.0
+  water_viscosity_pa_s: 0.001
+  default_water_cut: 0.35
+  eccentricity_factor: 1.25
+  min_damping_nu: 0.01
+  max_damping_nu: 3.00
+
+rod_string:
+  total_length_m: 1150.0
+  youngs_modulus_pa: 2.07e11
+  steel_density_kg_m3: 7850.0
+  acoustic_velocity_m_s: 5134.6
+  tubing_id_m: 0.076
+  sections:
+    - name: "Top Section (1.0 inch)"
+      top_depth_m: 0.0
+      bottom_depth_m: 350.0
+      diameter_m: 0.0254
+      area_m2: 5.06707e-4
+    - name: "Middle Section (7/8 inch)"
+      top_depth_m: 350.0
+      bottom_depth_m: 750.0
+      diameter_m: 0.022225
+      area_m2: 3.87953e-4
+    - name: "Bottom Section (3/4 inch)"
+      top_depth_m: 750.0
+      bottom_depth_m: 1150.0
+      diameter_m: 0.01905
+      area_m2: 2.85023e-4
+
+pumping_unit:
+  surface_stroke_m: 2.5
+  crank_length_m: 1.5
+  plunger_diameter_m: 0.04445
+  fluid_density_kg_m3: 980.0
+  pump_depth_m: 1150.0
+  rated_rod_capacity_kn: 110.0
+
+mpc_controller:
+  min_spm: 1.0
+  max_spm: 5.5
+  max_spm_ramp_per_hour: 0.5
+  min_downhole_tension_kn: 0.50
+  max_pprl_kn: 99.0
+  emergency_pprl_kn: 104.5
+  safe_fallback_spm: 2.0
+  receding_horizon_hours: 12.0
+  lambda_energy: 0.15
+  lambda_delta_spm: 0.80
+
+failsafe:
+  telemetry_sync_normal_sec: 10.0
+  telemetry_timeout_degraded_sec: 60.0
+  min_safe_tension_trip_kn: 0.20
+  fallback_ramp_strokes: 3
