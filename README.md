@@ -2,10 +2,11 @@
 ## Enterprise Digital Twin Architecture — Baghewala Field, Oil India Limited
 **Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited**
 
-[![100% Offline Localhost](https://img.shields.io/badge/Operation-100%25%20Offline%20Localhost-brightgreen.svg)](#)
-[![Zero Placeholders](https://img.shields.io/badge/Codebase-Zero%20Placeholders%20%2F%20100%25%20Exact-blue.svg)](#)
+[![Vercel Live Prototype](https://img.shields.io/badge/Live%20Prototype-vectrosync.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vectrosync.vercel.app)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-DKtech--dev%2Fvectrosync-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DKtech-dev/vectrosync)
 [![246 Tests Passing](https://img.shields.io/badge/Test%20Suite-246%2F246%20Passed%20(100%25)-success.svg)](#)
-[![Interactive Simulator](https://img.shields.io/badge/UI-Interactive%20Industrial%20Flight%20Simulator-orange.svg)](#)
+[![Zero Placeholders](https://img.shields.io/badge/Codebase-Zero%20Placeholders%20%2F%20100%25%20Exact-blue.svg)](#)
+
 
 ---
 
