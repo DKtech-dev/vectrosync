@@ -44,8 +44,6 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* ── Reset & Base ── */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
     .stApp {
         background-color: #ffffff;
         color: #1f2937;
@@ -290,7 +288,7 @@ for key, factory in {
     "active_scenario": lambda: ScenarioType.DEFAULT_OPERATION,
     "modbus_severed": lambda: False,
     "last_telemetry_time": lambda: time.time(),
-    "failsafe": lambda: SupervisoryFailsafe(),
+    "failsafe": lambda: SupervisoryFailsafe(rod_rating_kN=110.0, min_safe_tension_trip_kn=0.50),
     "thermal_engine": lambda: ThermalDecayEngine(),
     "rheo_engine": lambda: HeavyOilRheology(),
     "wave_solver": lambda: ConservativeRodWaveSolver(dx=10.0),
@@ -301,7 +299,7 @@ for key, factory in {
 
 # Guard against stale session: if failsafe was cached without reset(), recreate it
 if not hasattr(st.session_state.failsafe, "reset"):
-    st.session_state.failsafe = SupervisoryFailsafe()
+    st.session_state.failsafe = SupervisoryFailsafe(rod_rating_kN=110.0, min_safe_tension_trip_kn=0.50)
 
 scenario_cfg = ScenarioRunner.get_preset(st.session_state.active_scenario)
 
@@ -424,11 +422,13 @@ else:
 
 # ─── Physics Computation Pass ──────────────────────────────────
 
-tau_sec = elapsed_days * 86400.0
-
-# Thermal
-t_res_k = st.session_state.thermal_engine.temperature_calibrated(tau_sec, k_hat=cooling_mult)
-t_res_c = t_res_k - 273.15
+# Thermal: cooling multiplier scales thermal diffusivity consistently across UIs.
+t_res_c, _ = st.session_state.thermal_engine.predict_temperature(
+    elapsed_days,
+    time_unit="days",
+    cooling_multiplier=cooling_mult,
+)
+t_res_k = t_res_c + 273.15
 
 # Rheology
 mu_mix_pas = st.session_state.rheo_engine.mixture_viscosity(t_res_k, fw=water_cut_val)
@@ -440,33 +440,38 @@ well_state = WellState(spm_current=target_spm, temperature_C=t_res_c, viscosity_
 mpc_plan = st.session_state.mpc_controller.solve(well_state, forecast_temps)
 advisory_spm = mpc_plan.optimal_spm
 
-# Dynamic tension evaluation for failsafe supervisory check
+# Evaluate the same reduced-order card shown to the operator before assigning
+# a supervisory state. Scenario A intentionally preserves the pre-trip snapshot.
+st.session_state.wave_solver.stroke_s = float(stroke_length_m)
 if st.session_state.active_scenario == ScenarioType.SCENARIO_A_BASELINE_FAILURE or not scenario_cfg.mpc_enabled:
-    uncoupled_preview = st.session_state.wave_solver.simulate_card(
-        spm=target_spm, temp_c=t_res_c, water_cut=water_cut_val,
-        sand_wear=plunger_sand_wear, n_strokes=3,
-    )
-    sim_tension = float(uncoupled_preview.min_downhole_tension_kn)
+    proposed_spm = target_spm
+elif st.session_state.active_scenario == ScenarioType.SCENARIO_B_COUPLED_TWIN:
+    proposed_spm = advisory_spm if advisory_spm <= 3.5 else scenario_cfg.expected_spm
 else:
-    sim_tension = float(mpc_plan.predicted_min_tension_kN[0])
+    proposed_spm = advisory_spm
 
+preview_card = st.session_state.wave_solver.simulate_card(
+    spm=proposed_spm, temp_c=t_res_c, water_cut=water_cut_val,
+    sand_wear=plunger_sand_wear, n_strokes=3,
+)
+curr_time = time.time()
+last_time = curr_time - simulated_telemetry_age
 fs_state, fs_reason, safe_spm = st.session_state.failsafe.evaluate_state(
     current_time=curr_time,
     last_telemetry_time=last_time,
-    pprl_kn=105.0,
-    min_tension_kn=sim_tension,
+    pprl_kn=float(preview_card.pprl_kn),
+    min_tension_kn=float(preview_card.min_downhole_tension_kn),
     simulated_disconnect=is_modbus_cut,
 )
 
-# Resolve effective operating state purely from physics and control logic
 if st.session_state.active_scenario == ScenarioType.SCENARIO_A_BASELINE_FAILURE:
-    effective_spm = target_spm
-elif st.session_state.active_scenario == ScenarioType.SCENARIO_B_COUPLED_TWIN:
-    effective_spm = advisory_spm if scenario_cfg.mpc_enabled else scenario_cfg.expected_spm
-elif st.session_state.active_scenario == ScenarioType.SCENARIO_C_TELEMETRY_SEVERED:
+    effective_spm = proposed_spm
+elif fs_state == FailsafeLevel.LEVEL_3_EMERGENCY:
+    effective_spm = 0.5  # Visualization floor; the advisory command is 0 SPM.
+elif fs_state != FailsafeLevel.LEVEL_0_NORMAL:
     effective_spm = safe_spm
 else:
-    effective_spm = safe_spm if fs_state != FailsafeLevel.LEVEL_0_NORMAL else (advisory_spm if scenario_cfg.mpc_enabled else target_spm)
+    effective_spm = proposed_spm
 
 # Wave simulations
 twin_card = st.session_state.wave_solver.simulate_card(

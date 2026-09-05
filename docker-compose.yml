@@ -1,29 +1,55 @@
-version: "3.8"
-
 services:
-  vectrosync:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    image: vectrosync:enterprise-v2
-    container_name: vectrosync-enterprise-twin
+    image: vectrosync:2.0.0
     restart: unless-stopped
+    init: true
     ports:
-      - "8000:8000"
-      - "8501:8501"
+      - "127.0.0.1:8000:8000"
     environment:
-      - ENVIRONMENT=production
-      - WELL_ID=Baghewala-14
-      - FIELD=Baghewala
-      - BASIN=Bikaner-Nagaur
-      - OPERATOR=Oil India Limited
-      - ASSET_NAME=OIL-BAGHEWALA-EOR-V2
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
+      ENVIRONMENT: production
+      WELL_ID: Baghewala-14
+      VECTROSYNC_API_KEY: "${VECTROSYNC_API_KEY:-}"
+      VECTROSYNC_CORS_ORIGINS: "${VECTROSYNC_CORS_ORIGINS:-http://localhost:8000}"
+      VECTROSYNC_MAX_CSV_BYTES: "2097152"
+      VECTROSYNC_MAX_WEBSOCKETS: "5"
     volumes:
-      - ./data:/app/data
       - ./configs:/app/configs:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    mem_limit: 1g
+    cpus: 1.5
+
+  cockpit:
+    image: vectrosync:2.0.0
+    depends_on:
+      - api
+    restart: unless-stopped
+    init: true
+    command:
+      - streamlit
+      - run
+      - app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.headless=true
+    ports:
+      - "127.0.0.1:8501:8501"
+    volumes:
+      - ./configs:/app/configs:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    mem_limit: 1g
+    cpus: 1.5

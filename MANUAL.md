@@ -1,5 +1,7 @@
 # Well-to-Surface Digital Twin — Prototype & Application Manual
 
+> **Legacy operating manual.** Use the root `README.md` for current setup, advisory-only scope, endpoint behavior, and security configuration.
+
 **SIH26120: CSS + SRP Optimization for Baghewala Heavy Oil Field**  
 **Operator:** Oil India Limited (OIL), Rajasthan, India  
 **Stack:** Modern Full-Stack (FastAPI + React 18 + Vite + TailwindCSS) & Streamlit Desktop

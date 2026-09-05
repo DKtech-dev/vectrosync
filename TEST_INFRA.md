@@ -1,5 +1,7 @@
 # E2E Test Infra: Well-to-Surface Digital Twin
 
+> **Historical test design.** The current suite count and interpretation are in `README.md` and `submission/07_TEST_VERIFICATION_LOG.txt`; passing tests do not establish field validity or functional safety.
+
 ## Test Philosophy
 - Opaque-box, requirement-driven. Derived from `ORIGINAL_REQUEST.md`.
 - Methodology: Category-Partition + Boundary Value Analysis (BVA) + Pairwise Combinatorial Testing + Real-World Workload Scenarios.

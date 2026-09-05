@@ -9,6 +9,8 @@ directly to the clean-room Python physics engines in src/.
 
 import sys
 import os
+import hmac
+import logging
 from pathlib import Path
 import time
 import asyncio
@@ -20,11 +22,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, APIRouter, WebSocket, WebSocketDisconnect, UploadFile, File, Form, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.thermal import ThermalDecayEngine
 from src.rheology import HeavyOilRheology
@@ -37,30 +39,48 @@ from src.audit import AuditLedger
 from src.scenario_runner import ScenarioRunner, ScenarioType, SCENARIO_PRESETS
 from src.why_engine import WhyEngine
 from src.depth_stress import compute_spatiotemporal_stress_matrix, compute_rod_section_stresses
+from src.economics import sensitivity_analysis
 
 # Initialize FastAPI App
 app = FastAPI(
     title="VectroSync Enterprise Industrial Twin Engine API",
-    description="Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited",
+    description="Synthetic advisory research prototype for CSS-SRP what-if analysis; not an operational control system.",
     version="2.0.0",
 )
 
-# Enable CORS for development
+logger = logging.getLogger(__name__)
+API_KEY = os.getenv("VECTROSYNC_API_KEY")
+MAX_CSV_BYTES = int(os.getenv("VECTROSYNC_MAX_CSV_BYTES", str(2 * 1024 * 1024)))
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "VECTROSYNC_CORS_ORIGINS",
+        "http://localhost:5173,http://localhost:8000",
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
+
+
+def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
+    """Enable a deployment API key when VECTROSYNC_API_KEY is configured."""
+    if API_KEY and (x_api_key is None or not hmac.compare_digest(x_api_key, API_KEY)):
+        raise HTTPException(status_code=401, detail="Valid X-API-Key required")
 
 # Shared Physics State Engines
 thermal_engine = ThermalDecayEngine()
 rheo_engine = HeavyOilRheology()
 wave_solver = ConservativeRodWaveSolver(dx=10.0)
 mpc_controller = FastMPCController()
-failsafe_sm = SupervisoryFailsafe()
 audit_ledger = AuditLedger(well_id="Baghewala-14")
+websocket_slots = asyncio.Semaphore(int(os.getenv("VECTROSYNC_MAX_WEBSOCKETS", "5")))
 
 
 # ─── Pydantic Request / Response Models ───────────────────────
@@ -76,6 +96,13 @@ class SimulationParams(BaseModel):
     mpc_enabled: bool = Field(default=True)
     modbus_severed: bool = Field(default=False)
     scenario_override: Optional[str] = Field(default=None)
+
+    @field_validator("scenario_override")
+    @classmethod
+    def validate_scenario_override(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in {scenario.value for scenario in ScenarioType}:
+            raise ValueError(f"Unknown scenario_override '{value}'")
+        return value
 
 
 class DiagnosticResponse(BaseModel):
@@ -141,6 +168,9 @@ class StressTensorData(BaseModel):
 
 class SimulationResponse(BaseModel):
     status: str
+    control_authority: str
+    advisory_command_spm: float
+    model_status: Dict[str, Any]
     scenario_id: str
     scenario_name: str
     failsafe_level: str
@@ -166,7 +196,16 @@ class SimulationResponse(BaseModel):
 # ─── Helper Functions ──────────────────────────────────────────
 
 def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
-    """Executes the full coupled multi-physics pipeline."""
+    """Execute one deterministic, synthetic advisory-model pass."""
+    local_wave_solver = ConservativeRodWaveSolver(
+        dx=10.0,
+        surface_stroke_m=params.stroke_length_m,
+    )
+    local_failsafe = SupervisoryFailsafe(
+        rod_rating_kN=110.0,
+        min_safe_tension_trip_kn=0.50,
+    )
+
     # 1. Resolve Scenario Presets if requested
     scenario_type = ScenarioType.DEFAULT_OPERATION
     if params.scenario_override:
@@ -182,10 +221,13 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
         t_res_c = 66.0
         t_res_k = t_res_c + 273.15
     else:
-        tau_sec = params.elapsed_days * 86400.0
-        k_eff = 1.0 / max(0.1, params.cooling_multiplier) if params.cooling_multiplier > 1.0 else params.cooling_multiplier
-        t_res_k = float(thermal_engine.temperature_calibrated(tau_sec, k_hat=k_eff))
-        t_res_c = float(t_res_k - 273.15)
+        t_res_c, _ = thermal_engine.predict_temperature(
+            params.elapsed_days,
+            time_unit="days",
+            cooling_multiplier=params.cooling_multiplier,
+        )
+        t_res_c = float(t_res_c)
+        t_res_k = t_res_c + 273.15
 
     # 3. Compute Crude Rheology & Couette Drag
     mu_mix_pas = float(rheo_engine.mixture_viscosity(t_res_k, fw=params.water_cut))
@@ -193,59 +235,66 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
     beta_drag = float(rheo_engine.couette_drag_beta(mu_mix_pas, r_rod=0.0127))
 
     # 4. MPC 12-Hour Optimization
-    forecast_temps = list(np.linspace(t_res_c, max(48.0, t_res_c - 12.0), 24))
+    forecast_temps = [
+        float(value)
+        for value in np.linspace(t_res_c, max(48.0, t_res_c - 12.0), 24)
+    ]
     well_state = WellState(spm_current=params.target_spm, temperature_C=t_res_c, viscosity_Pas=mu_mix_pas)
     mpc_plan = mpc_controller.solve(well_state, forecast_temps)
     advisory_spm = float(mpc_plan.optimal_spm)
     solve_time_ms = float(getattr(mpc_plan, "solve_time_ms", 0.0))
 
-    # 5. Supervisory Safety Failsafe Evaluation
+    # 5. Evaluate the proposed advisory against the same card model displayed
+    # by the API. This avoids certifying one model and displaying another.
+    if scenario_type == ScenarioType.SCENARIO_A_BASELINE_FAILURE or not params.mpc_enabled:
+        proposed_spm = params.target_spm
+    elif scenario_type == ScenarioType.SCENARIO_B_COUPLED_TWIN:
+        proposed_spm = advisory_spm if advisory_spm <= 3.5 else preset.expected_spm
+    else:
+        proposed_spm = advisory_spm
+
+    preview_card = local_wave_solver.simulate_card(
+        spm=proposed_spm,
+        temp_c=t_res_c,
+        water_cut=params.water_cut,
+        sand_wear=params.plunger_sand_wear,
+        n_strokes=3,
+    )
     curr_time = time.time()
     telemetry_age = 75.0 if params.modbus_severed else 1.2
-    last_time = curr_time - telemetry_age
-
-    # Dynamic tension check for supervisory safety interlock
-    if scenario_type == ScenarioType.SCENARIO_A_BASELINE_FAILURE or not params.mpc_enabled:
-        uncoupled_preview = wave_solver.simulate_card(
-            spm=params.target_spm,
-            temp_c=t_res_c,
-            water_cut=params.water_cut,
-            sand_wear=params.plunger_sand_wear,
-            n_strokes=3,
-        )
-        eval_tension = float(uncoupled_preview.min_downhole_tension_kn)
-    else:
-        eval_tension = float(mpc_plan.predicted_min_tension_kN[0])
-    
-    fs_state, fs_reason, safe_spm = failsafe_sm.evaluate_state(
+    fs_state, fs_reason, safe_spm = local_failsafe.evaluate_state(
         current_time=curr_time,
-        last_telemetry_time=last_time,
-        pprl_kn=105.0,
-        min_tension_kn=eval_tension,
+        last_telemetry_time=curr_time - telemetry_age,
+        pprl_kn=float(preview_card.pprl_kn),
+        min_tension_kn=float(preview_card.min_downhole_tension_kn),
         simulated_disconnect=params.modbus_severed,
     )
 
-    # 6. Resolve Effective Operating State Purely From Physics & Logic
+    # Scenario A intentionally displays the pre-trip failure snapshot. All
+    # other cases display the command selected by the supervisory layer.
     if scenario_type == ScenarioType.SCENARIO_A_BASELINE_FAILURE:
-        effective_spm = params.target_spm
-    elif scenario_type == ScenarioType.SCENARIO_B_COUPLED_TWIN:
-        effective_spm = preset.expected_spm if not params.mpc_enabled else (
-            advisory_spm if advisory_spm <= 3.5 else preset.expected_spm
-        )
-    elif scenario_type == ScenarioType.SCENARIO_C_TELEMETRY_SEVERED:
+        effective_spm = proposed_spm
+    elif fs_state == FailsafeLevel.LEVEL_3_EMERGENCY:
+        effective_spm = 0.5  # Solver visualization floor; command is 0 SPM.
+    elif fs_state != FailsafeLevel.LEVEL_0_NORMAL:
         effective_spm = safe_spm
     else:
-        effective_spm = safe_spm if fs_state != FailsafeLevel.LEVEL_0_NORMAL else (advisory_spm if params.mpc_enabled else params.target_spm)
+        effective_spm = proposed_spm
+    advisory_command_spm = (
+        0.0 if fs_state == FailsafeLevel.LEVEL_3_EMERGENCY
+        else safe_spm if fs_state != FailsafeLevel.LEVEL_0_NORMAL
+        else proposed_spm
+    )
 
-    # 7. Solve 1D Wave PDE (Surface & Downhole Dynacards)
-    twin_card = wave_solver.simulate_card(
+    # 6. Generate reduced-order surface and downhole card estimates.
+    twin_card = local_wave_solver.simulate_card(
         spm=effective_spm,
         temp_c=t_res_c,
         water_cut=params.water_cut,
         sand_wear=params.plunger_sand_wear,
         n_strokes=3,
     )
-    baseline_card = wave_solver.simulate_card(
+    baseline_card = local_wave_solver.simulate_card(
         spm=params.target_spm,
         temp_c=48.0,
         water_cut=params.water_cut,
@@ -258,16 +307,16 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
 
     # 8. Compute 2D Spatiotemporal Stress Matrix sigma(x, theta) & Section Stress Tensor
     angles_deg, depths_m, stress_matrix = compute_spatiotemporal_stress_matrix(
-        depths_m=wave_solver.node_depths,
-        node_areas_m2=wave_solver.node_area,
+        depths_m=local_wave_solver.node_depths,
+        node_areas_m2=local_wave_solver.node_area,
         dynacard_result=twin_card,
         spm=effective_spm,
         is_buckling=is_buckling_active,
     )
 
     stress_tensor_data = compute_rod_section_stresses(
-        depths_m=wave_solver.node_depths,
-        node_areas_m2=wave_solver.node_area,
+        depths_m=local_wave_solver.node_depths,
+        node_areas_m2=local_wave_solver.node_area,
         dynacard_result=twin_card,
         stress_matrix_mpa=stress_matrix,
     )
@@ -311,29 +360,13 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
         for i in range(len(hours))
     ]
 
-    # 11. 23-Well Asset Economics
-    wells = 23
-    oil_usd = 75.0
-    fx = 83.5
-    repair_inr = 850000.0
-    base_fail = 2.4
-    twin_fail = 0.35
-    kwh_day = 48.0
-    tariff = 7.5
-    bopd_gain = 4.2
-
-    sav_workover = wells * (base_fail - twin_fail) * repair_inr
-    sav_power = wells * kwh_day * 365 * tariff
-    gain_oil = wells * bopd_gain * 365 * oil_usd * fx
-    total_val = sav_workover + sav_power + gain_oil
-
-    economics = {
-        "well_count": wells,
-        "workover_avoidance_cr_inr": round(sav_workover / 1e7, 3),
-        "power_efficiency_cr_inr": round(sav_power / 1e7, 3),
-        "oil_uplift_cr_inr": round(gain_oil / 1e7, 3),
-        "total_annual_value_cr_inr": round(total_val / 1e7, 3),
-    }
+    # 11. Commercial hypothesis with low/base/high sensitivity.
+    economics_sensitivity = sensitivity_analysis()
+    base_economics = economics_sensitivity["base"]
+    if not isinstance(base_economics, dict):
+        raise RuntimeError("Economics base case has invalid structure")
+    economics = dict(base_economics)
+    economics["sensitivity"] = economics_sensitivity
 
     # Record event in SHA-256 Ledger
     audit_ledger.record_event(
@@ -349,6 +382,17 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
 
     return {
         "status": "success",
+        "control_authority": "advisory_only_not_for_direct_actuation",
+        "advisory_command_spm": round(float(advisory_command_spm), 2),
+        "model_status": {
+            "data_provenance": "synthetic",
+            "rod_model": "reduced_order_algebraic_card_estimator",
+            "controller": "constraint_aware_reduced_order_governor",
+            "controller_status": mpc_plan.solver_status,
+            "field_validated": False,
+            "hil_validated": False,
+            "uncoupled_inputs": ["steam_quality"],
+        },
         "scenario_id": scenario_type.value,
         "scenario_name": preset.name,
         "failsafe_level": fs_state.value if hasattr(fs_state, "value") else str(fs_state),
@@ -410,8 +454,10 @@ async def health_check():
     """Health check endpoint confirming engine readiness."""
     return {
         "status": "healthy",
-        "service": "VectroSync Enterprise Industrial Twin Engine API",
+        "service": "VectroSync CSS-SRP Advisory Research API",
         "well_id": "Baghewala-14",
+        "deployment_class": "synthetic_research_prototype",
+        "control_authority": "none",
         "timestamp": time.time(),
     }
 
@@ -438,8 +484,12 @@ async def get_scenarios():
     return {"scenarios": scenarios}
 
 
-@api_router.post("/scenarios/{scenario_id}/apply")
-async def apply_scenario(scenario_id: str):
+@api_router.post(
+    "/scenarios/{scenario_id}/apply",
+    response_model=SimulationResponse,
+    dependencies=[Depends(require_api_key)],
+)
+def apply_scenario(scenario_id: str):
     """Applies a preset scenario and returns the recalculated physics state."""
     matched = None
     for sc in ScenarioType:
@@ -450,7 +500,6 @@ async def apply_scenario(scenario_id: str):
         raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
 
     cfg = ScenarioRunner.get_preset(matched)
-    failsafe_sm.reset()
 
     params = SimulationParams(
         cooling_multiplier=cfg.cooling_multiplier,
@@ -467,22 +516,30 @@ async def apply_scenario(scenario_id: str):
     return result
 
 
-@api_router.post("/simulate")
-async def simulate(params: SimulationParams):
+@api_router.post(
+    "/simulate",
+    response_model=SimulationResponse,
+    dependencies=[Depends(require_api_key)],
+)
+def simulate(params: SimulationParams):
     """Runs a customized multi-physics simulation pass."""
     result = run_physics_pass(params)
     return result
 
 
-@api_router.post("/csv/ingest")
+@api_router.post("/csv/ingest", dependencies=[Depends(require_api_key)])
 async def ingest_csv(file: Optional[UploadFile] = File(None), csv_text: Optional[str] = Form(None)):
     """Parses, normalizes, and validates SCADA telemetry CSV files."""
     try:
         content = ""
         if file is not None:
-            raw_bytes = await file.read()
+            raw_bytes = await file.read(MAX_CSV_BYTES + 1)
+            if len(raw_bytes) > MAX_CSV_BYTES:
+                raise HTTPException(status_code=413, detail="CSV upload exceeds configured size limit")
             content = raw_bytes.decode("utf-8")
         elif csv_text:
+            if len(csv_text.encode("utf-8")) > MAX_CSV_BYTES:
+                raise HTTPException(status_code=413, detail="CSV text exceeds configured size limit")
             content = csv_text
         else:
             raise HTTPException(status_code=400, detail="No CSV file or text content provided")
@@ -496,13 +553,26 @@ async def ingest_csv(file: Optional[UploadFile] = File(None), csv_text: Optional
         return {
             "status": "success",
             "row_count": parsed.row_count,
+            "control_valid": parsed.control_valid,
+            "warnings": parsed.warnings,
+            "mapping_report": {
+                header: {
+                    "target_channel": mapping.target_channel,
+                    "detected_unit": mapping.detected_unit,
+                    "confidence": mapping.confidence,
+                    "confirmed": mapping.confirmed,
+                }
+                for header, mapping in parsed.mapping_report.items()
+            },
             "column_data": parsed.column_data,
         }
-    except Exception as ex:
-        raise HTTPException(status_code=422, detail=f"CSV Ingestion Error: {str(ex)}")
+    except HTTPException:
+        raise
+    except (UnicodeDecodeError, ValueError) as ex:
+        raise HTTPException(status_code=422, detail=f"CSV Ingestion Error: {str(ex)}") from ex
 
 
-@api_router.get("/audit/verify")
+@api_router.get("/audit/verify", dependencies=[Depends(require_api_key)])
 async def verify_audit_ledger():
     """Cryptographically verifies SHA-256 hash chain and returns event blocks."""
     is_valid, err_msg = audit_ledger.verify_chain()
@@ -516,9 +586,8 @@ async def verify_audit_ledger():
     }
 
 
-# Mount API routes with and without /api prefix for maximum compatibility across environments
+# A single canonical API namespace keeps the public attack surface explicit.
 app.include_router(api_router, prefix="/api")
-app.include_router(api_router)
 
 
 
@@ -526,49 +595,47 @@ app.include_router(api_router)
 
 @app.websocket("/ws/live-stream")
 async def websocket_telemetry(websocket: WebSocket):
-    """
-    Streams high-frequency (25 Hz) crank kinematics, polished rod displacement,
-    surface load, downhole tension, and active rod stress for 60 FPS UI rendering.
-    """
-    await websocket.accept()
-    phase_deg = 0.0
+    """Stream explicitly synthetic 25 Hz demo telemetry with bounded fan-out."""
+    supplied_key = websocket.query_params.get("api_key")
+    if API_KEY and (supplied_key is None or not hmac.compare_digest(supplied_key, API_KEY)):
+        await websocket.close(code=1008, reason="Authentication required")
+        return
+    if websocket_slots.locked():
+        await websocket.close(code=1013, reason="Telemetry stream capacity reached")
+        return
 
-    try:
-        while True:
-            # Pumping kinematics at nominal 3.5 SPM -> omega = 3.5 * 360 / 60 = 21 deg/sec
-            # Step at 25 Hz -> dt = 0.04s -> delta_phase = 0.84 deg
-            phase_deg = (phase_deg + 1.2) % 360.0
-            phase_rad = np.radians(phase_deg)
-            stroke_length_m = 2.54
+    async with websocket_slots:
+        await websocket.accept()
+        phase_deg = 0.0
+        sequence = 0
+        try:
+            while True:
+                # 3.5 SPM => 21 deg/s; at 25 Hz the phase increment is 0.84 deg.
+                phase_deg = (phase_deg + 0.84) % 360.0
+                phase_rad = np.radians(phase_deg)
+                stroke_length_m = 2.54
+                displacement_m = (stroke_length_m / 2.0) * (1.0 - np.cos(phase_rad))
+                surface_load_kn = 45.0 + 18.0 * np.sin(phase_rad)
+                downhole_load_kn = 12.0 + 8.0 * np.sin(phase_rad - 0.4)
+                sequence += 1
 
-            # Simple kinematic displacement y(theta) = S/2 * (1 - cos(theta))
-            displacement_m = (stroke_length_m / 2.0) * (1.0 - np.cos(phase_rad))
-            
-            # Surface load estimate (sine wave dynamic load)
-            base_load_kn = 45.0
-            dynamic_amp_kn = 18.0
-            surface_load_kn = base_load_kn + dynamic_amp_kn * np.sin(phase_rad)
-
-            # Downhole load estimate (phase-shifted with Couette damping)
-            downhole_load_kn = 12.0 + 8.0 * np.sin(phase_rad - 0.4)
-
-            payload = {
-                "timestamp": time.time(),
-                "phase_deg": round(phase_deg, 2),
-                "displacement_m": round(float(displacement_m), 4),
-                "surface_load_kn": round(float(surface_load_kn), 2),
-                "downhole_load_kn": round(float(downhole_load_kn), 2),
-                "traveling_valve_open": bool(180.0 <= phase_deg < 360.0),
-                "standing_valve_open": bool(0.0 <= phase_deg < 180.0),
-            }
-
-            await websocket.send_json(payload)
-            await asyncio.sleep(0.04)  # 25 Hz update rate
-
-    except WebSocketDisconnect:
-        pass
-    except Exception:
-        pass
+                await websocket.send_json({
+                    "timestamp": time.time(),
+                    "sequence": sequence,
+                    "provenance": "[synthetic]",
+                    "control_valid": False,
+                    "phase_deg": round(phase_deg, 2),
+                    "displacement_m": round(float(displacement_m), 4),
+                    "surface_load_kn": round(float(surface_load_kn), 2),
+                    "downhole_load_kn": round(float(downhole_load_kn), 2),
+                    "traveling_valve_open": bool(180.0 <= phase_deg < 360.0),
+                    "standing_valve_open": bool(0.0 <= phase_deg < 180.0),
+                })
+                await asyncio.sleep(0.04)
+        except WebSocketDisconnect:
+            return
+        except Exception:
+            logger.exception("Synthetic telemetry WebSocket failed")
 
 
 # ─── Serve Built Frontend Static Files ─────────────────────────

@@ -1,7 +1,7 @@
 """
-Downhole Pump Boundary Dynamics & Valve States (src/pump_boundary.py)
-Implements Plunger Boundary Conditions, Traveling & Standing Valve State Machine,
-Hydrostatic Discharge/Intake Heads, Fluid Pound Shock, and Velocity Smoothing.
+Reduced-order downhole pump boundary and valve-state model.
+Fluid-pound behavior is an illustrative load multiplier pending validation
+against chamber pressure/volume and measured downhole cards.
 """
 
 from dataclasses import dataclass, field

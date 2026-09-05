@@ -1,7 +1,10 @@
 """
-Fast-Loop Constrained MPC & Optimization Engine (src/controller.py)
-Implements Receding Horizon Multi-Objective Optimization with Hard Downhole Anti-Float Tension Constraints,
-Motor Power Minimization, SPM Slew Limits, and 12-Hour Predictive Causal Timelines.
+Constraint-aware reduced-order pump-speed governor.
+
+The fast horizon model is an explicitly identified engineering surrogate. It is
+useful for deterministic what-if demonstrations, but it is not a certified MPC,
+a safety instrumented function, or a substitute for an independently validated
+rod-string model. Every result reports feasibility and constraint residuals.
 """
 
 from dataclasses import dataclass, field
@@ -29,7 +32,7 @@ class MPCConfig:
     max_pprl_kN: float = 282.7        # 90% of rod tensile rating
     min_spm: float = 1.0              # Kinematic minimum pump speed
     max_spm: float = 5.5              # Kinematic maximum pump speed
-    max_delta_spm: float = 0.50       # Maximum allowable SPM ramp per step/hour
+    max_delta_spm: float = 0.50       # Maximum allowable SPM ramp per hour
 
 
 @dataclass
@@ -57,14 +60,14 @@ class MPCResult:
     spm_trajectory: List[float]
     predicted_min_tension_kN: List[float]
     predicted_pprl_kN: List[float]
-    solver_status: str = "OPTIMAL"
+    solver_status: str = "UNSOLVED"
     solve_time_ms: float = 0.0
     predicted_min_tension_kn: Optional[float] = None
     predicted_pprl_kn: Optional[float] = None
     predicted_oil_bopd: Optional[float] = None
     is_anti_float_satisfied: bool = True
     cost: float = 0.0
-    status: str = "OPTIMAL"
+    status: str = "UNSOLVED"
     details: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
@@ -88,6 +91,8 @@ class MPCResult:
             "predicted_pprl_kN": self.predicted_pprl_kN,
             "solver_status": self.solver_status,
             "solve_time_ms": self.solve_time_ms,
+            "is_anti_float_satisfied": self.is_anti_float_satisfied,
+            "details": self.details,
         }
 
 
@@ -111,53 +116,71 @@ class FastMPCController:
         self.failsafe = failsafe if failsafe is not None else DEFAULT_FAILSAFE
 
     def solve(self, state: WellState, thermal_forecast_C: List[float]) -> MPCResult:
-        """Fast analytical/DP QP optimization across thermal trajectory."""
+        """Build a constraint-aware advisory trajectory with explicit infeasibility."""
         t_start = time.perf_counter()
         n = self.config.horizon_steps
-        gamma = 0.10
+        gamma = 0.10  # Identified surrogate coefficient; see docs/MODEL_CARD.md.
 
-        # 1. Compute viscosity profile across horizon
-        mu_profile = []
+        if n <= 0 or self.config.dt_hours <= 0.0:
+            raise ValueError("MPC horizon_steps and dt_hours must be positive.")
+        if not math.isfinite(state.spm_current) or not math.isfinite(state.temperature_C):
+            raise ValueError("WellState SPM and temperature must be finite.")
+        if state.viscosity_Pas is not None and (
+            not math.isfinite(state.viscosity_Pas) or state.viscosity_Pas <= 0.0
+        ):
+            raise ValueError("WellState viscosity_Pas must be finite and positive when supplied.")
+
+        mu_profile: List[float] = []
         mu_oil_curr = max(1e-4, float(self.rheology.oil_viscosity_celsius(state.temperature_C)))
         for k in range(n):
             temp_k = thermal_forecast_C[k] if k < len(thermal_forecast_C) else state.temperature_C
+            if not math.isfinite(float(temp_k)):
+                raise ValueError(f"Thermal forecast at step {k} is not finite.")
             mu_oil_k = float(self.rheology.oil_viscosity_celsius(temp_k))
-            if state.viscosity_Pas > 0.0:
+            if state.viscosity_Pas is not None:
                 mu_k = state.viscosity_Pas * (mu_oil_k / mu_oil_curr)
             else:
                 mu_k = mu_oil_k
-            mu_profile.append(mu_k)
+            mu_profile.append(max(1e-6, float(mu_k)))
 
-        # 2. Compute point-wise maximum safe SPM to enforce F_min >= 0.5 kN
-        safe_bounds = []
-        for k in range(n):
-            max_safe_spm = (3.5 - self.config.min_tension_kN) / max(0.01, gamma * mu_profile[k])
-            safe_bounds.append(float(np.clip(max_safe_spm, self.config.min_spm, self.config.max_spm)))
+        max_delta_step = self.config.max_delta_spm * self.config.dt_hours
+        safe_bounds: List[float] = []
+        intrinsically_infeasible_steps: List[int] = []
+        for k, mu_k in enumerate(mu_profile):
+            tension_bound = (3.5 - self.config.min_tension_kN) / max(0.01, gamma * mu_k)
+            pprl_bound = (self.config.max_pprl_kN - 120.0 - 8.0 * mu_k) / 15.0
+            raw_bound = min(tension_bound, pprl_bound, self.config.max_spm)
+            if raw_bound < self.config.min_spm:
+                intrinsically_infeasible_steps.append(k)
+            safe_bounds.append(float(np.clip(raw_bound, self.config.min_spm, self.config.max_spm)))
 
-        # 3. Dynamic programming backward pass for proactive slew-rate anticipation
+        # Backward reachability pass: begin reducing speed early enough to respect
+        # the per-hour actuator slew limit at future constraints.
         for k in range(n - 2, -1, -1):
-            safe_bounds[k] = min(safe_bounds[k], safe_bounds[k + 1] + self.config.max_delta_spm)
+            safe_bounds[k] = min(safe_bounds[k], safe_bounds[k + 1] + max_delta_step)
 
-        # 4. Forward execution pass starting from current SPM
-        spm_traj = []
-        min_tensions = []
-        pprls = []
-        spm_curr = state.spm_current
+        spm_traj: List[float] = []
+        min_tensions: List[float] = []
+        pprls: List[float] = []
+        spm_curr = float(np.clip(state.spm_current, self.config.min_spm, self.config.max_spm))
 
         for k in range(n):
-            target_spm = safe_bounds[k]
-            delta = target_spm - spm_curr
-            delta_clamped = float(np.clip(delta, -self.config.max_delta_spm, self.config.max_delta_spm))
+            delta = safe_bounds[k] - spm_curr
+            delta_clamped = float(np.clip(delta, -max_delta_step, max_delta_step))
             spm_next = float(np.clip(spm_curr + delta_clamped, self.config.min_spm, self.config.max_spm))
-
             spm_traj.append(spm_next)
             spm_curr = spm_next
+            min_tensions.append(3.5 - gamma * mu_profile[k] * spm_next)
+            pprls.append(120.0 + 15.0 * spm_next + 8.0 * mu_profile[k])
 
-            predicted_tension = 3.5 - gamma * mu_profile[k] * spm_next
-            predicted_pprl = 120.0 + 15.0 * spm_next + 8.0 * mu_profile[k]
-            min_tensions.append(predicted_tension)
-            pprls.append(predicted_pprl)
-
+        tension_residuals = [v - self.config.min_tension_kN for v in min_tensions]
+        pprl_residuals = [self.config.max_pprl_kN - v for v in pprls]
+        violating_steps = [
+            k for k in range(n)
+            if tension_residuals[k] < -1e-9 or pprl_residuals[k] < -1e-9
+        ]
+        feasible = not intrinsically_infeasible_steps and not violating_steps
+        status = "OPTIMAL" if feasible else "INFEASIBLE_SAFE_FALLBACK"
         solve_time_ms = float(round((time.perf_counter() - t_start) * 1000.0, 3))
 
         return MPCResult(
@@ -165,8 +188,18 @@ class FastMPCController:
             spm_trajectory=spm_traj,
             predicted_min_tension_kN=min_tensions,
             predicted_pprl_kN=pprls,
-            solver_status="OPTIMAL",
+            solver_status=status,
             solve_time_ms=solve_time_ms,
+            is_anti_float_satisfied=all(v >= -1e-9 for v in tension_residuals),
+            details={
+                "model_class": "reduced_order_advisory_surrogate",
+                "certified_for_direct_control": False,
+                "max_delta_spm_per_step": max_delta_step,
+                "min_tension_residual_kN": float(min(tension_residuals)),
+                "min_pprl_residual_kN": float(min(pprl_residuals)),
+                "violating_steps": violating_steps,
+                "intrinsically_infeasible_steps": intrinsically_infeasible_steps,
+            },
         )
 
     def optimize(self, state: Union[WellState, Dict[str, Any]]) -> MPCResult:
@@ -285,7 +318,8 @@ class FastMPCController:
 
         for h_rel in hours_relative:
             abs_t_hours = start_elapsed_hours + h_rel
-            t_cal, t_avg = self.thermal.predict_temperature(abs_t_hours, time_unit="hours", cooling_multiplier=cooling_multiplier)
+            t_cal_raw, _ = self.thermal.predict_temperature(abs_t_hours, time_unit="hours", cooling_multiplier=cooling_multiplier)
+            t_cal = float(t_cal_raw)
             mu_mix = self.rheology.compute_mixture_viscosity(t_cal, water_cut=water_cut)
             beta_top = self.rheology.compute_couette_shear_drag(0.0254 / 2.0, t_cal, water_cut=water_cut)
 

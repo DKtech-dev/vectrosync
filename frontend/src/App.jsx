@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScadaHeader } from './components/ScadaHeader';
 import { MetricCards } from './components/MetricCards';
 import { WellboreSimulator } from './components/WellboreSimulator';
@@ -34,10 +34,12 @@ export default function App() {
   const [simParams, setSimParams] = useState(DEFAULT_PARAMS);
   const [simState, setSimState] = useState(null);
   const [edgeSolveTimeMs, setEdgeSolveTimeMs] = useState(3.2);
+  const [error, setError] = useState(null);
 
   // Fetch simulation state from backend
   const loadSimulation = async (paramsToRun) => {
     setLoading(true);
+    setError(null);
     const tStart = performance.now();
     try {
       const res = await fetch('/api/simulate', {
@@ -46,12 +48,14 @@ export default function App() {
         body: JSON.stringify(paramsToRun),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || `Simulation request failed (${res.status})`);
       const tEnd = performance.now();
       const roundtripMs = Math.max(1.2, tEnd - tStart);
       setEdgeSolveTimeMs(data?.edge_solve_time_ms || data?.solve_time_ms || roundtripMs);
       setSimState(data);
     } catch (err) {
       console.error('Simulation fetch error:', err);
+      setError(err.message || 'The simulation service is unavailable.');
     } finally {
       setLoading(false);
     }
@@ -60,12 +64,14 @@ export default function App() {
   // Apply Scenario Preset
   const handleApplyScenario = async (scenarioId) => {
     setLoading(true);
+    setError(null);
     const tStart = performance.now();
     try {
       const res = await fetch(`/api/scenarios/${scenarioId}/apply`, {
         method: 'POST',
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || `Scenario request failed (${res.status})`);
       const tEnd = performance.now();
       const roundtripMs = Math.max(1.4, tEnd - tStart);
       setEdgeSolveTimeMs(data?.edge_solve_time_ms || data?.solve_time_ms || roundtripMs);
@@ -82,6 +88,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Scenario apply error:', err);
+      setError(err.message || 'The scenario could not be applied.');
     } finally {
       setLoading(false);
     }
@@ -135,6 +142,18 @@ export default function App() {
 
       {/* Main SCADA Workspace Container */}
       <main className="flex-1 max-w-[1780px] w-full mx-auto p-4 lg:p-6 space-y-4">
+        <div role="status" className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-xs text-amber-950 flex flex-wrap items-center justify-between gap-2">
+          <strong className="font-mono uppercase tracking-wide">Research prototype · Synthetic model output · Advisory only</strong>
+          <span>No field/HIL validation and no direct PLC/VFD control authority.</span>
+        </div>
+
+        {error && (
+          <div role="alert" className="bg-rose-50 border border-rose-300 rounded-lg p-3 text-sm text-rose-900 flex items-center justify-between gap-3">
+            <span>{error}</span>
+            <button type="button" onClick={() => loadSimulation(simParams)} className="font-semibold underline underline-offset-2">Retry</button>
+          </div>
+        )}
+
         {/* Active Scenario Banner */}
         {simState?.scenario_name && (
           <div className="bg-white border border-slate-200 rounded-lg shadow-xs p-3 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -142,13 +161,13 @@ export default function App() {
               <span className="font-mono font-bold text-sky-700">{simState.scenario_name}:</span>
               <span className="text-slate-700 font-sans">
                 {simState.scenario_id === 'SCENARIO_A_BASELINE_FAILURE' &&
-                  '16-day unmitigated thermal decay to ~50°C causing heavy crude viscosity surge (>12,000 cP) and downhole compressive rod float (< 0.0 kN).'}
+                  `Synthetic freeze stress case: reduced-order model returns ${simState.temperature_c.toFixed(1)}°C and ${simState.actual_min_tension_kn.toFixed(2)} kN minimum tension.`}
                 {simState.scenario_id === 'SCENARIO_B_COUPLED_TWIN' &&
-                  'Fast-Loop MPC anticipates viscosity surge ahead of time and proactively modulates speed to ~2.8 SPM, preserving safe tension (+0.65 kN).'}
+                  `Constraint-aware advisory case: modeled speed ${simState.effective_spm.toFixed(2)} SPM and minimum tension ${simState.actual_min_tension_kn.toFixed(2)} kN.`}
                 {simState.scenario_id === 'SCENARIO_C_TELEMETRY_SEVERED' &&
-                  'Modbus TCP cable severance (>60s latency) triggers Level 2 Supervisory protective 3-stroke ramp to safe 2.0 SPM fallback.'}
+                  'Synthetic telemetry timeout (>60 s) triggers the Level 2 protective 2.0 SPM fallback advisory.'}
                 {simState.scenario_id === 'DEFAULT_OPERATION' &&
-                  'Calibrated nominal operating conditions for Baghewala Well #14 under cyclic steam stimulation.'}
+                  'Synthetic nominal case for exploring the reduced-order thermal, rheology, and rod-load assumptions.'}
               </span>
             </div>
             <span className="font-mono text-[11px] font-semibold text-slate-600 shrink-0 px-2.5 py-0.5 rounded bg-slate-100 border border-slate-200">
@@ -194,13 +213,18 @@ export default function App() {
           {/* Right Column (7/12): Multi-Tab Engineering Console */}
           <div className="lg:col-span-7 bg-white border border-slate-200 rounded-lg shadow-xs p-4 flex flex-col justify-between">
             {/* Underline-Style Active Tab Bar */}
-            <div className="flex border-b border-slate-200 gap-1 mb-3 overflow-x-auto">
+            <div role="tablist" aria-label="Engineering analysis views" className="flex border-b border-slate-200 gap-1 mb-3 overflow-x-auto">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
+                    id={`tab-${tab.id}`}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`panel-${tab.id}`}
+                    tabIndex={isActive ? 0 : -1}
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-medium border-b-2 transition whitespace-nowrap rounded-t ${
                       isActive
@@ -216,7 +240,7 @@ export default function App() {
             </div>
 
             {/* Active Tab Content */}
-            <div className="min-h-[470px]">
+            <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="min-h-[470px]">
               {activeTab === 'dynacard' && simState && (
                 <DynacardStudio
                   dynacard={simState.dynacard}
@@ -280,14 +304,14 @@ export default function App() {
       <footer className="bg-[#0b0f17] border-t border-[#1e293b] py-3 px-6 text-[11px] text-slate-400 font-mono mt-auto">
         <div className="max-w-[1780px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>
-            <span>Oil India Limited &middot; Baghewala Heavy Oil Asset (Well #14, Bikaner-Nagaur Basin)</span>
+            <span>Baghewala-inspired research case study &middot; No operator affiliation or deployment implied</span>
             <span className="mx-2 text-slate-600">&middot;</span>
             <span className="text-cyan-400 font-bold">VectroSync Enterprise Industrial Twin</span>
           </div>
           <div className="flex items-center gap-3 text-[10.5px]">
-            <span className="text-emerald-400 font-semibold">100% Offline Localhost Architecture</span>
+            <span className="text-amber-300 font-semibold">Synthetic · Reduced-order · Advisory only</span>
             <span className="text-slate-600">&middot;</span>
-            <span>FastAPI + React 18 + Canvas Wave PDE</span>
+            <span>FastAPI + React 18 + deterministic card surrogate</span>
           </div>
         </div>
       </footer>

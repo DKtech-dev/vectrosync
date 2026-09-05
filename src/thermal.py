@@ -1,7 +1,6 @@
 """
-Reservoir Thermal Decay Engine (src/thermal.py)
-Implements Safari et al. (2020) analytical Boberg-Lantz formulation with Bessel quadrature,
-exact singularity limits, asymptotic branch transitions, and dynamic temperature calibration.
+Reservoir thermal-decay research model with Bessel quadrature, explicit
+singularity branches, and a documented empirical calibration factor.
 """
 
 from dataclasses import dataclass, field
@@ -42,6 +41,10 @@ class ThermalAssetParameters:
             raise ValueError("Heated steam radius rh must be strictly positive.")
         if not (0.0 <= self.delta < 1.0):
             raise ValueError("Convective removal factor delta must be in [0, 1).")
+        if not (0.0 < self.k_ref <= 1.0):
+            raise ValueError("Calibration asymptote k_ref must be in (0, 1].")
+        if self.t_ref <= 0.0:
+            raise ValueError("Calibration reference time t_ref must be positive.")
 
     @property
     def TR_C(self) -> float:
@@ -166,8 +169,14 @@ class ThermalDecayEngine:
 
         mid_mask = (~sing_mask) & (~asymp_mask)
         if np.any(mid_mask):
-            log_b2 = np.log10(flat_b2[mid_mask])
-            vr_flat[mid_mask] = np.clip(self._vr_spline(log_b2), 0.0, 1.0)
+            if use_fast_spline:
+                log_b2 = np.log10(flat_b2[mid_mask])
+                vr_flat[mid_mask] = np.clip(self._vr_spline(log_b2), 0.0, 1.0)
+            else:
+                vr_flat[mid_mask] = np.array([
+                    self._quad_radial_integral(float(value))
+                    for value in flat_b2[mid_mask]
+                ])
 
         vr_clipped = np.clip(vr_flat, 0.0, 1.0)
         res = vr_clipped.reshape(b2_arr.shape)
@@ -309,7 +318,12 @@ class ThermalDecayEngine:
         times_days: Union[List[float], np.ndarray],
         cooling_multiplier: float = 1.0,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        return self.predict_temperature(times_days, time_unit="days", cooling_multiplier=cooling_multiplier)
+        calibrated, average = self.predict_temperature(
+            np.asarray(times_days, dtype=np.float64),
+            time_unit="days",
+            cooling_multiplier=cooling_multiplier,
+        )
+        return np.asarray(calibrated), np.asarray(average)
 
 
 # Compatibility aliases

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, RotateCcw, Check, SlidersHorizontal } from 'lucide-react';
 
 export function ParameterDrawer({
@@ -10,20 +10,35 @@ export function ParameterDrawer({
   onReset,
   loading,
 }) {
+  const closeButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/30 backdrop-blur-xs flex justify-end">
-      <div className="w-full max-w-md bg-white text-slate-900 h-full shadow-2xl flex flex-col justify-between border-l border-slate-200">
+      <div role="dialog" aria-modal="true" aria-labelledby="parameter-drawer-title" className="w-full max-w-md bg-white text-slate-900 h-full shadow-2xl flex flex-col justify-between border-l border-slate-200">
         {/* Drawer Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-sky-600" />
-            <h3 className="font-sans font-bold text-sm text-slate-900 uppercase tracking-wide">
+            <h3 id="parameter-drawer-title" className="font-sans font-bold text-sm text-slate-900 uppercase tracking-wide">
               Disturbance Cockpit &mdash; Physics Overrides
             </h3>
           </div>
           <button
+            ref={closeButtonRef}
+            type="button"
+            aria-label="Close parameter drawer"
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition"
           >
@@ -57,7 +72,7 @@ export function ParameterDrawer({
 
             <div>
               <div className="flex justify-between text-slate-600 font-medium mb-1">
-                <span>Steam quality (X):</span>
+                <span>Steam quality (reserved; not coupled):</span>
                 <span className="font-bold font-mono text-sky-700">{(params.steam_quality * 100).toFixed(0)}%</span>
               </div>
               <input
@@ -66,8 +81,10 @@ export function ParameterDrawer({
                 max="0.95"
                 step="0.05"
                 value={params.steam_quality}
+                disabled
+                title="Reserved until a steam-energy balance is implemented"
                 onChange={(e) => onChangeParam('steam_quality', parseFloat(e.target.value))}
-                className="w-full accent-sky-600 cursor-pointer"
+                className="w-full accent-sky-600 cursor-not-allowed opacity-50"
               />
             </div>
 

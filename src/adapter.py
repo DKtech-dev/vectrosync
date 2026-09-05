@@ -245,7 +245,8 @@ class ColumnMapper:
 
         # Standard and noisy headers
         ("position", re.compile(r"^position_m$|^pos_m$", re.I), "m", 1.0),
-        ("load", re.compile(r"^load_kn$|^load_n$", re.I), "kn", 1.0),
+        ("load", re.compile(r"^load_kn$", re.I), "kn", 1.0),
+        ("load", re.compile(r"^load_n$", re.I), "n", 1.0),
         ("temperature", re.compile(r"^tubing_temp_c$|^bht_degf$|^bht_deg_f$", re.I), "degc", 1.0),
 
         ("timestamp", re.compile(r"time|timestamp|datetime|date", re.I), "s", 0.95),
@@ -458,7 +459,7 @@ class StandardDynoCard(BaseModel):
         # Shoelace polygon area or trapezoidal loop area
         area = 0.5 * abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
         if area == 0.0:
-            area = float(abs(np.trapz(y, x)))
+            area = float(abs(np.trapezoid(y, x)))
         return max(float(area), 1.0)
 
 
@@ -536,11 +537,32 @@ class AdaptiveCSVParser:
         control_valid = True
         warnings = []
 
+        timestamp_headers = [
+            header for header, mapping in mapping_report.items()
+            if mapping.target_channel == "timestamp"
+        ]
+        if timestamp_headers:
+            timestamps = pd.to_datetime(df[timestamp_headers[0]], errors="coerce", utc=True)
+            if timestamps.isna().any():
+                control_valid = False
+                warnings.append("Timestamp parsing failed for one or more rows.")
+            elif not timestamps.is_monotonic_increasing or timestamps.duplicated().any():
+                control_valid = False
+                warnings.append("Timestamps must be strictly increasing and unique.")
+        else:
+            control_valid = False
+            warnings.append("No timestamp channel was identified; control use is inhibited.")
+
         for header, mapping in mapping_report.items():
             if mapping.target_channel == "unknown" or mapping.target_channel == "timestamp":
                 continue
 
             channel = mapping.target_channel
+            if mapping.confidence < 0.80 or not mapping.confirmed:
+                control_valid = False
+                warnings.append(
+                    f"Low-confidence mapping for '{header}' ({mapping.confidence:.2f}); operator confirmation required."
+                )
             series = pd.to_numeric(df[header], errors="coerce")
             nans = series.isna()
 
@@ -590,11 +612,55 @@ class AdaptiveCSVParser:
                 converted = np.array([UnitConverter.convert_temperature(v, unit, "degc") if not np.isnan(v) else np.nan for v in raw_vals])
             elif channel == "spm":
                 converted = raw_vals
+            elif channel == "casing_pressure":
+                unit = unit or "bar"
+                converted = np.array([UnitConverter.convert_pressure(v, unit, "pa") if not np.isnan(v) else np.nan for v in raw_vals])
+            elif channel == "viscosity":
+                unit = unit or "cp"
+                converted = np.array([UnitConverter.convert_viscosity(v, unit, "pa.s") if not np.isnan(v) else np.nan for v in raw_vals])
+            elif channel == "water_cut":
+                converted = raw_vals / 100.0 if unit == "pct" else raw_vals
+            elif channel == "motor_power":
+                unit = unit or "kw"
+                converted = np.array([UnitConverter.convert_power(v, unit, "kw") if not np.isnan(v) else np.nan for v in raw_vals])
+            elif channel == "pump_fillage":
+                converted = raw_vals / 100.0 if unit == "pct" else raw_vals
             else:
                 converted = raw_vals
 
+            if not np.all(np.isfinite(converted)):
+                control_valid = False
+                warnings.append(f"Channel '{channel}' contains unresolved non-finite values.")
+
+            physical_ranges = {
+                "position": (-0.25, 10.0),
+                "load": (-100_000.0, 500_000.0),
+                "temperature": (-50.0, 350.0),
+                "spm": (0.0, 10.0),
+                "casing_pressure": (0.0, 100_000_000.0),
+                "viscosity": (1e-6, 10_000.0),
+                "water_cut": (0.0, 1.0),
+                "motor_power": (0.0, 1_000.0),
+                "pump_fillage": (0.0, 1.0),
+            }
+            if channel in physical_ranges:
+                lower, upper = physical_ranges[channel]
+                finite_values = converted[np.isfinite(converted)]
+                if finite_values.size and (np.any(finite_values < lower) or np.any(finite_values > upper)):
+                    control_valid = False
+                    warnings.append(
+                        f"Channel '{channel}' exceeds configured physical range [{lower}, {upper}]."
+                    )
+
             column_data[channel] = converted.tolist()
             imputed_mask[channel] = imp_flags
+
+        missing_required = {"position", "load"} - set(column_data)
+        if missing_required:
+            control_valid = False
+            warnings.append(
+                "Missing required dynacard channel(s): " + ", ".join(sorted(missing_required)) + "."
+            )
 
         return ParsedDataset(
             row_count=len(df),

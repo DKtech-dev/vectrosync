@@ -1,5 +1,7 @@
 # Project: Well-to-Surface Digital Twin
 
+> **Legacy design brief — not the current assurance statement.** Treat aspirational production/PDE/MPC/field claims below as historical requirements. The executed model status and limitations are authoritative in `README.md` and `docs/MODEL_CARD.md`.
+
 ## Architecture
 A 100% offline, production-grade Well-to-Surface Digital Twin for Cyclic Steam Stimulation (CSS) and Sucker Rod Pump (SRP) optimization in the Baghewala heavy-oil field (Oil India Limited, Rajasthan).
 

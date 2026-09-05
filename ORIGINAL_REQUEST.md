@@ -1,5 +1,7 @@
 # Original User Request
 
+> **Historical requirements only.** Terms such as production-grade, elastodynamic PDE, MPC, and failsafe describe the requested target state, not verified implementation. See `docs/MODEL_CARD.md` for current status.
+
 ## 2026-09-01T10:08:57Z
 
 # Teamwork Project Prompt

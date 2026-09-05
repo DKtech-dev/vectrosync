@@ -1,7 +1,9 @@
 """
-Conservative 1D Elastodynamic Wave Solver for Tapered Sucker Rods (src/rod_conservative.py)
-Solves the Damped 1D Wave PDE with CFL Subcycling, Harmonic Flux Taper Continuity,
-Kinematic Crank Boundary, Downhole Valve Coupling, and Phase-Resampled Dynamometer Cards.
+Reduced-order tapered sucker-rod card estimator.
+
+The current production path evaluates phase-resolved algebraic load balances.
+Mesh and CFL utilities are retained for planned transient-solver verification,
+but ``simulate_card`` does not time-march the elastodynamic PDE.
 """
 
 from dataclasses import dataclass, field
@@ -18,7 +20,8 @@ def trapz_integrate(y: np.ndarray, x: np.ndarray) -> float:
     if hasattr(np, "trapezoid"):
         return float(np.trapezoid(y, x))
     elif hasattr(np, "trapz"):
-        return float(np.trapz(y, x))
+        legacy_trapezoid = getattr(np, "trapz")
+        return float(legacy_trapezoid(y, x))
     else:
         return float(0.5 * np.sum((y[:-1] + y[1:]) * (x[1:] - x[:-1])))
 
@@ -209,9 +212,7 @@ class DynacardResult:
 
 
 class ConservativeRodWaveSolver:
-    """
-    1D Conservative finite-difference elastodynamic wave PDE solver for tapered rod strings.
-    """
+    """Reduced-order rod-load estimator with tapered-string mesh utilities."""
 
     def __init__(
         self,

@@ -28,7 +28,14 @@ export function CsvIngestor() {
 
       const data = await res.json();
       if (res.ok) {
-        setIngestStatus({ success: true, message: `Successfully ingested ${data.row_count} telemetry rows. Bounded gaps linearly imputed.` });
+        const safeForControl = data.control_valid === true;
+        const warningText = data.warnings?.length ? ` ${data.warnings.join(' ')}` : '';
+        setIngestStatus({
+          success: safeForControl,
+          message: safeForControl
+            ? `Parsed ${data.row_count} rows; safety gate passed.${warningText}`
+            : `Parsed for analysis only; control gate inhibited.${warningText}`,
+        });
         setParsedData(data.column_data);
       } else {
         setIngestStatus({ success: false, message: data.detail || 'Failed to ingest CSV.' });
@@ -149,7 +156,7 @@ export function CsvIngestor() {
 
           <div className="text-[10.5px] text-slate-600 flex items-center gap-2 mt-3 pt-2 border-t border-slate-200 font-mono">
             <span className="font-semibold text-emerald-700">✓ Gap-Discipline:</span>
-            <span>Bounded NaN sensor gaps imputed via physics interpolation</span>
+            <span>Linear interpolation is flagged; only validated schemas may pass the control gate</span>
           </div>
         </div>
       </div>

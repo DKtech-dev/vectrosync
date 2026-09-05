@@ -9,7 +9,7 @@ import numpy as np
 
 from src.animated_well import render_animated_well_html
 from src.why_engine import WhyEngine, DiagnosticReasoning
-from src.scenario_runner import ScenarioRunner, ScenarioType, SCENARIO_PRESETS
+from src.scenario_runner import ScenarioRunner, ScenarioType
 from src.depth_stress import compute_spatiotemporal_stress_matrix, create_depth_stress_heatmap
 from src.rod_conservative import ConservativeRodWaveSolver
 
@@ -70,9 +70,14 @@ class TestWhyEngine:
         assert isinstance(diag, DiagnosticReasoning)
         assert "9,800 cP" in diag.trigger_event
         assert "1.72 N·s/m²" in diag.trigger_event
-        assert "Fast-Loop Model Predictive Controller" in diag.dispatched_action
+        assert "reduced-order governor" in diag.dispatched_action
         assert "+0.65 kN" in diag.structural_outcome
-        assert "₹8.5 Lakhs" in diag.structural_outcome
+        assert diag.provenance_tag == "[synthetic model]"
+        combined = " ".join(diag.to_dict().values())
+        assert "68%" not in combined
+        assert "₹" not in combined
+        assert "autonomous" not in combined.lower()
+        assert "[calibrated]" not in combined
 
     def test_buckling_failure_explanation(self):
         diag = WhyEngine.generate_explanation(
@@ -85,8 +90,9 @@ class TestWhyEngine:
             effective_spm=4.7,
             is_modbus_severed=False,
         )
-        assert "compressive buckling" in diag.forward_horizon.lower()
-        assert "rod parting" in diag.structural_outcome.lower()
+        assert "modeled compression" in diag.forward_horizon.lower()
+        assert "does not resolve" in diag.forward_horizon.lower()
+        assert "not proof of rod parting" in diag.structural_outcome.lower()
 
     def test_modbus_severance_explanation(self):
         diag = WhyEngine.generate_explanation(
@@ -97,10 +103,16 @@ class TestWhyEngine:
             min_tension_kn=0.55,
             nominal_spm=4.2,
             effective_spm=2.0,
+            failsafe_level="LEVEL_2_PROTECTIVE",
             is_modbus_severed=True,
         )
         assert "Modbus" in diag.trigger_event
-        assert "LEVEL-2 PROTECTIVE" in diag.dispatched_action
+        assert "LEVEL_2_PROTECTIVE" in diag.dispatched_action
+        assert "does not dispatch" in diag.dispatched_action
+
+    def test_non_finite_inputs_are_rejected(self):
+        with pytest.raises(ValueError, match="finite"):
+            WhyEngine.generate_explanation(min_tension_kn=float("nan"))
 
 
 class TestScenarioRunner:
@@ -122,7 +134,7 @@ class TestScenarioRunner:
         cfg_b = ScenarioRunner.get_preset(ScenarioType.SCENARIO_B_COUPLED_TWIN)
         assert cfg_b.cooling_multiplier == 2.20
         assert cfg_b.expected_spm == 2.8
-        assert cfg_b.expected_min_tension_kn == 0.65
+        assert cfg_b.expected_min_tension_kn == 2.36
         assert cfg_b.mpc_enabled
 
     def test_scenario_c_preset_parameters(self):
@@ -153,8 +165,8 @@ class TestDepthStressInspector:
     def test_stress_matrix_buckling_state(self):
         solver = ConservativeRodWaveSolver(dx=10.0)
         card = solver.simulate_card(spm=4.7, temp_c=50.0, water_cut=0.25)
-        
-        angles_deg, depths_m, stress_mat = compute_spatiotemporal_stress_matrix(
+
+        _angles_deg, _depths_m, stress_mat = compute_spatiotemporal_stress_matrix(
             depths_m=solver.node_depths,
             node_areas_m2=solver.node_area,
             dynacard_result=card,

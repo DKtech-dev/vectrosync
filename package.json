@@ -3,6 +3,6 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm install && npm run build"
+    "build": "npm ci --ignore-scripts --cache frontend/.npm-cache --prefix frontend && npm run build --prefix frontend"
   }
 }

@@ -1,3 +1,4 @@
+evidence_status: "synthetic research assumptions; not operator-approved asset data"
 well_name: "OIL-BAGHEWALA-EOR-V2"
 asset_attribution: "Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited"
 operator: "Oil India Limited"
@@ -51,7 +52,7 @@ rod_string:
       area_m2: 2.85023e-4
 
 pumping_unit:
-  surface_stroke_m: 2.5
+  surface_stroke_m: 2.54
   crank_length_m: 1.5
   plunger_diameter_m: 0.04445
   fluid_density_kg_m3: 980.0
@@ -73,5 +74,5 @@ mpc_controller:
 failsafe:
   telemetry_sync_normal_sec: 10.0
   telemetry_timeout_degraded_sec: 60.0
-  min_safe_tension_trip_kn: 0.20
+  min_safe_tension_trip_kn: 0.50
   fallback_ramp_strokes: 3

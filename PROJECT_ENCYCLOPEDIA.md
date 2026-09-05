@@ -1,5 +1,7 @@
 # 📖 Well-to-Surface Digital Twin: Master Technical Encyclopedia
 
+> **Superseded legacy narrative.** Test counts and industrial/field claims below are not current evidence. Use `README.md`, `docs/MODEL_CARD.md`, and `docs/ASSURANCE_CASE.md` as authoritative.
+
 **SIH26120: Well-to-Surface Digital Twin for CSS + SRP Optimization**  
 **Asset:** Baghewala Heavy Oil Field, Well #14, Bikaner-Nagaur Basin, Thar Desert, Rajasthan  
 **Operator:** Oil India Limited (OIL)  

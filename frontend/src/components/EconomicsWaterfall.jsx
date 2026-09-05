@@ -16,13 +16,15 @@ export function EconomicsWaterfall({ economics }) {
     power_efficiency_cr_inr = 0.23,
     oil_uplift_cr_inr = 10.72,
     total_annual_value_cr_inr = 14.96,
+    evidence_status = 'commercial_hypothesis_not_field_validated',
+    assumptions = {},
   } = economics;
 
   const items = [
-    { label: 'Workover Avoidance', value: workover_avoidance_cr_inr, sub: '2.05 fewer pulls/yr @ ₹8.5L', barColor: 'bg-emerald-500' },
-    { label: 'Power Efficiency', value: power_efficiency_cr_inr, sub: '48 kWh/day @ ₹7.5/unit', barColor: 'bg-cyan-500' },
-    { label: 'Oil Rate Uplift', value: oil_uplift_cr_inr, sub: '+4.2 BOPD/well @ $75/bbl', barColor: 'bg-blue-500' },
-    { label: 'Total Annual ROI', value: total_annual_value_cr_inr, sub: '23-Well Baghewala Sector', total: true, barColor: 'bg-gradient-to-r from-cyan-400 to-emerald-400' },
+    { label: 'Workover Hypothesis', value: workover_avoidance_cr_inr, sub: `${assumptions.baseline_failures_per_well_year ?? '—'} → ${assumptions.residual_failures_per_well_year ?? '—'} failures/well-year`, barColor: 'bg-emerald-500' },
+    { label: 'Energy Hypothesis', value: power_efficiency_cr_inr, sub: `${assumptions.energy_saved_kwh_well_day ?? '—'} kWh/well-day`, barColor: 'bg-cyan-500' },
+    { label: 'Deferment Recapture', value: oil_uplift_cr_inr, sub: `${assumptions.avoided_downtime_days_per_well_year ?? '—'} days × ${assumptions.deferred_oil_rate_bopd ?? '—'} BOPD`, barColor: 'bg-blue-500' },
+    { label: 'Base Net Hypothesis', value: total_annual_value_cr_inr, sub: `${well_count}-well planning case; unvalidated`, total: true, barColor: 'bg-gradient-to-r from-cyan-400 to-emerald-400' },
   ];
 
   return (
@@ -32,13 +34,17 @@ export function EconomicsWaterfall({ economics }) {
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-emerald-600" />
           <span className="text-xs font-mono font-bold text-slate-800 uppercase tracking-wide">
-            23-Well Asset ROI Ribbon &mdash; Field Economics Waterfall
+            Commercial Sensitivity &mdash; Base Planning Hypothesis
           </span>
         </div>
         <div className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 border border-emerald-300 rounded-md tabular-nums flex items-center gap-1 shadow-xs">
           <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-          <span>₹{total_annual_value_cr_inr.toFixed(2)} Cr / Year Net Uplift</span>
+          <span>₹{total_annual_value_cr_inr.toFixed(2)} Cr / Year Base Case</span>
         </div>
+      </div>
+
+      <div className="text-[10.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-3 font-mono">
+        {evidence_status.replaceAll('_', ' ')} · Replace assumptions with operator-approved evidence before investment decisions.
       </div>
 
       {/* Value Creation Grid */}

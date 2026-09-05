@@ -3,8 +3,8 @@ Scenario Playback & Supervisory Controller (src/scenario_runner.py)
 Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
 Model: OIL-BAGHEWALA-EOR-V2
 
-Provides one-click presets for operational SCADA evaluation and supervisory control to instantly trigger
-and compare baseline failure, coupled twin mitigation, and telemetry failsafe actions.
+Provides deterministic synthetic presets for comparing a baseline stress case,
+a reduced-order governor response, and telemetry-timeout advisory logic.
 """
 
 from dataclasses import dataclass
@@ -46,18 +46,20 @@ def compute_expected_downhole_tension(
     sand_wear: float = 0.20,
 ) -> float:
     """
-    Computes expected downhole minimum tension directly from the first-principles
-    1D elastodynamic wave solver (src.rod_conservative) and thermal decay engine (src.thermal),
-    eliminating all hardcoded tension constants.
+    Compute expected minimum tension with the current reduced-order rod-card and
+    thermal research models.
     """
     try:
         from src.thermal import ThermalDecayEngine
         from src.rod_conservative import ConservativeRodWaveSolver
 
-        tau_sec = float(elapsed_days) * 86400.0
         thermal = ThermalDecayEngine()
-        t_res_k = thermal.temperature_calibrated(tau_sec, k_hat=cooling_multiplier)
-        t_res_c = float(t_res_k - 273.15)
+        t_res_c, _ = thermal.predict_temperature(
+            float(elapsed_days),
+            time_unit="days",
+            cooling_multiplier=float(cooling_multiplier),
+        )
+        t_res_c = float(t_res_c)
 
         solver = ConservativeRodWaveSolver(dx=10.0)
         card = solver.simulate_card(
@@ -68,21 +70,16 @@ def compute_expected_downhole_tension(
             n_strokes=3,
         )
         return round(float(card.min_downhole_tension_kn), 2)
-    except Exception:
-        # Physical dynamic mechanics if wave engine cannot be imported at bootstrap
-        if spm >= 4.5 and cooling_multiplier >= 2.0:
-            return -2.01  # Natural compressive float under 12,000 cP heavy crude
-        elif spm <= 2.8:
-            return 0.65   # Throttled MPC safe positive tension
-        return 0.55
+    except Exception as exc:
+        raise RuntimeError("Synthetic scenario model evaluation failed") from exc
 
 
 SCENARIO_PRESETS: Dict[ScenarioType, ScenarioConfig] = {
     ScenarioType.SCENARIO_A_BASELINE_FAILURE: ScenarioConfig(
         name="Scenario A: The Baghewala Freeze (Baseline Failure)",
         description=(
-            "Runs a 16-day cooldown simulation where reservoir cools to ~50°C, viscosity surges to ~12,000 cP, "
-            "and an uncoupled fixed-speed controller (4.7 SPM) causes severe downhole compressive buckling (< 0.0 kN)."
+            "Runs a synthetic 66°C stress case where the configured emulsion viscosity rises sharply "
+            "and the reduced-order card model predicts compression at 4.7 SPM."
         ),
         cooling_multiplier=2.20,
         elapsed_days=16.0,
@@ -94,7 +91,7 @@ SCENARIO_PRESETS: Dict[ScenarioType, ScenarioConfig] = {
         modbus_severed=False,
         expected_spm=4.7,
         expected_min_tension_kn=-1.80,
-        expected_failsafe_state="LEVEL_0_NORMAL",
+        expected_failsafe_state="LEVEL_3_EMERGENCY",
         color_theme="#dc2626",
     ),
 
@@ -113,7 +110,7 @@ SCENARIO_PRESETS: Dict[ScenarioType, ScenarioConfig] = {
         mpc_enabled=True,
         modbus_severed=False,
         expected_spm=2.8,
-        expected_min_tension_kn=0.65,
+        expected_min_tension_kn=2.36,
         expected_failsafe_state="LEVEL_0_NORMAL",
         color_theme="#059669",
     ),
@@ -168,6 +165,8 @@ class ScenarioRunner:
     @classmethod
     def compute_all_presets(cls) -> Dict[ScenarioType, ScenarioConfig]:
         """Pre-computes and caches physical presets for all scenarios."""
-        for stype in ScenarioType:
-            cls.get_preset(stype)
-        return cls._resolved_cache
+        cls._resolved_cache = {
+            stype: cls.get_preset(stype)
+            for stype in ScenarioType
+        }
+        return dict(cls._resolved_cache)

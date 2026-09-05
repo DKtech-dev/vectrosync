@@ -33,6 +33,7 @@ ENV/
 # Node modules
 node_modules/
 frontend/node_modules/
+frontend/.npm-cache/
 frontend/dist/
 
 # Large binaries & media
@@ -42,12 +43,18 @@ frontend/dist/
 *.mov
 *.mp3
 *.wav
+*.pdf
+*.pptx
+slide_preview-*.png
 
 # Testing
 .pytest_cache/
 
 # Scratch & IDE
 scratch/
+extracted_images/
+presentation_assets/
+submission/*_render.html
 .agents/
 .streamlit/
 .wheels/

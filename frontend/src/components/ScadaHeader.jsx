@@ -29,8 +29,8 @@ export function ScadaHeader({
 }) {
   // Dynamic 4-Level Supervisory Safety Machine Badge
   const renderSupervisoryBadge = () => {
-    // Level 3: E-Stop condition (Active severe buckling in Baseline Freeze or LEVEL_3_ESTOP)
-    if (scenarioId === 'SCENARIO_A_BASELINE_FAILURE' || (failsafeLevel && failsafeLevel.includes('LEVEL_3'))) {
+    // Render only the supervisory state returned by the backend model.
+    if (failsafeLevel && failsafeLevel.includes('LEVEL_3')) {
       return (
         <div className="flex items-center gap-2 px-3 py-1 bg-rose-50 border border-rose-400 text-rose-700 text-xs font-mono font-bold rounded-md scada-pulse-estop">
           <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></span>
@@ -69,7 +69,7 @@ export function ScadaHeader({
     { 
       id: 'SCENARIO_A_BASELINE_FAILURE', 
       label: 'Scenario A (Freeze)', 
-      hint: 'Scenario A: 2.2x Cooling → Viscous Surge & Compressive Rod Float',
+      hint: 'Synthetic freeze stress case → modeled compressive rod load',
       icon: AlertTriangle, 
       color: 'hover:bg-rose-50 hover:border-rose-400 text-rose-700',
       activeColor: 'bg-rose-100 border-rose-500 text-rose-800 shadow-sm font-bold ring-1 ring-rose-400'
@@ -77,7 +77,7 @@ export function ScadaHeader({
     { 
       id: 'SCENARIO_B_COUPLED_TWIN', 
       label: 'Scenario B (Twin)', 
-      hint: 'Scenario B: Fast-Loop MPC Throttles to 2.8 SPM → Restores Safe Tension (+2.36 kN)',
+      hint: 'Reduced-order governor stress case → compare modeled tension margin',
       icon: ShieldCheck, 
       color: 'hover:bg-sky-50 hover:border-sky-400 text-sky-700',
       activeColor: 'bg-sky-100 border-sky-500 text-sky-800 shadow-sm font-bold ring-1 ring-sky-400'
@@ -85,7 +85,7 @@ export function ScadaHeader({
     { 
       id: 'SCENARIO_C_TELEMETRY_SEVERED', 
       label: 'Sever Modbus', 
-      hint: 'Scenario C: Telemetry Dropout (>60s) → L2 Failsafe 3-Stroke Ramp to 2.0 SPM',
+      hint: 'Synthetic telemetry timeout (>60 s) → L2 fallback advisory',
       icon: Radio, 
       color: 'hover:bg-amber-50 hover:border-amber-400 text-amber-800',
       activeColor: 'bg-amber-100 border-amber-500 text-amber-900 shadow-sm font-bold ring-1 ring-amber-400'
@@ -93,7 +93,7 @@ export function ScadaHeader({
     { 
       id: 'DEFAULT_OPERATION', 
       label: 'Reset', 
-      hint: 'Restore nominal calibrated reservoir conditions',
+      hint: 'Restore the nominal synthetic demonstration case',
       icon: RotateCcw, 
       color: 'hover:bg-slate-100 hover:border-slate-400 text-slate-700',
       activeColor: 'bg-slate-200 border-slate-400 text-slate-900 shadow-sm font-bold'
@@ -112,10 +112,10 @@ export function ScadaHeader({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm text-slate-900 tracking-tight font-sans">
-                VectroSync Enterprise Industrial Twin
+                VectroSync CSS-SRP Advisory Twin
               </span>
               <span className="px-2 py-0.5 rounded text-[10.5px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200">
-                OIL-BAGHEWALA-EOR-V2
+                RESEARCH PROTOTYPE
               </span>
               <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10.5px] font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200">
                 CSS+SRP OPTIMIZER

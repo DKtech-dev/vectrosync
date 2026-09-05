@@ -1,12 +1,14 @@
 """
-3-Tier Failsafe State Machine Engine (src/failsafe.py)
-Implements Real-Time Safety Interlocks, Telemetry Loss Triggers, 3-Stroke Ramp Down,
-Hysteresis Recovery Debouncing, and Emergency Latching.
+Four-level supervisory advisory state machine.
+
+This software state machine demonstrates trip logic; it is not an IEC 61511
+safety-instrumented function and must not replace an independent safety PLC/SIS.
 """
 
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Tuple, Any, Dict
+import math
 import time
 
 
@@ -122,8 +124,12 @@ class FailsafeStateMachine:
         stroke_completed: bool = True,
         operator_ack: bool = False,
     ) -> FailsafeDecision:
-        # 1. Level 3 Check: PPRL > 95% rating
-        if pprl_kN > self.emergency_ratio * self.rod_rating_kN:
+        metrics = (telemetry_age_s, f_downhole_min_kN, pprl_kN, proposed_spm)
+        if not all(math.isfinite(float(value)) for value in metrics):
+            return self.trip_manual_emergency("INVALID SAFETY INPUT: Non-finite telemetry or model output.")
+
+        # 1. Level 3 Check: tensile overload or modeled compression.
+        if pprl_kN > self.emergency_ratio * self.rod_rating_kN or f_downhole_min_kN < 0.0:
             self.state = FailsafeLevel.LEVEL_3_EMERGENCY
             self.is_latched = True
             self.current_spm = 0.0
@@ -132,7 +138,11 @@ class FailsafeStateMachine:
                 spm_command=0.0,
                 control_enabled=False,
                 alarm_raised=True,
-                alarm_message="CRITICAL OVERLOAD: PPRL exceeded 95% rod tensile rating.",
+                alarm_message=(
+                    "MODELED COMPRESSION: Downhole tension fell below 0 kN."
+                    if f_downhole_min_kN < 0.0
+                    else "CRITICAL OVERLOAD: PPRL exceeded 95% rod tensile rating."
+                ),
                 e_stop_tripped=True,
             )
 
@@ -238,16 +248,28 @@ class FailsafeStateMachine:
     ) -> Tuple[FailsafeLevel, str, float]:
         if manual_emergency:
             dec = self.trip_manual_emergency()
-            return FailsafeLevel(dec.state), dec.alarm_message, dec.spm_command
+            return FailsafeLevel(dec.state), dec.alarm_message or "Manual emergency trip", dec.spm_command
 
         if self.is_latched or self.state == FailsafeLevel.LEVEL_3_EMERGENCY:
             return FailsafeLevel.LEVEL_3_EMERGENCY, "EMERGENCY OVERLOAD: PPRL exceeded rating (latched)", 0.0
 
-        if pprl_kn > self.emergency_ratio * self.rod_rating_kN:
+        metrics = (current_time, last_telemetry_time, pprl_kn, min_tension_kn)
+        if not all(math.isfinite(float(value)) for value in metrics):
             self.state = FailsafeLevel.LEVEL_3_EMERGENCY
             self.is_latched = True
             self.current_spm = 0.0
-            return FailsafeLevel.LEVEL_3_EMERGENCY, "EMERGENCY OVERLOAD: PPRL exceeded rating", 0.0
+            return FailsafeLevel.LEVEL_3_EMERGENCY, "INVALID SAFETY INPUT: Non-finite value", 0.0
+
+        if pprl_kn > self.emergency_ratio * self.rod_rating_kN or min_tension_kn < 0.0:
+            self.state = FailsafeLevel.LEVEL_3_EMERGENCY
+            self.is_latched = True
+            self.current_spm = 0.0
+            reason = (
+                "MODELED COMPRESSION: Downhole tension below 0 kN"
+                if min_tension_kn < 0.0
+                else "EMERGENCY OVERLOAD: PPRL exceeded rating"
+            )
+            return FailsafeLevel.LEVEL_3_EMERGENCY, reason, 0.0
 
         telemetry_age = 9999.0 if simulated_disconnect else max(0.0, current_time - last_telemetry_time)
 

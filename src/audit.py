@@ -3,15 +3,18 @@ Cryptographic SHA-256 Provenance & Audit Ledger (src/audit.py)
 Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
 Model: OIL-BAGHEWALA-EOR-V2
 
-Implements Canonical JSON Hashing, Genesis Block Initialization,
-Tamper-Evident Event Chaining, Immutable Provenance Taxonomy, and Filtering/Export.
+Implements canonical JSON hashing, genesis initialization, and an in-memory,
+thread-safe tamper-evident event chain. It is not durable, signed, externally
+anchored, or immutable storage.
 """
 
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Tuple, Iterator, Union
 import collections
+import copy
 import hashlib
 import json
+import threading
 import time
 import datetime
 import numpy as np
@@ -50,7 +53,7 @@ def compute_canonical_json(data: Dict[str, Any]) -> str:
 
 @dataclass
 class AuditBlock:
-    """Immutable cryptographically chained audit block."""
+    """Hash-chained audit block used for tamper-evidence demonstrations."""
     index: int
     timestamp: float
     event_type: str
@@ -121,7 +124,7 @@ AuditEvent = AuditBlock
 
 class AuditLedger:
     """
-    Cryptographic SHA-256 ledger recording all industrial advisory twin events.
+    In-memory SHA-256 chain recording advisory-model events.
     """
 
     GENESIS_HASH = "0" * 64
@@ -134,6 +137,7 @@ class AuditLedger:
     ):
         self.well_id = str(well_id)
         self.chain: List[AuditBlock] = []
+        self._lock = threading.RLock()
         if auto_genesis:
             self._create_genesis_block(genesis_payload)
 
@@ -164,17 +168,20 @@ class AuditLedger:
     ) -> AuditBlock:
         """Appends a new verified event block to the ledger."""
         ts = time.time() if timestamp is None else float(timestamp)
-        prev_hash = self.chain[-1].block_hash if len(self.chain) > 0 else self.GENESIS_HASH
-        block = AuditBlock(
-            index=len(self.chain),
-            timestamp=ts,
-            event_type=event_type,
-            provenance_tag=provenance_tag,
-            payload=payload,
-            prev_hash=prev_hash,
-        )
-        self.chain.append(block)
-        return block
+        if not np.isfinite(ts):
+            raise ValueError("Audit timestamp must be finite.")
+        with self._lock:
+            prev_hash = self.chain[-1].block_hash if self.chain else self.GENESIS_HASH
+            block = AuditBlock(
+                index=len(self.chain),
+                timestamp=ts,
+                event_type=str(event_type),
+                provenance_tag=provenance_tag,
+                payload=copy.deepcopy(payload),
+                prev_hash=prev_hash,
+            )
+            self.chain.append(block)
+            return block
 
     def verify_block(self, block_idx: int) -> Tuple[bool, Optional[str]]:
         """Verifies an individual block by index."""
@@ -196,27 +203,27 @@ class AuditLedger:
         """
         Verifies cryptographic continuity and block hash validity across entire chain.
         """
-        if len(self.chain) == 0:
+        with self._lock:
+            if len(self.chain) == 0:
+                return False, "Ledger is empty; genesis block is missing."
+
+            if self.chain[0].index != 0 or self.chain[0].prev_hash != self.GENESIS_HASH:
+                return False, "Corrupted Genesis block 0 header."
+            if not self.chain[0].is_hash_valid():
+                return False, "Genesis block 0 self-hash mismatch."
+
+            for i in range(1, len(self.chain)):
+                curr = self.chain[i]
+                prev = self.chain[i - 1]
+
+                if curr.index != i:
+                    return False, f"Broken index sequence at block {i}."
+                if curr.prev_hash != prev.block_hash:
+                    return False, f"Broken hash chain link at block {i} (points to incorrect parent)."
+                if not curr.is_hash_valid():
+                    return False, f"Tampered data detected in block {i}."
+
             return True, None
-
-        # Verify Genesis
-        if self.chain[0].index != 0 or self.chain[0].prev_hash != self.GENESIS_HASH:
-            return False, "Corrupted Genesis block 0 header."
-        if not self.chain[0].is_hash_valid():
-            return False, "Genesis block 0 self-hash mismatch."
-
-        for i in range(1, len(self.chain)):
-            curr = self.chain[i]
-            prev = self.chain[i - 1]
-
-            if curr.index != i:
-                return False, f"Broken index sequence at block {i}."
-            if curr.prev_hash != prev.block_hash:
-                return False, f"Broken hash chain link at block {i} (points to incorrect parent)."
-            if not curr.is_hash_valid():
-                return False, f"Tampered data detected in block {i}."
-
-        return True, None
 
     def verify_chain_integrity(self) -> Tuple[bool, Optional[str]]:
         return self.verify_chain()
@@ -270,7 +277,8 @@ class AuditLedger:
         chain_blocks = []
         for blk_data in data["chain"]:
             chain_blocks.append(AuditBlock.from_dict(blk_data))
-        self.chain = chain_blocks
+        with self._lock:
+            self.chain = chain_blocks
         is_valid, err = self.verify_chain()
         if not is_valid:
             raise ValueError(f"Imported ledger is cryptographically invalid: {err}")

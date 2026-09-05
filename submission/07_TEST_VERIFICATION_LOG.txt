@@ -1,0 +1,26 @@
+VECTROSYNC VERIFICATION LOG — 2026-09-05
+========================================
+Scope: software and selected numerical-property verification
+Environment observed: Linux, Python 3.14 virtual environment
+
+Command: .venv/bin/python -m pytest -q
+Result: 271 passed, 1 external Starlette/httpx deprecation warning
+Duration: 59.74 seconds (final run)
+
+Command: npm run build (frontend/)
+Result: PASS — 1600 modules transformed
+Output: dist/index.html; CSS and JS production bundles
+
+Command: .venv/bin/python -c "import app"
+Result: PASS — full Streamlit script imported; expected bare-mode warnings only
+
+Additional checks:
+- scenario A: LEVEL_3_EMERGENCY, displayed pre-trip 4.7 SPM, -1.81 kN model tension, 0 SPM advisory command
+- scenario B: LEVEL_0_NORMAL, 2.8 SPM, +2.36 kN model tension
+- scenario C: LEVEL_2_PROTECTIVE, 2.0 SPM fallback
+- default: LEVEL_0_NORMAL
+- YAML parse: PASS
+- git diff --check: PASS
+
+Interpretation boundary:
+These results do not establish field accuracy, HIL readiness, functional safety, Modbus integration, trained-AI performance, commercial savings, or operator deployment.

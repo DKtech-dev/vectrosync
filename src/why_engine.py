@@ -1,25 +1,25 @@
-"""
-Causal "Why Engine" Explainable AI Copilot (src/why_engine.py)
-Generates structured, plain-language petroleum engineering diagnostic reasoning summaries
-tracing the multi-physics chain from thermal decay to MPC autonomous speed modulation.
+"""Deterministic, evidence-bounded explanations for synthetic model outputs.
+
+This module formats values produced elsewhere; it is not an AI model, an independent
+physics check, or evidence that an advisory action will prevent a failure.
 """
 
-from dataclasses import dataclass
-from typing import Dict, Any, Optional
 import math
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
 class DiagnosticReasoning:
-    """Structured explainable AI diagnostic summary."""
+    """Structured diagnostic summary with an explicit evidence label."""
     trigger_event: str
     forward_horizon: str
     dispatched_action: str
     structural_outcome: str
-    provenance_tag: str = "[calibrated]"
+    provenance_tag: str = "[synthetic model]"
     timestamp_iso: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "trigger_event": self.trigger_event,
             "forward_horizon": self.forward_horizon,
@@ -31,10 +31,7 @@ class DiagnosticReasoning:
 
 
 class WhyEngine:
-    """
-    Explainable AI reasoning engine translating numerical wave mechanics and thermal states
-    into rigorous, plain-language engineering diagnostics for operators and evaluators.
-    """
+    """Translate synthetic scalar outputs into bounded operator-facing language."""
 
     @classmethod
     def generate_explanation(
@@ -48,69 +45,94 @@ class WhyEngine:
         effective_spm: float = 2.8,
         failsafe_level: str = "LEVEL_0_NORMAL",
         is_modbus_severed: bool = False,
-        scenario_name: Optional[str] = None,
+        scenario_name: str | None = None,
     ) -> DiagnosticReasoning:
+        values = {
+            "elapsed_days": elapsed_days,
+            "temp_c": temp_c,
+            "viscosity_cp": viscosity_cp,
+            "drag_beta": drag_beta,
+            "min_tension_kn": min_tension_kn,
+            "nominal_spm": nominal_spm,
+            "effective_spm": effective_spm,
+        }
+        if any(not math.isfinite(value) for value in values.values()):
+            raise ValueError("Diagnostic inputs must be finite")
+        if elapsed_days < 0 or viscosity_cp < 0 or drag_beta < 0:
+            raise ValueError("Elapsed time, viscosity, and drag coefficient must be non-negative")
+
         visc_pas = viscosity_cp / 1000.0
+        state = failsafe_level
 
         if is_modbus_severed:
             trigger = (
-                f"At day {elapsed_days:.1f}, real-time Modbus serial telemetry was severed. "
-                f"Heartbeat latency exceeded the 60-second safety timeout."
+                f"At synthetic cycle day {elapsed_days:.1f}, the configured telemetry-loss scenario exceeded "
+                "the software demonstration's 60-second stale-data threshold. No live Modbus connection is implemented."
             )
             horizon = (
-                "Operating blind without telemetry risks undetected compressive rod buckling "
-                "or severe fluid pound if reservoir cooling accelerates."
+                "Without current measurements, load and tension estimates cannot be treated as observed plant state. "
+                "Continued operation would require independent PLC/SIS permissives and operator procedures."
             )
             action = (
-                "Supervisory Failsafe State Machine tripped to LEVEL-2 PROTECTIVE mode, "
-                f"executing a deterministic 3-stroke ramp-down from {nominal_spm:.1f} SPM to safe fallback 2.0 SPM."
+                f"The supervisory model reports {state} and recommends {effective_spm:.1f} SPM instead of "
+                f"{nominal_spm:.1f} SPM. This application does not dispatch that recommendation to an actuator."
             )
             outcome = (
-                "String locked into low-stress idle regime (PPRL < 55 kN), preventing mechanical overload "
-                "until Modbus telemetry link is verified."
+                "The protective state and speed are advisory outputs only; mechanical condition cannot be verified "
+                "until trusted telemetry is restored and independently checked."
             )
 
         elif min_tension_kn < 0.5:
+            condition = "modeled compression" if min_tension_kn < 0 else "low modeled tension"
             trigger = (
-                f"At CSS cycle day {elapsed_days:.1f}, sandface formation temperature cooled to {temp_c:.1f}°C, "
-                f"causing non-Newtonian heavy crude viscosity to surge exponentially to {viscosity_cp:,.0f} cP ({visc_pas:.2f} Pa·s). "
-                f"Annular Couette hydrodynamic shear drag coefficient β climbed to {drag_beta:.2f} N·s/m²."
+                f"At synthetic CSS cycle day {elapsed_days:.1f}, the configured thermal/rheology chain gives "
+                f"{temp_c:.1f}°C, {viscosity_cp:,.0f} cP ({visc_pas:.2f} Pa·s), and a reduced-order "
+                f"Couette coefficient β of {drag_beta:.2f} N·s/m²."
             )
             horizon = (
-                f"Under unmitigated baseline operation ({nominal_spm:.1f} SPM), downhole axial tension collapsed to {min_tension_kn:.2f} kN "
-                f"(violating the +0.5 kN safety envelope), inducing severe compressive buckling and rod float on the downstroke."
+                f"At {nominal_spm:.1f} SPM, the algebraic card estimator reports a minimum tension of "
+                f"{min_tension_kn:.2f} kN: {condition} below the +0.50 kN advisory floor. The model does not "
+                "resolve tubing contact or certify buckling or failure probability."
             )
             action = (
-                f"Uncoupled baseline controller failed to adapt. Autonomous MPC intervention required to prevent catastrophic fatigue failure."
+                f"The software reports {state} and recommends {effective_spm:.1f} SPM. An operator and independent "
+                "protection system must decide and enforce any physical response."
             )
             outcome = (
-                "Rod Section 3 (3/4\") subjected to high compressive buckling risk, carrier bar separation on downstroke, "
-                "and violent impact loading on upstroke reversal. High probability of rod parting (₹8.5 Lakhs workover risk)."
+                "The synthetic result is a screening indicator for compression/rod-float investigation, not proof "
+                "of rod parting, avoided failure, fatigue-life improvement, or financial benefit."
             )
 
         else:
+            margin_kn = min_tension_kn - 0.5
             trigger = (
-                f"At CSS cycle day {elapsed_days:.1f}, formation temperature reached {temp_c:.1f}°C, "
-                f"increasing heavy crude viscosity to {viscosity_cp:,.0f} cP ({visc_pas:.2f} Pa·s). "
-                f"Annular Couette shear drag coefficient β climbed to {drag_beta:.2f} N·s/m² across the 3-section tapered string."
+                f"At synthetic CSS cycle day {elapsed_days:.1f}, the configured thermal/rheology chain gives "
+                f"{temp_c:.1f}°C, {viscosity_cp:,.0f} cP ({visc_pas:.2f} Pa·s), and a reduced-order "
+                f"Couette coefficient β of {drag_beta:.2f} N·s/m²."
             )
             horizon = (
-                f"The 12-hour forward elastodynamic predictive horizon forecast downhole rod tension dropping to -1.1 kN in 4.2 hours "
-                f"if surface pumping remained at {nominal_spm:.1f} SPM."
+                f"For the evaluated advisory point, the algebraic card estimator reports {min_tension_kn:+.2f} kN, "
+                f"a modeled margin of {margin_kn:+.2f} kN above the +0.50 kN floor. Horizon values remain "
+                "uncalibrated model projections rather than field measurements."
             )
             action = (
-                f"Fast-Loop Model Predictive Controller (MPC) proactively throttled surface speed from {nominal_spm:.1f} SPM to {effective_spm:.1f} SPM, "
-                f"modulating the downstroke kinematic velocity profile to maintain positive rod string tension."
+                f"The reduced-order governor recommends {effective_spm:.1f} SPM versus the requested "
+                f"{nominal_spm:.1f} SPM; it has advisory authority only and does not command a PLC/VFD."
             )
             outcome = (
-                f"Downhole minimum tension successfully preserved at +{min_tension_kn:.2f} kN (strictly above the +0.5 kN structural floor). "
-                f"Eliminated rod floating, reduced cyclic fatigue by 68%, and preserved ₹8.5 Lakhs per well in workover avoidance."
+                f"The evaluated synthetic point satisfies the implemented tension constraint at "
+                f"{min_tension_kn:+.2f} kN. This does not establish buckling prevention, fatigue reduction, "
+                "field performance, or commercial value."
             )
+
+        provenance = "[synthetic model]"
+        if scenario_name:
+            provenance = f"[synthetic model: {scenario_name}]"
 
         return DiagnosticReasoning(
             trigger_event=trigger,
             forward_horizon=horizon,
             dispatched_action=action,
             structural_outcome=outcome,
-            provenance_tag="[calibrated]",
+            provenance_tag=provenance,
         )

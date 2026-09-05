@@ -214,8 +214,8 @@ class TestFailsafeStateMachineTransitions:
         d4 = sm.evaluate(telemetry_age_s=85.0, f_downhole_min_kN=1.2, pprl_kN=180.0, proposed_spm=5.0, stroke_completed=True)
         assert math.isclose(d4.spm_command, 2.0, abs_tol=1e-4)
 
-    def test_level_2_trip_on_rod_compression(self):
-        """Downhole tension violation (F_downhole < +0.5 kN) immediately triggers LEVEL-2 protective fallback."""
+    def test_level_3_trip_on_rod_compression(self):
+        """Modeled negative tension immediately triggers the latched Level-3 advisory trip."""
         sm = FailsafeStateMachine()
         decision = sm.evaluate(
             telemetry_age_s=1.0,  # Telemetry fresh
@@ -223,8 +223,10 @@ class TestFailsafeStateMachineTransitions:
             pprl_kN=180.0,
             proposed_spm=4.5,
         )
-        assert decision.state == FailsafeLevel.LEVEL_2_PROTECTIVE
+        assert decision.state == FailsafeLevel.LEVEL_3_EMERGENCY
         assert decision.control_enabled is False
+        assert decision.spm_command == 0.0
+        assert decision.e_stop_tripped is True
 
     def test_level_3_emergency_stop_trip(self):
         """PPRL > 95% rod rating (298.4 kN) cuts motor power (SPM -> 0) and latches system."""

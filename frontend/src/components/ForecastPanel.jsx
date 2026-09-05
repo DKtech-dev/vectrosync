@@ -90,8 +90,8 @@ export function ForecastPanel({ forecast12h }) {
         {/* 3. Couette Shear Drag */}
         {renderSparkline('drag_beta', '#dc2626', 'Couette Shear Drag (β)', 'N·s/m²', (v) => v.toFixed(2))}
 
-        {/* 4. Autonomous MPC Speed Modulation */}
-        {renderSparkline('spm_trajectory', '#059669', 'MPC Speed Modulation', 'SPM')}
+        {/* 4. Advisory MPC Speed Schedule */}
+        {renderSparkline('spm_trajectory', '#059669', 'Advisory Speed Schedule', 'SPM')}
       </div>
     </div>
   );

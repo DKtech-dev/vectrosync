@@ -1,13 +1,8 @@
-"""
-2D Depth-Stress Spatiotemporal Inspector (src/depth_stress.py)
-Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
-Model: OIL-BAGHEWALA-EOR-V2
+"""Depth/phase axial-load visualization.
 
-Computes the spatiotemporal axial stress distribution sigma(x, theta)
-across the full 1,150 m tapered sucker rod string and renders an
-interactive Plotly contour heatmap with taper interface annotations.
-Zero synthetic numerical overrides; all forces derived directly from
-conservative wave solver nodal mechanics.
+The current heatmap linearly interpolates between estimated surface and
+bottom loads and divides by local section area. It is not a recovered nodal
+stress field or a lateral buckling/contact solution.
 """
 
 import numpy as np
@@ -27,9 +22,9 @@ def compute_spatiotemporal_stress_matrix(
     is_buckling: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Computes 2D stress matrix sigma(depth, crank_angle) in MPa
-    across all spatial nodes and 144 stroke phase angles directly
-    from conservative wave solver nodal forces.
+    Estimate a 2D axial stress map by interpolating endpoint card loads.
+
+    This visualization is suitable for comparative demonstrations only.
     """
     n_nodes = len(depths_m)
     n_angles = 144
@@ -47,7 +42,7 @@ def compute_spatiotemporal_stress_matrix(
         for i, d in enumerate(depths_m):
             area = node_areas_m2[i]
             frac = d / total_depth
-            # Pure physical axial force from wave solver nodal forces
+            # Reduced-order interpolation; not a transient nodal-force recovery.
             f_axial = (1.0 - frac) * f_surf + frac * f_down
             stress_mpa[i, j] = f_axial / area / 1.0e6
 

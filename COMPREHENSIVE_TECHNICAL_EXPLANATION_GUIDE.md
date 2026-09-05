@@ -1,5 +1,7 @@
 # Well-to-Surface Digital Twin: Master Technical & Operational Specification
 
+> **Superseded legacy specification.** It may describe target-state equations as implemented facts. Current executed behavior, validation level, and non-affiliation limits are defined in `README.md` and `docs/MODEL_CARD.md`.
+
 **SIH26120: CSS + SRP Optimization for Baghewala Heavy Oil Field**  
 **Operator:** Oil India Limited (OIL), Rajasthan, India  
 **Target Formation:** Jodhpur Sandstone at 1,150 m True Vertical Depth (TVD)  
