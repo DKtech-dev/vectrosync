@@ -1,0 +1,177 @@
+[
+  {
+    "start": 0.0,
+    "end": 4.68,
+    "text": "Welcome to Vectrosing, the real-time closed loop, physics informed digital twin engineered"
+  },
+  {
+    "start": 4.68,
+    "end": 7.48,
+    "text": "for oil-india limited's baggy valla."
+  },
+  {
+    "start": 7.48,
+    "end": 14.12,
+    "text": "Well number 14 cyclic steam stimulation and sucker road pump asset in Rajasthan, a kick."
+  },
+  {
+    "start": 14.12,
+    "end": 20.0,
+    "text": "The Skada architecture features live-age controller profiling at 0.3 milliseconds communicating"
+  },
+  {
+    "start": 20.0,
+    "end": 26.92,
+    "text": "over industrial mode bus, T, C, P, Port 5, O2 with the supervisory state machine operating"
+  },
+  {
+    "start": 26.92,
+    "end": 29.4,
+    "text": "at level 0 normal."
+  },
+  {
+    "start": 29.4,
+    "end": 36.16,
+    "text": "Examining live telemetry, the reservoir temperature is 218.8 degrees Celsius, maintaining"
+  },
+  {
+    "start": 36.16,
+    "end": 41.32,
+    "text": "heavy oil, viscosity at 75 centipose with low shear drag."
+  },
+  {
+    "start": 41.32,
+    "end": 47.76,
+    "text": "Minimum downhole tension is positive at 8.43 kilonewton's well above the buckling threshold."
+  },
+  {
+    "start": 47.76,
+    "end": 53.36,
+    "text": "Rating stuck, our subsurface wave solver simulates a LST dynamic-stayed stress across"
+  },
+  {
+    "start": 53.36,
+    "end": 60.12,
+    "text": "1,150 meters throughout 3 taper sections, both surface and downhole dynamometer cards"
+  },
+  {
+    "start": 60.12,
+    "end": 63.52,
+    "text": "operate safely inside the green operational envelope."
+  },
+  {
+    "start": 63.52,
+    "end": 69.16,
+    "text": "Switching to the Spassure Temporal Daped Stress Map, the continuous axial stress tensor"
+  },
+  {
+    "start": 69.16,
+    "end": 75.92,
+    "text": "is resolved across 144 nodes and full 360 degree crank rotation displaying stress gradients"
+  },
+  {
+    "start": 75.92,
+    "end": 77.88,
+    "text": "along each taper section."
+  },
+  {
+    "start": 77.88,
+    "end": 84.76,
+    "text": "In the 12 hour multi-physics, horizon, bober glance, analytical decay, forecast, reservoir,"
+  },
+  {
+    "start": 84.76,
+    "end": 89.48,
+    "text": "heat loss, viscosity rise and predicted road tension trajectories."
+  },
+  {
+    "start": 89.48,
+    "end": 95.24,
+    "text": "The Geospatial Basin Map aggregates 23 heavy oil wells in the Bikaner Nagar Basin, projecting"
+  },
+  {
+    "start": 95.24,
+    "end": 101.12,
+    "text": "14.82 crore rupees in annual operating expand savings from avoided road failures."
+  },
+  {
+    "start": 101.12,
+    "end": 106.88,
+    "text": "In this state, fuel, opening the disturbance cockpit allows petroleum engineers to simulate"
+  },
+  {
+    "start": 106.88,
+    "end": 111.16,
+    "text": "real reservoir cooling rates, steam quality drops and water cut variations for sensitivity"
+  },
+  {
+    "start": 111.16,
+    "end": 112.16,
+    "text": "analysis."
+  },
+  {
+    "start": 112.16,
+    "end": 118.28,
+    "text": "Now, initiating scenario a the baguava freeze, unmitigated cooling to 66 degrees causes"
+  },
+  {
+    "start": 118.28,
+    "end": 124.76,
+    "text": "crude viscosity to surge to 11800 centiposes, hydrodynamic, quatt drag, over power's"
+  },
+  {
+    "start": 124.76,
+    "end": 130.68,
+    "text": "road, self weight on the downstroke, causing compressive buckling float at minus 1.81 kilonewton's"
+  },
+  {
+    "start": 130.68,
+    "end": 133.64,
+    "text": "and tripping the level 3 emergency stop."
+  },
+  {
+    "start": 133.64,
+    "end": 139.2,
+    "text": "In scenario B, our fast loop model predictive controller intervenes, proctively throttling"
+  },
+  {
+    "start": 139.2,
+    "end": 144.36,
+    "text": "speed to 2.8 strokes per minute, shear drag drops quadratically immediately recovering"
+  },
+  {
+    "start": 144.36,
+    "end": 150.2,
+    "text": "down hold tension to positive 2.36 kilonewton's and restoring safe operation."
+  },
+  {
+    "start": 150.2,
+    "end": 155.68,
+    "text": "Peace, in scenario C, field mode bus telemetry is severed."
+  },
+  {
+    "start": 155.68,
+    "end": 160.32,
+    "text": "The supervisor is state machine transitions to level 2 protective, executing an automated"
+  },
+  {
+    "start": 160.32,
+    "end": 165.8,
+    "text": "3 stroke ramp down to 2.0 strokes per minute mechanical fallback to preserve road integrity,"
+  },
+  {
+    "start": 165.8,
+    "end": 171.2,
+    "text": "safehee, pitties, resetting the system restores nominal calibrated conditions and clears"
+  },
+  {
+    "start": 171.2,
+    "end": 177.08,
+    "text": "all alarms, vector sync delivers autonomous 0 more first principle cyber physical protection"
+  },
+  {
+    "start": 177.08,
+    "end": 178.8,
+    "text": "for heavy oil artificial lift."
+  }
+]

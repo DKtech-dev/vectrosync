@@ -1,0 +1,248 @@
+1
+00:00:00,000 --> 00:00:06,880
+Hey everyone, we're Team VectroSync, and welcome to our live prototype demonstration.
+
+2
+00:00:06,880 --> 00:00:13,040
+We built this cyber-physical digital twin specifically for Oil India Limited's Well #14...
+
+3
+00:00:13,040 --> 00:00:17,200
+...located in the Baghewala heavy oil field out in Rajasthan.
+
+4
+00:00:17,200 --> 00:00:22,000
+Now, heavy oil thermal extraction is brutal on equipment.
+
+5
+00:00:22,000 --> 00:00:26,480
+Operators pump high-pressure steam downhole to liquefy the crude,
+
+6
+00:00:26,480 --> 00:00:30,080
+but as the reservoir inevitably cools down,
+
+7
+00:00:30,080 --> 00:00:36,320
+that crude turns thick as tar—shooting past 11,000 centipoise.
+
+8
+00:00:36,320 --> 00:00:39,440
+When the sucker rod pump strokes downward,
+
+9
+00:00:39,440 --> 00:00:44,880
+that heavy viscous fluid creates massive annular Couette shear drag.
+
+10
+00:00:44,880 --> 00:00:49,600
+The fluid drag literally overpowers the weight of the rods. They float,
+
+11
+00:00:49,600 --> 00:00:53,760
+they buckle under compression, and eventually they snap.
+
+12
+00:00:53,760 --> 00:00:57,920
+Existing tools out there like ForeSite or Lufkin SAM,
+
+13
+00:00:57,920 --> 00:01:03,840
+they're completely reactive, only alerting after the rod has already broken in half.
+
+14
+00:01:03,840 --> 00:01:09,520
+And by then, you're looking at millions of rupees in workover rig repairs and lost oil production.
+
+15
+00:01:09,520 --> 00:01:12,080
+That's the exact problem we set out to solve.
+
+16
+00:01:12,080 --> 00:01:17,760
+VectroSync isn't just another monitoring dashboard—it's an autonomous edge controller.
+
+17
+00:01:17,760 --> 00:01:20,480
+Look right up here at our mission control header:
+
+18
+00:01:20,480 --> 00:01:26,160
+our controller is running live with an edge execution latency of just 0.35 milliseconds,
+
+19
+00:01:26,160 --> 00:01:30,800
+communicating over industrial Modbus-TCP port 502.
+
+20
+00:01:30,800 --> 00:01:33,600
+Right now, the well is running at normal baseline.
+
+21
+00:01:33,600 --> 00:01:37,200
+The formation is hot at 218 degrees Celsius,
+
+22
+00:01:37,200 --> 00:01:40,240
+viscosity is low at 75 centipoise,
+
+23
+00:01:40,240 --> 00:01:45,280
+and our downhole tension is sitting safe at positive 8.4 kilonewtons.
+
+24
+00:01:45,280 --> 00:01:47,680
+Look at our dynamometer cards on the right:
+
+25
+00:01:47,680 --> 00:01:52,000
+both surface and downhole cards are tracking cleanly inside the green envelope.
+
+26
+00:01:52,000 --> 00:01:54,400
+Let me take you under the hood for a second.
+
+27
+00:01:54,400 --> 00:02:00,720
+If we click Tab 2, this is our spatiotemporal depth-stress map.
+
+28
+00:02:00,720 --> 00:02:06,640
+It resolves the full continuous axial stress tensor across 144 nodes
+
+29
+00:02:06,640 --> 00:02:10,240
+and a 360-degree crank cycle.
+
+30
+00:02:10,240 --> 00:02:14,320
+And over in Tab 3, our predictive horizon couples
+
+31
+00:02:14,400 --> 00:02:18,720
+Boberg-Lantz thermal dissipation with emulsion rheology,
+
+32
+00:02:18,720 --> 00:02:24,480
+forecasting temperature drops and viscosity spikes hours before they actually hit the wellhead.
+
+33
+00:02:24,480 --> 00:02:27,600
+Now, let's trigger a real failure.
+
+34
+00:02:27,600 --> 00:02:32,880
+Watch what happens when I click Scenario A—the Baghewala Freeze.
+
+35
+00:02:32,880 --> 00:02:39,280
+The reservoir cools to 66 degrees, and viscosity spikes to 11,800 centipoise.
+
+36
+00:02:39,280 --> 00:02:42,320
+Look at the wellbore on the left turning red!
+
+37
+00:02:42,320 --> 00:02:46,000
+On the downstroke, fluid drag completely grabs the rod string.
+
+38
+00:02:46,000 --> 00:02:51,840
+Downhole tension just plunged into negative compression at minus 1.81 kilonewtons.
+
+39
+00:02:51,840 --> 00:02:53,760
+The rod has buckled,
+
+40
+00:02:53,760 --> 00:02:57,360
+and immediately, our supervisory system trips
+
+41
+00:02:57,360 --> 00:03:00,560
+a Level 3 emergency stop to save the string.
+
+42
+00:03:00,560 --> 00:03:04,480
+Now, let's see VectroSync fix this proactively.
+
+43
+00:03:04,480 --> 00:03:06,240
+I'll click Scenario B.
+
+44
+00:03:06,240 --> 00:03:07,680
+Watch the pumping speed:
+
+45
+00:03:07,680 --> 00:03:11,760
+our Model Predictive Controller detects the cooling trend in advance,
+
+46
+00:03:11,760 --> 00:03:18,000
+and automatically throttles surface speed from 5.2 down to 2.8 strokes per minute.
+
+47
+00:03:18,000 --> 00:03:21,520
+Because fluid shear drag drops quadratically with speed,
+
+48
+00:03:21,520 --> 00:03:27,360
+downhole tension instantly recovers back to positive 2.36 kilonewtons.
+
+49
+00:03:27,360 --> 00:03:31,440
+That downhole card snaps right back into the green safe zone,
+
+50
+00:03:31,440 --> 00:03:35,040
+keeping production flowing without any intervention or downtime.
+
+51
+00:03:35,040 --> 00:03:38,960
+Finally, what happens if field communication drops?
+
+52
+00:03:39,040 --> 00:03:41,680
+Let's sever Modbus in Scenario C.
+
+53
+00:03:41,680 --> 00:03:44,560
+Look at port 502—communication lost.
+
+54
+00:03:44,560 --> 00:03:46,880
+But the system doesn't freeze or crash.
+
+55
+00:03:46,880 --> 00:03:50,640
+It instantly transitions into Level 2 Protective mode,
+
+56
+00:03:50,640 --> 00:03:57,200
+executing an automated 3-stroke ramp-down to a safe 2.0 strokes per minute mechanical fallback.
+
+57
+00:03:57,200 --> 00:04:02,640
+When you scale this across all 23 heavy-oil wells in the Baghewala basin,
+
+58
+00:04:03,360 --> 00:04:08,960
+VectroSync saves an auditable 14.8 crore rupees every single year,
+
+59
+00:04:08,960 --> 00:04:15,040
+eliminating 47 workover interventions and cutting 300 tonnes of wasted energy emissions.
+
+60
+00:04:15,040 --> 00:04:20,720
+Real physics, autonomous edge control, and zero mock shortcuts.
+
+61
+00:04:20,720 --> 00:04:23,760
+That is Team VectroSync.
+
+62
+00:04:23,760 --> 00:04:24,560
+Thanks for watching.
+

@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  vectrosync:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vectrosync:enterprise-v2
+    container_name: vectrosync-enterprise-twin
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "8501:8501"
+    environment:
+      - ENVIRONMENT=production
+      - WELL_ID=Baghewala-14
+      - FIELD=Baghewala
+      - BASIN=Bikaner-Nagaur
+      - OPERATOR=Oil India Limited
+      - ASSET_NAME=OIL-BAGHEWALA-EOR-V2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs:ro
