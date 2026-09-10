@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, ShieldCheck, AlertTriangle, Layers, Maximize2 } from 'lucide-react';
+import { AnimatedNumber } from './AnimatedNumber';
+import { SkeletonPanel } from './Skeleton';
 
 export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
   const [hoverData, setHoverData] = useState(null);
@@ -7,11 +9,7 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
   const [activeCardView, setActiveCardView] = useState('dual'); // 'dual' | 'surface' | 'downhole'
 
   if (!dynacard || !dynacard.surface_position_m || dynacard.surface_position_m.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-500 font-mono text-xs bg-[#111827] rounded border border-[#1e293b]">
-        Awaiting reduced-order synthetic dynacard output...
-      </div>
-    );
+    return <SkeletonPanel title="Awaiting synthetic dynacard output" lines={4} height={260} />;
   }
 
   const {
@@ -106,56 +104,56 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
   return (
     <div className="flex flex-col gap-3 font-sans">
       {/* Studio Header & View Mode Selector */}
-      <div className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-xs">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between pb-2.5 border-b border-slate-200 gap-2">
+      <div className="panel p-4">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between pb-3 mb-3 border-b border-hairline gap-2">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-sky-600" />
-            <span className="font-bold text-xs text-slate-800 uppercase tracking-wide font-mono">
+            <Activity className="w-4 h-4 text-muted" />
+            <span className="section-title">
               Reduced-Order Dynacard Estimates &mdash; Screening Thresholds
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {/* View Mode Toggle */}
-            <div className="inline-flex bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[11px] font-mono">
+            <div className="inline-flex bg-surface-2 p-0.5 rounded-md border border-hairline text-[11px] readout">
               <button
                 type="button"
                 aria-pressed={activeCardView === 'dual'}
                 onClick={() => setActiveCardView('dual')}
-                className={`px-2.5 py-0.5 rounded transition ${
-                  activeCardView === 'dual' ? 'bg-white text-sky-700 font-bold border border-slate-200 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1 rounded transition ${
+                  activeCardView === 'dual' ? 'bg-surface-1 text-interactive font-bold border border-hairline' : 'text-muted hover:text-ink'
                 }`}
               >
-                DUAL VIEW
+                Dual view
               </button>
               <button
                 type="button"
                 aria-pressed={activeCardView === 'surface'}
                 onClick={() => setActiveCardView('surface')}
-                className={`px-2.5 py-0.5 rounded transition ${
-                  activeCardView === 'surface' ? 'bg-white text-sky-700 font-bold border border-slate-200 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1 rounded transition ${
+                  activeCardView === 'surface' ? 'bg-surface-1 text-interactive font-bold border border-hairline' : 'text-muted hover:text-ink'
                 }`}
               >
-                SURFACE (0-150kN)
+                Surface (0-150 kN)
               </button>
               <button
                 type="button"
                 aria-pressed={activeCardView === 'downhole'}
                 onClick={() => setActiveCardView('downhole')}
-                className={`px-2.5 py-0.5 rounded transition ${
-                  activeCardView === 'downhole' ? 'bg-white text-sky-700 font-bold border border-slate-200 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1 rounded transition ${
+                  activeCardView === 'downhole' ? 'bg-surface-1 text-interactive font-bold border border-hairline' : 'text-muted hover:text-ink'
                 }`}
               >
-                DOWNHOLE (-10..40kN)
+                Downhole (-10..40 kN)
               </button>
             </div>
 
-            <label className="flex items-center gap-1.5 cursor-pointer select-none text-slate-600 text-[11px] font-mono ml-1">
+            <label className="flex items-center gap-1.5 cursor-pointer select-none text-muted text-[11px] readout ml-1">
               <input
                 type="checkbox"
                 checked={showEnvelope}
                 onChange={(e) => setShowEnvelope(e.target.checked)}
-                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500 text-xs"
+                className="rounded border-hairline text-interactive focus:ring-interactive text-xs"
               />
               <span>Show screening thresholds</span>
             </label>
@@ -163,18 +161,18 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
         </div>
 
         {/* Vector SVG Cards Canvas Area */}
-        <div className={`pt-3 ${activeCardView === 'dual' ? 'grid grid-cols-1 lg:grid-cols-2 gap-3' : 'flex justify-center'}`}>
+        <div className={activeCardView === 'dual' ? 'grid grid-cols-1 lg:grid-cols-2 gap-3' : 'flex justify-center'}>
           
           {/* Card 1: High-Precision Surface Dynamometer Card (0 - 3.5 m vs 0 - 150 kN) */}
           {(activeCardView === 'dual' || activeCardView === 'surface') && (
-            <div className="bg-slate-50/70 rounded-lg border border-slate-200 p-2.5 relative flex flex-col justify-between">
-              <div className="flex items-center justify-between px-1 mb-1 text-[11px] font-mono">
-                <span className="text-sky-700 font-bold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-sky-600"></span>
-                  MODELED SURFACE CARD (0 &ndash; 150 kN)
+            <div className="panel-inset p-3 relative flex flex-col justify-between">
+              <div className="flex items-center justify-between px-1 mb-1 text-[11px] readout">
+                <span className="section-title flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-interactive"></span>
+                  Modeled surface card (0 &ndash; 150 kN)
                 </span>
-                <span className="text-slate-500 text-[10px]">
-                  PPRL: <strong className="text-slate-800">{pprl_kn.toFixed(1)} kN</strong> | MPRL: <strong className="text-slate-800">{mprl_kn.toFixed(1)} kN</strong>
+                <span className="readout text-[10px] text-faint">
+                  PPRL: <AnimatedNumber value={pprl_kn} format={(v) => `${v.toFixed(1)} kN`} className="text-ink font-bold" /> | MPRL: <AnimatedNumber value={mprl_kn} format={(v) => `${v.toFixed(1)} kN`} className="text-ink font-bold" />
                 </span>
               </div>
 
@@ -182,7 +180,7 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                 viewBox={`0 0 ${surfPlot.width} ${surfPlot.height}`}
                 role="img"
                 aria-label="Synthetic modeled surface load versus stroke displacement card"
-                className="w-full h-auto cursor-crosshair bg-white rounded border border-slate-200"
+                className="w-full h-auto cursor-crosshair bg-surface-1 rounded border border-hairline"
                 onMouseMove={(e) => handleMouseMove(e, 'surf')}
                 onMouseLeave={() => setHoverData(null)}
               >
@@ -191,8 +189,8 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                   const y = scaleYSurf(val);
                   return (
                     <g key={`surf-y-${val}`}>
-                      <line x1={surfPlot.margin.left} y1={y} x2={surfPlot.width - surfPlot.margin.right} y2={y} stroke="#e2e8f0" strokeWidth="1" />
-                      <text x={surfPlot.margin.left - 6} y={y + 3.5} className="text-[8.5px] fill-slate-500 font-mono text-right" textAnchor="end">
+                      <line x1={surfPlot.margin.left} y1={y} x2={surfPlot.width - surfPlot.margin.right} y2={y} style={{ stroke: 'rgb(var(--border-hairline))' }} strokeWidth="1" />
+                      <text x={surfPlot.margin.left - 6} y={y + 3.5} className="text-[8.5px] fill-faint font-mono text-right" textAnchor="end">
                         {val}
                       </text>
                     </g>
@@ -203,8 +201,8 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                   const x = scaleXSurf(val);
                   return (
                     <g key={`surf-x-${val}`}>
-                      <line x1={x} y1={surfPlot.margin.top} x2={x} y2={surfPlot.height - surfPlot.margin.bottom} stroke="#e2e8f0" strokeWidth="1" />
-                      <text x={x} y={surfPlot.height - surfPlot.margin.bottom + 14} className="text-[8.5px] fill-slate-500 font-mono" textAnchor="middle">
+                      <line x1={x} y1={surfPlot.margin.top} x2={x} y2={surfPlot.height - surfPlot.margin.bottom} style={{ stroke: 'rgb(var(--border-hairline))' }} strokeWidth="1" />
+                      <text x={x} y={surfPlot.height - surfPlot.margin.bottom + 14} className="text-[8.5px] fill-faint font-mono" textAnchor="middle">
                         {val.toFixed(1)}
                       </text>
                     </g>
@@ -220,22 +218,23 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                       y1={scaleYSurf(99.0)}
                       x2={surfPlot.width - surfPlot.margin.right}
                       y2={scaleYSurf(99.0)}
-                      stroke="#e11d48"
+                      style={{ stroke: 'rgb(var(--accent-critical))' }}
                       strokeWidth="1.2"
                       strokeDasharray="4 3"
                     />
-                    <text x={surfPlot.width - surfPlot.margin.right - 4} y={scaleYSurf(99.0) - 3} className="text-[8px] fill-rose-600 font-mono" textAnchor="end">
+                    <text x={surfPlot.width - surfPlot.margin.right - 4} y={scaleYSurf(99.0) - 3} className="text-[8px] fill-critical font-mono" textAnchor="end">
                       90% Working Limit (99.0 kN) · Rated 110.0 kN
                     </text>
                   </g>
                 )}
 
-                {/* Surface P-V Loop (Sky Blue Bold Vector) */}
+                {/* Surface P-V Loop (interactive-toned vector, draws in on scenario switch) */}
                 <path
+                  key={`surf-${surface_position_m.length}-${surface_load_kn[0]?.toFixed?.(1)}`}
+                  className="vs-draw stroke-interactive"
                   d={surfaceCardPath}
-                  fill="#0284c7"
+                  style={{ '--draw-length': 2000, fill: 'rgb(var(--accent-interactive))' }}
                   fillOpacity="0.08"
-                  stroke="#0284c7"
                   strokeWidth="2.2"
                 />
 
@@ -247,7 +246,7 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                       y1={surfPlot.margin.top}
                       x2={scaleXSurf(hoverData.disp)}
                       y2={surfPlot.height - surfPlot.margin.bottom}
-                      stroke="#94a3b8"
+                      style={{ stroke: 'rgb(var(--text-tertiary))' }}
                       strokeWidth="1"
                       strokeDasharray="2 2"
                     />
@@ -255,21 +254,21 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                       cx={scaleXSurf(hoverData.disp)}
                       cy={scaleYSurf(hoverData.surfLoad)}
                       r="3.5"
-                      fill="#0284c7"
-                      stroke="#ffffff"
+                      className="fill-interactive"
+                      style={{ stroke: 'rgb(var(--bg-surface-1))' }}
                       strokeWidth="1.5"
                     />
                   </g>
                 )}
 
                 {/* Axis Labels */}
-                <text x={surfPlot.margin.left + (surfPlot.width - surfPlot.margin.left - surfPlot.margin.right) / 2} y={surfPlot.height - 4} className="text-[9px] fill-slate-600 font-mono" textAnchor="middle">
+                <text x={surfPlot.margin.left + (surfPlot.width - surfPlot.margin.left - surfPlot.margin.right) / 2} y={surfPlot.height - 4} className="text-[9px] fill-muted font-mono" textAnchor="middle">
                   Stroke displacement (m)
                 </text>
                 <text
                   x={14}
                   y={surfPlot.margin.top + (surfPlot.height - surfPlot.margin.top - surfPlot.margin.bottom) / 2}
-                  className="text-[9px] fill-slate-600 font-mono"
+                  className="text-[9px] fill-muted font-mono"
                   textAnchor="middle"
                   transform={`rotate(-90, 14, ${surfPlot.margin.top + (surfPlot.height - surfPlot.margin.top - surfPlot.margin.bottom) / 2})`}
                 >
@@ -281,16 +280,18 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
 
           {/* Card 2: High-Precision Downhole Pump Card (-10 to +40 kN vs 0 - 3.5 m) */}
           {(activeCardView === 'dual' || activeCardView === 'downhole') && (
-            <div className="bg-slate-50/70 rounded-lg border border-slate-200 p-2.5 relative flex flex-col justify-between">
-              <div className="flex items-center justify-between px-1 mb-1 text-[11px] font-mono">
-                <span className="text-emerald-700 font-bold flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${isBuckling ? 'bg-rose-600 animate-pulse' : 'bg-emerald-600'}`}></span>
-                  MODELED DOWNHOLE CARD (-10 &ndash; +40 kN)
+            <div className="panel-inset p-3 relative flex flex-col justify-between">
+              <div className="flex items-center justify-between px-1 mb-1 text-[11px] readout">
+                <span className="section-title flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${isBuckling ? 'bg-critical animate-pulse' : 'bg-safe'}`}></span>
+                  Modeled downhole card (-10 &ndash; +40 kN)
                 </span>
-                <span className="text-slate-500 text-[10px]">
-                  F_min: <strong className={minTensionKn >= 0.5 ? 'text-emerald-600' : 'text-rose-600'}>
-                    {minTensionKn >= 0 ? `+${minTensionKn.toFixed(2)}` : minTensionKn.toFixed(2)} kN
-                  </strong>
+                <span className="readout text-[10px] text-faint">
+                  F_min: <AnimatedNumber
+                    value={minTensionKn}
+                    format={(v) => `${v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2)} kN`}
+                    className={`font-bold ${minTensionKn >= 0.5 ? 'text-safe' : 'text-critical'}`}
+                  />
                 </span>
               </div>
 
@@ -298,7 +299,7 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                 viewBox={`0 0 ${downPlot.width} ${downPlot.height}`}
                 role="img"
                 aria-label="Synthetic modeled downhole load versus stroke displacement card"
-                className="w-full h-auto cursor-crosshair bg-white rounded border border-slate-200"
+                className="w-full h-auto cursor-crosshair bg-surface-1 rounded border border-hairline"
                 onMouseMove={(e) => handleMouseMove(e, 'down')}
                 onMouseLeave={() => setHoverData(null)}
               >
@@ -311,7 +312,7 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                       y={scaleYDown(35)}
                       width={downPlot.width - downPlot.margin.left - downPlot.margin.right}
                       height={scaleYDown(0.5) - scaleYDown(35)}
-                      fill="#10b981"
+                      style={{ fill: 'rgb(var(--accent-safe))' }}
                       fillOpacity="0.08"
                     />
                     {/* Compressive Buckling Hazard Danger Zone (< 0 kN) */}
@@ -320,7 +321,7 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                       y={scaleYDown(0)}
                       width={downPlot.width - downPlot.margin.left - downPlot.margin.right}
                       height={scaleYDown(-10) - scaleYDown(0)}
-                      fill="#ef4444"
+                      style={{ fill: 'rgb(var(--accent-critical))' }}
                       fillOpacity="0.10"
                     />
                   </g>
@@ -336,10 +337,10 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                         y1={y} 
                         x2={downPlot.width - downPlot.margin.right} 
                         y2={y} 
-                        stroke={val === 0 ? '#94a3b8' : '#e2e8f0'} 
+                        style={{ stroke: val === 0 ? 'rgb(var(--text-tertiary))' : 'rgb(var(--border-hairline))' }}
                         strokeWidth={val === 0 ? '1.5' : '1'} 
                       />
-                      <text x={downPlot.margin.left - 6} y={y + 3.5} className="text-[8.5px] fill-slate-500 font-mono text-right" textAnchor="end">
+                      <text x={downPlot.margin.left - 6} y={y + 3.5} className="text-[8.5px] fill-faint font-mono text-right" textAnchor="end">
                         {val}
                       </text>
                     </g>
@@ -350,8 +351,8 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                   const x = scaleXDown(val);
                   return (
                     <g key={`down-x-${val}`}>
-                      <line x1={x} y1={downPlot.margin.top} x2={x} y2={downPlot.height - downPlot.margin.bottom} stroke="#e2e8f0" strokeWidth="1" />
-                      <text x={x} y={downPlot.height - downPlot.margin.bottom + 14} className="text-[8.5px] fill-slate-500 font-mono" textAnchor="middle">
+                      <line x1={x} y1={downPlot.margin.top} x2={x} y2={downPlot.height - downPlot.margin.bottom} style={{ stroke: 'rgb(var(--border-hairline))' }} strokeWidth="1" />
+                      <text x={x} y={downPlot.height - downPlot.margin.bottom + 14} className="text-[8.5px] fill-faint font-mono" textAnchor="middle">
                         {val.toFixed(1)}
                       </text>
                     </g>
@@ -365,11 +366,11 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                     y1={scaleYDown(0.5)}
                     x2={downPlot.width - downPlot.margin.right}
                     y2={scaleYDown(0.5)}
-                    stroke="#d97706"
+                    style={{ stroke: 'rgb(var(--accent-caution))' }}
                     strokeWidth="1.6"
                     strokeDasharray="4 3"
                   />
-                  <text x={downPlot.width - downPlot.margin.right - 4} y={scaleYDown(0.5) - 3} className="text-[8px] fill-amber-700 font-mono font-bold" textAnchor="end">
+                  <text x={downPlot.width - downPlot.margin.right - 4} y={scaleYDown(0.5) - 3} className="text-[8px] fill-caution font-mono font-bold" textAnchor="end">
                     +0.50 kN Model Screening Floor
                   </text>
                 </g>
@@ -381,31 +382,33 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                     y1={scaleYDown(0.0)}
                     x2={downPlot.width - downPlot.margin.right}
                     y2={scaleYDown(0.0)}
-                    stroke="#dc2626"
+                    style={{ stroke: 'rgb(var(--accent-critical))' }}
                     strokeWidth="1.2"
                     strokeDasharray="2 2"
                   />
-                  <text x={downPlot.margin.left + 6} y={scaleYDown(0.0) + 9} className="text-[7.5px] fill-rose-600 font-mono">
+                  <text x={downPlot.margin.left + 6} y={scaleYDown(0.0) + 9} className="text-[7.5px] fill-critical font-mono">
                     0.0 kN Compression Screen
                   </text>
                 </g>
 
-                {/* Baseline Downhole Curve (Crimson Dashed) */}
+                {/* Baseline Downhole Curve (critical, draws in on scenario switch) */}
                 <path
+                  key={`base-${surface_position_m.length}-${(baseline_downhole_load_kn?.[0] ?? downhole_load_kn[0])?.toFixed?.(1)}`}
+                  className="vs-draw stroke-critical"
                   d={baselineDownholePath}
                   fill="none"
-                  stroke="#dc2626"
+                  style={{ '--draw-length': 2000 }}
                   strokeWidth="1.8"
-                  strokeDasharray="4 3"
                   opacity="0.85"
                 />
 
-                {/* Coupled Digital Twin Downhole Card (Emerald Solid or Crimson if Buckled) */}
+                {/* Coupled Digital Twin Downhole Card (safe solid, critical if buckled — draws in) */}
                 <path
+                  key={`down-${surface_position_m.length}-${downhole_load_kn[0]?.toFixed?.(1)}`}
+                  className={`vs-draw ${isBuckling ? 'stroke-critical' : 'stroke-safe'}`}
                   d={downholeCardPath}
-                  fill={isBuckling ? '#dc2626' : '#059669'}
+                  style={{ '--draw-length': 2000, fill: isBuckling ? 'rgb(var(--accent-critical))' : 'rgb(var(--accent-safe))' }}
                   fillOpacity="0.10"
-                  stroke={isBuckling ? '#dc2626' : '#059669'}
                   strokeWidth="2.2"
                 />
 
@@ -417,7 +420,7 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                       y1={downPlot.margin.top}
                       x2={scaleXDown(hoverData.disp)}
                       y2={downPlot.height - downPlot.margin.bottom}
-                      stroke="#94a3b8"
+                      style={{ stroke: 'rgb(var(--text-tertiary))' }}
                       strokeWidth="1"
                       strokeDasharray="2 2"
                     />
@@ -425,21 +428,21 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
                       cx={scaleXDown(hoverData.disp)}
                       cy={scaleYDown(hoverData.downLoad)}
                       r="3.5"
-                      fill={isBuckling ? '#dc2626' : '#059669'}
-                      stroke="#ffffff"
+                      className={isBuckling ? 'fill-critical' : 'fill-safe'}
+                      style={{ stroke: 'rgb(var(--bg-surface-1))' }}
                       strokeWidth="1.5"
                     />
                   </g>
                 )}
 
                 {/* Axis Labels */}
-                <text x={downPlot.margin.left + (downPlot.width - downPlot.margin.left - downPlot.margin.right) / 2} y={downPlot.height - 4} className="text-[9px] fill-slate-600 font-mono" textAnchor="middle">
+                <text x={downPlot.margin.left + (downPlot.width - downPlot.margin.left - downPlot.margin.right) / 2} y={downPlot.height - 4} className="text-[9px] fill-muted font-mono" textAnchor="middle">
                   Stroke displacement (m)
                 </text>
                 <text
                   x={14}
                   y={downPlot.margin.top + (downPlot.height - downPlot.margin.top - downPlot.margin.bottom) / 2}
-                  className="text-[9px] fill-slate-600 font-mono"
+                  className="text-[9px] fill-muted font-mono"
                   textAnchor="middle"
                   transform={`rotate(-90, 14, ${downPlot.margin.top + (downPlot.height - downPlot.margin.top - downPlot.margin.bottom) / 2})`}
                 >
@@ -452,79 +455,81 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn }) {
 
         {/* Synchronous Hover Tooltip Banner */}
         {hoverData && (
-          <div className="mt-2.5 p-2 bg-slate-100 border border-slate-200 rounded-md flex flex-wrap items-center justify-between gap-2 text-xs font-mono tabular-nums text-slate-700">
-            <span className="text-slate-500">Position: <strong className="text-slate-800">{hoverData.disp.toFixed(2)} m</strong></span>
-            <span className="text-sky-700">Surface Load: <strong>{hoverData.surfLoad.toFixed(1)} kN</strong></span>
-            <span className={isBuckling ? 'text-rose-600 font-bold' : 'text-emerald-700 font-bold'}>
+          <div className="mt-3 p-2 panel-inset rounded-md flex flex-wrap items-center justify-between gap-2 text-xs readout text-muted">
+            <span className="text-faint">Position: <strong className="text-ink">{hoverData.disp.toFixed(2)} m</strong></span>
+            <span className="text-interactive">Surface Load: <strong>{hoverData.surfLoad.toFixed(1)} kN</strong></span>
+            <span className={isBuckling ? 'text-critical font-bold' : 'text-safe font-bold'}>
               Modeled Downhole: <strong>{hoverData.downLoad.toFixed(2)} kN</strong>
             </span>
-            <span className="text-rose-600 text-[11px]">
+            <span className="text-critical text-[11px]">
               Baseline Estimate: <strong>{hoverData.baselineDownLoad.toFixed(2)} kN</strong>
             </span>
           </div>
         )}
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-2.5 text-[11px] font-mono border-t border-slate-200 mt-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 text-[11px] readout border-t border-hairline mt-3">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-1 bg-sky-600 rounded-sm"></span>
-              <span className="text-slate-700">Modeled Surface</span>
+              <span className="w-3.5 h-1 bg-interactive rounded-sm"></span>
+              <span className="text-muted">Modeled Surface</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className={`w-3.5 h-1 ${isBuckling ? 'bg-rose-600' : 'bg-emerald-600'} rounded-sm`}></span>
-              <span className="text-slate-700">{isBuckling ? 'Modeled Compression Screen' : 'Modeled Downhole Estimate'}</span>
+              <span className={`w-3.5 h-1 ${isBuckling ? 'bg-critical' : 'bg-safe'} rounded-sm`}></span>
+              <span className="text-muted">{isBuckling ? 'Modeled Compression Screen' : 'Modeled Downhole Estimate'}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-0.5 border-b-2 border-dashed border-rose-500"></span>
-              <span className="text-slate-500">Baseline Downhole Estimate</span>
+              <span className="w-3.5 h-0.5 border-b-2 border-dashed border-critical"></span>
+              <span className="text-muted">Baseline Downhole Estimate</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-0.5 border-b-2 border-dashed border-amber-500"></span>
-              <span className="text-amber-700 font-medium">+0.50 kN Model Screening Floor</span>
+              <span className="w-3.5 h-0.5 border-b-2 border-dashed border-caution"></span>
+              <span className="text-caution font-medium">+0.50 kN Model Screening Floor</span>
             </div>
           </div>
 
-          <div className="text-slate-400 text-[10px]">
+          <div className="text-faint text-[10px]">
             Deterministic reduced-order card estimator &middot; synthetic output
           </div>
         </div>
       </div>
 
-      <div className="text-[10.5px] font-mono text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+      <div className="readout text-[10.5px] text-caution bg-caution/10 border border-caution/30 rounded-md px-3 py-1.5">
         Algebraic card estimates, not wave-solver telemetry or measured dynamometer cards. Thresholds are screening references and do not certify equipment condition.
       </div>
 
       {/* Technical model readout strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 font-mono text-xs tabular-nums">
-        <div className="hmi-panel p-3 flex flex-col bg-white border border-slate-200 rounded-lg shadow-xs">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-sans">Peak Polished Rod Load (PPRL)</span>
-          <span className="text-lg font-bold text-slate-900 my-0.5">{pprl_kn.toFixed(1)} kN</span>
-          <span className="text-[10.5px] text-slate-400">Illustrative 314.2 kN reference: {(pprl_kn / 314.2 * 100).toFixed(0)}% · verify equipment data</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 readout text-xs">
+        <div className="panel p-4 flex flex-col">
+          <span className="text-[10px] text-muted font-sans">Peak Polished Rod Load (PPRL)</span>
+          <AnimatedNumber value={pprl_kn} format={(v) => `${v.toFixed(1)} kN`} className="text-lg font-bold text-ink my-1" />
+          <span className="text-[10.5px] text-faint">Illustrative 314.2 kN reference: {(pprl_kn / 314.2 * 100).toFixed(0)}% · verify equipment data</span>
         </div>
 
-        <div className="hmi-panel p-3 flex flex-col bg-white border border-slate-200 rounded-lg shadow-xs">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-sans">Min Polished Rod Load (MPRL)</span>
-          <span className="text-lg font-bold text-slate-900 my-0.5">{mprl_kn.toFixed(1)} kN</span>
-          <span className="text-[10.5px] text-slate-400">Kinematic delta: {(pprl_kn - mprl_kn).toFixed(1)} kN</span>
+        <div className="panel p-4 flex flex-col">
+          <span className="text-[10px] text-muted font-sans">Min Polished Rod Load (MPRL)</span>
+          <AnimatedNumber value={mprl_kn} format={(v) => `${v.toFixed(1)} kN`} className="text-lg font-bold text-ink my-1" />
+          <span className="text-[10.5px] text-faint">Kinematic delta: {(pprl_kn - mprl_kn).toFixed(1)} kN</span>
         </div>
 
-        <div className={`hmi-panel p-3 flex flex-col border-l-4 rounded-lg shadow-xs ${
-          minTensionKn >= 0.5 ? 'border-l-emerald-500 bg-white border-slate-200' : 'border-l-rose-500 bg-rose-50/60 border-rose-200'
+        <div className={`panel p-4 flex flex-col border-l-2 ${
+          minTensionKn >= 0.5 ? 'border-l-safe' : 'border-l-critical'
         }`}>
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-sans">Downhole Minimum Tension</span>
-          <span className={`text-lg font-bold my-0.5 ${minTensionKn >= 0.5 ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {minTensionKn >= 0 ? `+${minTensionKn.toFixed(2)}` : minTensionKn.toFixed(2)} kN
-          </span>
-          <span className="text-[10.5px] text-slate-500">
+          <span className="text-[10px] text-muted font-sans">Downhole Minimum Tension</span>
+          <AnimatedNumber
+            value={minTensionKn}
+            format={(v) => `${v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2)} kN`}
+            className={`text-lg font-bold my-1 ${minTensionKn >= 0.5 ? 'text-safe' : 'text-critical'}`}
+          />
+          <span className="text-[10.5px] text-muted">
             {minTensionKn >= 0.5 ? 'Above implemented model floor' : 'Modeled compression screen'}
           </span>
         </div>
 
-        <div className="hmi-panel p-3 flex flex-col bg-white border border-slate-200 rounded-lg shadow-xs">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-sans">Estimated Oil Rate</span>
-          <span className="text-lg font-bold text-slate-900 my-0.5">{oil_production_bopd.toFixed(1)} BOPD</span>
-          <span className="text-[10.5px] text-slate-400">Modeled liquid rate: {liquid_production_bopd.toFixed(1)} BLPD</span>
+        <div className="panel p-4 flex flex-col">
+          <span className="text-[10px] text-muted font-sans">Estimated Oil Rate</span>
+          <AnimatedNumber value={oil_production_bopd} format={(v) => `${v.toFixed(1)} BOPD`} className="text-lg font-bold text-ink my-1" />
+          <span className="text-[10.5px] text-faint">Modeled liquid rate: {liquid_production_bopd.toFixed(1)} BLPD</span>
         </div>
       </div>
     </div>

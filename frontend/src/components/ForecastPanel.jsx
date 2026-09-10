@@ -1,13 +1,11 @@
 import React from 'react';
 import { TrendingUp } from 'lucide-react';
+import { AnimatedNumber } from './AnimatedNumber';
+import { SkeletonPanel } from './Skeleton';
 
 export function ForecastPanel({ forecast12h }) {
   if (!forecast12h || forecast12h.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-500 font-mono text-xs bg-[#111827] rounded border border-[#1e293b]">
-        Generating reduced-order 12-hour model projection...
-      </div>
-    );
+    return <SkeletonPanel title="Generating 12-hour projection" lines={4} height={220} />;
   }
 
   const renderSparkline = (dataKey, color, label, unit, formatFn = (v) => v.toFixed(1)) => {
@@ -29,35 +27,44 @@ export function ForecastPanel({ forecast12h }) {
       .join(' ');
 
     return (
-      <div className="hmi-panel p-3.5 flex flex-col justify-between bg-white border border-slate-200 rounded-lg shadow-xs">
-        <div className="flex items-center justify-between text-xs pb-1.5 border-b border-slate-100">
-          <span className="font-sans font-semibold text-slate-700">{label}</span>
-          <span className="font-mono font-bold text-sky-700 text-xs tabular-nums">
-            {formatFn(values[0])} → {formatFn(values[values.length - 1])} {unit}
+      <div className="panel p-3 flex flex-col justify-between">
+        <div className="flex items-center justify-between text-xs pb-3 border-b border-hairline">
+          <span className="font-semibold text-muted">{label}</span>
+          <span className="readout font-semibold text-ink text-xs">
+            <AnimatedNumber value={values[0]} format={formatFn} /> →{' '}
+            <AnimatedNumber value={values[values.length - 1]} format={formatFn} /> {unit}
           </span>
         </div>
 
-        <div className="my-2 bg-slate-50 rounded-lg p-1.5 border border-slate-200">
+        <div className="panel-inset my-3 p-2">
           <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
             {/* Guide Grid Lines */}
-            <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="3 3" />
-            <line x1={padding} y1={height / 2} x2={width - padding} y2={height / 2} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="3 3" />
-            <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#cbd5e1" strokeWidth="1" />
+            <line x1={padding} y1={padding} x2={width - padding} y2={padding} className="stroke-hairline" strokeWidth="1" strokeDasharray="3 3" />
+            <line x1={padding} y1={height / 2} x2={width - padding} y2={height / 2} className="stroke-hairline" strokeWidth="1" strokeDasharray="3 3" />
+            <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} className="stroke-hairline" strokeWidth="1" />
 
-            {/* Trajectory Polyline */}
-            <polyline fill="none" stroke={color} strokeWidth="2.2" points={points} />
+            {/* Trajectory Polyline — draws in on scenario/data change */}
+            <polyline
+              key={`${dataKey}-${values[0]}-${values.length}`}
+              className="vs-draw"
+              fill="none"
+              stroke={color}
+              strokeWidth="2.2"
+              points={points}
+              style={{ '--draw-length': 700 }}
+            />
 
             {/* Start and End Dots */}
             {points.split(' ').length > 0 && (
               <>
-                <circle cx={points.split(' ')[0].split(',')[0]} cy={points.split(' ')[0].split(',')[1]} r="3" fill={color} stroke="#ffffff" strokeWidth="1.5" />
-                <circle cx={points.split(' ').slice(-1)[0].split(',')[0]} cy={points.split(' ').slice(-1)[0].split(',')[1]} r="3.5" fill={color} stroke="#ffffff" strokeWidth="1.5" />
+                <circle cx={points.split(' ')[0].split(',')[0]} cy={points.split(' ')[0].split(',')[1]} r="3" fill={color} stroke="rgb(var(--bg-surface-1))" strokeWidth="1.5" />
+                <circle cx={points.split(' ').slice(-1)[0].split(',')[0]} cy={points.split(' ').slice(-1)[0].split(',')[1]} r="3.5" fill={color} stroke="rgb(var(--bg-surface-1))" strokeWidth="1.5" />
               </>
             )}
           </svg>
         </div>
 
-        <div className="flex justify-between text-[9.5px] font-mono text-slate-500">
+        <div className="flex justify-between text-[9.5px] readout text-faint">
           <span>T+0h</span>
           <span>T+4h</span>
           <span>T+8h</span>
@@ -69,33 +76,31 @@ export function ForecastPanel({ forecast12h }) {
 
   return (
     <div className="flex flex-col gap-3 font-sans">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-200 text-xs font-medium gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-hairline text-xs font-medium gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-sky-600" />
-          <span className="font-bold text-slate-800 font-mono uppercase tracking-wide">
-            12-Hour Reduced-Order Model Projection
-          </span>
-          <span className="font-mono text-[10.5px] text-slate-500">Advisory governor trajectory</span>
+          <TrendingUp className="w-4 h-4 text-muted" />
+          <span className="section-title">12-Hour Reduced-Order Model Projection</span>
+          <span className="text-[10.5px] text-muted">Advisory governor trajectory</span>
         </div>
-        <span className="font-mono text-[11px] text-sky-700 font-medium">24 Steps (&Delta;t = 30 min)</span>
+        <span className="chip text-muted bg-surface-2 border-hairline">24 Steps (&Delta;t = 30 min)</span>
       </div>
 
-      <div className="text-[10.5px] font-mono text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+      <div className="readout text-[10.5px] text-caution bg-caution/10 border border-caution/30 rounded-md px-3 py-1.5">
         Uncalibrated synthetic projection; values are not a field forecast, autonomous control plan, or operating instruction.
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* 1. Formation Temperature Decay */}
-        {renderSparkline('temperature_c', '#0284c7', 'Modeled Formation Temperature', '°C')}
+        {renderSparkline('temperature_c', 'rgb(var(--accent-interactive))', 'Modeled Formation Temperature', '°C')}
 
         {/* 2. Heavy Crude Viscosity Surge */}
-        {renderSparkline('viscosity_cp', '#d97706', 'Modeled Crude Viscosity', 'cP', (v) => `${(v / 1000).toFixed(1)}k`)}
+        {renderSparkline('viscosity_cp', 'rgb(var(--accent-caution))', 'Modeled Crude Viscosity', 'cP', (v) => `${(v / 1000).toFixed(1)}k`)}
 
         {/* 3. Couette Shear Drag */}
-        {renderSparkline('drag_beta', '#dc2626', 'Reduced-Order Drag Coefficient (β)', 'N·s/m²', (v) => v.toFixed(2))}
+        {renderSparkline('drag_beta', 'rgb(var(--accent-critical))', 'Reduced-Order Drag Coefficient (β)', 'N·s/m²', (v) => v.toFixed(2))}
 
         {/* 4. Advisory MPC Speed Schedule */}
-        {renderSparkline('spm_trajectory', '#059669', 'Model-Recommended Speed Schedule', 'SPM')}
+        {renderSparkline('spm_trajectory', 'rgb(var(--accent-safe))', 'Model-Recommended Speed Schedule', 'SPM')}
       </div>
     </div>
   );

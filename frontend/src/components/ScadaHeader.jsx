@@ -1,17 +1,42 @@
 import React from 'react';
-import { 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  SlidersHorizontal, 
-  Radio, 
-  AlertTriangle, 
-  ShieldCheck, 
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  SlidersHorizontal,
+  Radio,
+  AlertTriangle,
+  ShieldCheck,
   Activity,
   Cpu,
   Server,
-  Zap
+  Zap,
 } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
+
+// Resolve the backend supervisory state into one of the four fixed levels.
+function resolveLevel(failsafeLevel, isModbusSevered) {
+  if (failsafeLevel && failsafeLevel.includes('LEVEL_3')) return 'L3';
+  if (isModbusSevered || (failsafeLevel && failsafeLevel.includes('LEVEL_2'))) return 'L2';
+  if (failsafeLevel && failsafeLevel.includes('LEVEL_1')) return 'L1';
+  return 'L0';
+}
+
+// Full literal class strings per tone so Tailwind's scanner emits them
+// (dynamic `text-${tone}` template classes would be purged).
+const TONE = {
+  safe: { chip: 'text-safe bg-safe/10 border-safe/40', dot: 'bg-safe', activeBtn: 'text-safe bg-safe/10 border border-safe/40', pulse: 'rgb(var(--accent-safe) / 0.55)' },
+  caution: { chip: 'text-caution bg-caution/10 border-caution/40', dot: 'bg-caution', activeBtn: 'text-caution bg-caution/10 border border-caution/40', pulse: 'rgb(var(--accent-caution) / 0.55)' },
+  critical: { chip: 'text-critical bg-critical/10 border-critical/40', dot: 'bg-critical', activeBtn: 'text-critical bg-critical/10 border border-critical/40', pulse: 'rgb(var(--accent-critical) / 0.55)' },
+  interactive: { chip: 'text-interactive bg-interactive/10 border-interactive/40', dot: 'bg-interactive', activeBtn: 'text-interactive bg-interactive/10 border border-interactive/40', pulse: 'rgb(var(--accent-interactive) / 0.55)' },
+};
+
+const LEVEL_META = {
+  L0: { tone: 'safe', label: 'MODEL L0 NOMINAL', icon: ShieldCheck },
+  L1: { tone: 'caution', label: 'MODEL L1 STALE-DATA CASE', icon: Activity },
+  L2: { tone: 'caution', label: 'MODEL L2 FALLBACK RECOMMENDATION', icon: Radio },
+  L3: { tone: 'critical', label: 'MODEL L3 STOP RECOMMENDATION', icon: AlertTriangle },
+};
 
 export function ScadaHeader({
   scenarioId,
@@ -30,172 +55,156 @@ export function ScadaHeader({
   solverType = 'surrogate',
   onToggleSolverType,
 }) {
-  // Dynamic 4-Level Supervisory Safety Machine Badge
+  const level = resolveLevel(failsafeLevel, isModbusSevered);
+  const meta = LEVEL_META[level];
+
+  // Dynamic 4-Level Supervisory Safety Machine Badge.
+  // Keyed on `level` so it re-mounts and re-runs the one-shot sweep/pulse on change.
   const renderSupervisoryBadge = () => {
-    // Render only the supervisory state returned by the backend model.
-    if (failsafeLevel && failsafeLevel.includes('LEVEL_3')) {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 bg-rose-50 border border-rose-400 text-rose-700 text-xs font-mono font-bold rounded-md scada-pulse-estop">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></span>
-          <span className="tracking-wider">MODEL L3 STOP RECOMMENDATION</span>
-        </div>
-      );
-    }
-    // Level 2: Protective Fallback (Modbus severed or tension violation -> ramp to 2.0 SPM)
-    if (isModbusSevered || (failsafeLevel && failsafeLevel.includes('LEVEL_2'))) {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-400 text-orange-800 text-xs font-mono font-bold rounded-md">
-          <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-          <span className="tracking-wider">MODEL L2 FALLBACK RECOMMENDATION</span>
-        </div>
-      );
-    }
-    // Level 1: Degraded Surveillance (Telemetry age 10s-60s)
-    if (failsafeLevel && failsafeLevel.includes('LEVEL_1')) {
-      return (
-        <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-400 text-amber-800 text-xs font-mono font-bold rounded-md">
-          <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-          <span className="tracking-wider">MODEL L1 STALE-DATA CASE</span>
-        </div>
-      );
-    }
-    // Level 0: Nominal Operation
+    const Icon = meta.icon;
+    const tone = TONE[meta.tone];
+    const isL3 = level === 'L3';
     return (
-      <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-400 text-emerald-800 text-xs font-mono font-bold rounded-md">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span className="tracking-wider">MODEL L0 NOMINAL</span>
+      <div
+        key={level}
+        className={`vs-badge-change chip ${tone.chip} px-3 py-1 text-xs font-bold ${isL3 ? 'vs-estop' : ''}`}
+        style={{ '--pulse-color': tone.pulse }}
+        role="status"
+        aria-label={`Supervisory ${level}`}
+      >
+        <span
+          className={`w-2 h-2 rounded-full ${tone.dot} ${
+            isL3 ? 'animate-ping' : level === 'L2' || level === 'L0' ? 'animate-pulse' : ''
+          }`}
+        />
+        <Icon className="w-3.5 h-3.5" />
+        <span className="tracking-wider">{meta.label}</span>
       </div>
     );
   };
 
   const scenarios = [
-    { 
-      id: 'SCENARIO_A_BASELINE_FAILURE', 
-      label: 'Scenario A (Freeze)', 
+    {
+      id: 'SCENARIO_A_BASELINE_FAILURE',
+      label: 'Scenario A (Freeze)',
       hint: 'Synthetic freeze stress case → modeled compressive rod load',
-      icon: AlertTriangle, 
-      color: 'hover:bg-rose-50 hover:border-rose-400 text-rose-700',
-      activeColor: 'bg-rose-100 border-rose-500 text-rose-800 shadow-sm font-bold ring-1 ring-rose-400'
+      icon: AlertTriangle,
+      tone: 'critical',
     },
-    { 
-      id: 'SCENARIO_B_COUPLED_TWIN', 
+    {
+      id: 'SCENARIO_B_COUPLED_TWIN',
       label: 'Scenario B (Advisory)',
       hint: 'Reduced-order governor stress case → compare modeled tension margin',
-      icon: ShieldCheck, 
-      color: 'hover:bg-sky-50 hover:border-sky-400 text-sky-700',
-      activeColor: 'bg-sky-100 border-sky-500 text-sky-800 shadow-sm font-bold ring-1 ring-sky-400'
+      icon: ShieldCheck,
+      tone: 'safe',
     },
-    { 
-      id: 'SCENARIO_C_TELEMETRY_SEVERED', 
+    {
+      id: 'SCENARIO_C_TELEMETRY_SEVERED',
       label: 'Telemetry-Loss Case',
       hint: 'Synthetic telemetry timeout (>60 s) → L2 fallback advisory',
-      icon: Radio, 
-      color: 'hover:bg-amber-50 hover:border-amber-400 text-amber-800',
-      activeColor: 'bg-amber-100 border-amber-500 text-amber-900 shadow-sm font-bold ring-1 ring-amber-400'
+      icon: Radio,
+      tone: 'caution',
     },
-    { 
-      id: 'DEFAULT_OPERATION', 
-      label: 'Reset', 
+    {
+      id: 'DEFAULT_OPERATION',
+      label: 'Reset',
       hint: 'Restore the nominal synthetic demonstration case',
-      icon: RotateCcw, 
-      color: 'hover:bg-slate-100 hover:border-slate-400 text-slate-700',
-      activeColor: 'bg-slate-200 border-slate-400 text-slate-900 shadow-sm font-bold'
+      icon: RotateCcw,
+      tone: 'interactive',
     },
   ];
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <header className="theme-transition bg-surface-1 border-b border-hairline sticky top-0 z-30">
       {/* Primary SCADA Top Bar */}
-      <div className="max-w-[1780px] mx-auto px-4 lg:px-6 py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Left: Enterprise Brand & Asset Attribution */}
+      <div className="max-w-[1780px] mx-auto px-4 lg:px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Left: Brand & Asset Attribution */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center font-mono font-bold text-xs text-sky-600 shadow-xs">
-            <Zap className="w-5 h-5 text-sky-600" />
+          <div className="w-9 h-9 rounded-lg bg-interactive/10 border border-interactive/30 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-interactive" />
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-sm text-slate-900 tracking-tight font-sans">
-                VectroSync CSS-SRP Advisory Twin
-              </span>
-              <span className="px-2 py-0.5 rounded text-[10.5px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200">
-                RESEARCH PROTOTYPE
-              </span>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10.5px] font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                CSS+SRP ADVISORY MODEL
-              </span>
+              <span className="font-bold text-sm text-ink tracking-tight">VectroSync CSS-SRP Advisory Twin</span>
+              <span className="chip text-interactive bg-interactive/10 border-interactive/30">RESEARCH PROTOTYPE</span>
+              <span className="hidden sm:inline-flex chip text-muted bg-surface-2 border-hairline">CSS+SRP ADVISORY MODEL</span>
             </div>
-            <div className="text-[11px] text-slate-500 font-mono tracking-tight mt-0.5 leading-relaxed">
+            <div className="readout text-[11px] text-faint mt-0.5 leading-relaxed">
               Synthetic case asset: Well #14 · Baghewala-inspired basin assumptions · no operator affiliation or field deployment
             </div>
           </div>
         </div>
 
-        {/* Right: Live Diagnostics, Supervisory Badge, Kinematic Controls, Cockpit */}
+        {/* Right: Diagnostics, Supervisory Badge, Controls, Theme */}
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap md:justify-end">
-          {/* Diagnostic Indicator 1: Edge Controller Solve Time */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-[11px] font-mono tabular-nums text-slate-700" title="Backend-reported model solve time, or measured API round-trip when unavailable">
-            <Cpu className="w-3.5 h-3.5 text-sky-600" />
-            <span className="text-slate-500">MODEL RESPONSE:</span>
-            <span className="font-bold text-sky-700">{typeof edgeSolveTimeMs === 'number' ? edgeSolveTimeMs.toFixed(1) : edgeSolveTimeMs}ms</span>
+          {/* Edge Controller Solve Time */}
+          <div
+            className="chip text-muted bg-surface-2 border-hairline"
+            title="Backend-reported model solve time, or measured API round-trip when unavailable"
+          >
+            <Cpu className="w-3.5 h-3.5 text-interactive" />
+            <span className="text-faint">MODEL RESPONSE</span>
+            <span className="font-bold text-ink">
+              {typeof edgeSolveTimeMs === 'number' ? edgeSolveTimeMs.toFixed(1) : edgeSolveTimeMs}ms
+            </span>
           </div>
 
-          {/* Diagnostic Indicator 2: Bus Architecture & Port Status */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] font-mono ${
-            isModbusSevered 
-              ? 'border-rose-300 bg-rose-50 text-rose-800' 
-              : 'border-slate-200 bg-slate-50 text-slate-700'
-          }`}>
-            <Server className={`w-3.5 h-3.5 ${isModbusSevered ? 'text-rose-600 animate-ping' : isWsLive ? 'text-emerald-600' : 'text-slate-500'}`} />
+          {/* Bus Architecture & Port Status */}
+          <div
+            className={`chip ${
+              isModbusSevered ? 'text-critical bg-critical/10 border-critical/40' : 'text-muted bg-surface-2 border-hairline'
+            }`}
+          >
+            <Server
+              className={`w-3.5 h-3.5 ${
+                isModbusSevered ? 'text-critical animate-ping' : isWsLive ? 'text-safe' : 'text-faint'
+              }`}
+            />
             <span>BUS: MODBUS-TCP</span>
-            <span className={`px-1.5 py-0.2 rounded text-[9.5px] font-bold ${
-              isModbusSevered 
-                ? 'bg-rose-200 text-rose-800' 
-                : isWsLive 
-                  ? 'bg-emerald-100 text-emerald-800' 
-                  : 'bg-slate-200 text-slate-700'
-            }`}>
+            <span className="inline-flex items-center gap-1 font-bold">
+              {isWsLive && !isModbusSevered && <span className="w-1.5 h-1.5 rounded-full bg-safe vs-live-dot" />}
               {isModbusSevered ? 'LOSS CASE' : isWsLive ? 'STREAM CONNECTED' : 'LOCAL LOOP'}
             </span>
           </div>
 
-          {/* Diagnostic Indicator 3: Multi-Fidelity Wave Solver Mode Toggle */}
+          {/* Multi-Fidelity Solver Mode Toggle */}
           <button
             type="button"
             onClick={onToggleSolverType}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] font-mono transition cursor-pointer ${
+            className={`chip btn ${
               solverType === 'transient'
-                ? 'border-indigo-400 bg-indigo-50 text-indigo-800 font-bold shadow-xs'
-                : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                ? 'text-interactive bg-interactive/10 border-interactive/40'
+                : 'text-muted bg-surface-2 border-hairline hover:text-ink'
             }`}
-            title="Click to toggle between Fast Surrogate (~2 ms) and Full Transient Wave Solver (~150 ms)"
+            title="Toggle between Fast Surrogate (~2 ms) and Full Transient Wave Solver (~150 ms)"
           >
-            <Activity className={`w-3.5 h-3.5 ${solverType === 'transient' ? 'text-indigo-600' : 'text-sky-600'}`} />
-            <span className="text-slate-500">SOLVER:</span>
-            <span className={solverType === 'transient' ? 'text-indigo-700 font-bold' : 'text-slate-800'}>
+            <Activity className={`w-3.5 h-3.5 ${solverType === 'transient' ? 'text-interactive' : 'text-faint'}`} />
+            <span className="text-faint">SOLVER</span>
+            <span className={solverType === 'transient' ? 'text-interactive font-bold' : 'text-ink'}>
               {solverType === 'transient' ? 'TRANSIENT PDE' : 'FAST SURROGATE'}
             </span>
           </button>
 
-          {/* Dynamic 4-Level Supervisory Safety Machine Badge */}
+          {/* Supervisory Badge */}
           {renderSupervisoryBadge()}
 
           {/* Kinematic Clock Controller */}
-          <div className="flex items-center bg-slate-100 rounded-md p-0.5 border border-slate-200 text-xs font-mono">
+          <div className="flex items-center bg-surface-2 rounded-lg p-0.5 border border-hairline text-xs">
             <button
               type="button"
               aria-pressed={isPlaying}
               aria-label={isPlaying ? 'Pause schematic animation' : 'Play schematic animation'}
               onClick={onTogglePlay}
-              className={`px-2 py-0.5 rounded flex items-center gap-1 transition ${
-                isPlaying ? 'bg-white shadow-xs border border-slate-200 text-sky-700 font-bold' : 'text-slate-500 hover:text-slate-800'
+              className={`btn px-2 py-0.5 rounded-md text-[11px] ${
+                isPlaying ? 'bg-surface-1 border border-hairline text-interactive' : 'text-muted hover:text-ink'
               }`}
               title={isPlaying ? 'Pause schematic animation' : 'Play schematic animation'}
             >
-              {isPlaying ? <Pause className="w-3 h-3 text-sky-600" /> : <Play className="w-3 h-3 text-emerald-600" />}
+              {isPlaying ? <Pause className="w-3 h-3 text-interactive" /> : <Play className="w-3 h-3 text-safe" />}
               <span>{isPlaying ? 'ANIMATE' : 'PAUSED'}</span>
             </button>
 
-            <div className="flex items-center gap-0.5 px-1 border-l border-slate-200 ml-1">
+            <div className="flex items-center gap-0.5 px-1 border-l border-hairline ml-1">
               {[1, 2, 5].map((spd) => (
                 <button
                   type="button"
@@ -203,8 +212,8 @@ export function ScadaHeader({
                   aria-pressed={simSpeed === spd}
                   aria-label={`Set animation speed to ${spd} times`}
                   onClick={() => onChangeSpeed(spd)}
-                  className={`px-1.5 py-0.5 rounded text-[10.5px] transition ${
-                    simSpeed === spd ? 'bg-white font-bold text-sky-700 shadow-xs border border-slate-200' : 'text-slate-500 hover:text-slate-800'
+                  className={`btn px-1.5 py-0.5 rounded text-[10.5px] ${
+                    simSpeed === spd ? 'bg-surface-1 border border-hairline text-interactive' : 'text-muted hover:text-ink'
                   }`}
                 >
                   {spd}x
@@ -217,25 +226,25 @@ export function ScadaHeader({
           <button
             type="button"
             onClick={onToggleDrawer}
-            className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono rounded-md transition shadow-xs"
+            className="btn px-3 py-1.5 bg-interactive text-white hover:bg-interactive/90 text-xs"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-white" />
+            <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>CASE INPUTS</span>
           </button>
+
+          {/* Theme toggle */}
+          <ThemeToggle />
         </div>
       </div>
 
       {/* 1-Click Scenario Execution Ribbon */}
-      <div className="bg-slate-100/90 border-t border-slate-200 px-4 lg:px-6 py-2">
+      <div className="theme-transition bg-surface-2 border-t border-hairline px-4 lg:px-6 py-2">
         <div className="max-w-[1780px] mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Activity className="w-3.5 h-3.5 text-sky-600" />
-            <span className="text-[11px] font-mono font-bold text-slate-600 uppercase tracking-wider">
-              RUN SYNTHETIC SCENARIO:
-            </span>
+            <Activity className="w-3.5 h-3.5 text-interactive" />
+            <span className="section-title text-muted">Run synthetic scenario</span>
           </div>
 
-          {/* 1-Click Scenario Execution Button Strip */}
           <div className="flex items-center gap-2 flex-wrap">
             {scenarios.map((sc) => {
               const isActive = scenarioId === sc.id;
@@ -249,11 +258,11 @@ export function ScadaHeader({
                   onClick={() => onApplyScenario(sc.id)}
                   disabled={loading}
                   title={sc.hint}
-                  className={`px-3 py-1 text-xs font-mono font-bold rounded-md border transition flex items-center gap-1.5 shadow-xs ${
+                  className={`btn px-3 py-1 text-xs ${
                     isActive
-                      ? sc.activeColor
-                      : `bg-white border-slate-300 text-slate-700 ${sc.color}`
-                  } ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      ? TONE[sc.tone].activeBtn
+                      : 'bg-surface-1 border border-hairline text-muted hover:text-ink'
+                  }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   <span>{sc.label}</span>

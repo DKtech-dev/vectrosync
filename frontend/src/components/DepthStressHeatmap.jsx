@@ -1,8 +1,10 @@
 import React, { useRef, useEffect } from 'react';
 import { Layers } from 'lucide-react';
+import { useTheme } from '../utils/theme';
 
 export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
   const canvasRef = useRef(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (!stressHeatmap || !stressHeatmap.stress_matrix_mpa || !canvasRef.current) return;
@@ -17,24 +19,28 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
     const numDepths = depths_m.length;
     const numAngles = angles_deg.length;
 
-    // Dark-Slate SCADA Color Mapping:
-    // Compression (< 0 MPa): Deep Red to Bright Crimson
-    // Low Tension (0 to 20 MPa): Deep Navy/Obsidian Slate
-    // Normal Tension (20 to 80 MPa): Steel/Sky Blue
-    // High Tension (> 80 MPa): Vibrant Cyan / Bright Highlight
+    // Theme-aware SCADA color mapping — read live accent/surface channels so the
+    // heatmap re-tints on theme toggle. Channels are space-separated RGB triplets.
+    const root = getComputedStyle(document.documentElement);
+    const parse = (name) => root.getPropertyValue(name).trim().split(/\s+/).map(Number);
+    const critical = parse('--accent-critical');
+    const surf2 = parse('--bg-surface-2');
+    const hi = parse('--accent-interactive');
+
+    // Compression (< 0 MPa): interpolate surface -> critical.
+    // Tension (>= 0 MPa): interpolate surface (low) -> interactive (high).
     const getColor = (val) => {
       if (val < 0) {
         const t = Math.min(1.0, Math.abs(val) / 25.0);
-        const r = Math.round(180 + t * 75);
-        const g = Math.round((1 - t) * 35);
-        const b = Math.round((1 - t) * 35);
+        const r = Math.round(surf2[0] + (critical[0] - surf2[0]) * t);
+        const g = Math.round(surf2[1] + (critical[1] - surf2[1]) * t);
+        const b = Math.round(surf2[2] + (critical[2] - surf2[2]) * t);
         return `rgb(${r}, ${g}, ${b})`;
       } else {
         const t = Math.min(1.0, val / 130.0);
-        // Gradient from dark navy (15, 23, 42) -> deep cyan (6, 110, 160) -> vibrant cyan (6, 182, 212)
-        const r = Math.round((1 - t) * 11 + t * 6);
-        const g = Math.round((1 - t) * 24 + t * 182);
-        const b = Math.round((1 - t) * 45 + t * 212);
+        const r = Math.round(surf2[0] + (hi[0] - surf2[0]) * t);
+        const g = Math.round(surf2[1] + (hi[1] - surf2[1]) * t);
+        const b = Math.round(surf2[2] + (hi[2] - surf2[2]) * t);
         return `rgb(${r}, ${g}, ${b})`;
       }
     };
@@ -50,9 +56,12 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
       }
     }
 
+    // Taper interface lines use the interactive accent channel.
+    const taperColor = `rgb(${hi[0]}, ${hi[1]}, ${hi[2]})`;
+
     // Taper Interface 1: 350 m
     const yTaper1 = (350 / 1150) * height;
-    ctx.strokeStyle = '#38bdf8';
+    ctx.strokeStyle = taperColor;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 3]);
     ctx.beginPath();
@@ -62,39 +71,39 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
 
     // Taper Interface 2: 750 m
     const yTaper2 = (750 / 1150) * height;
-    ctx.strokeStyle = '#38bdf8';
+    ctx.strokeStyle = taperColor;
     ctx.beginPath();
     ctx.moveTo(0, yTaper2);
     ctx.lineTo(width, yTaper2);
     ctx.stroke();
     ctx.setLineDash([]);
-  }, [stressHeatmap]);
+  }, [stressHeatmap, theme]);
 
   return (
     <div className="flex flex-col gap-3 font-sans">
       {/* 2D Contour Canvas */}
-      <div className="bg-white rounded-lg border border-slate-200 p-3.5 relative shadow-xs">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between pb-2.5 border-b border-slate-200 text-xs font-medium gap-2">
+      <div className="panel p-4 relative">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between pb-3 mb-3 border-b border-hairline text-xs font-medium gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Layers className="w-4 h-4 text-sky-600" />
-            <span className="font-bold text-slate-800 font-mono uppercase tracking-wide">
+            <Layers className="w-4 h-4 text-muted" />
+            <span className="section-title">
               Reduced-Order Modeled Axial Stress &mdash; σ(x, θ)
             </span>
-            <span className="font-mono text-[10.5px] text-slate-500">116 Nodes &times; 144 Crank Angles</span>
+            <span className="readout text-[10.5px] text-faint">116 Nodes &times; 144 Crank Angles</span>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10.5px]">
-            <span className="flex items-center gap-1.5 text-rose-600 font-semibold">
-              <span className="w-2.5 h-2.5 rounded-xs bg-rose-600"></span> Compression (&lt;0 MPa)
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 readout text-[10.5px]">
+            <span className="flex items-center gap-1.5 text-critical font-semibold">
+              <span className="w-2.5 h-2.5 rounded-xs bg-critical"></span> Compression (&lt;0 MPa)
             </span>
-            <span className="flex items-center gap-1.5 text-sky-600 font-semibold">
-              <span className="w-2.5 h-2.5 rounded-xs bg-sky-600"></span> Tension (&gt;50 MPa)
+            <span className="flex items-center gap-1.5 text-interactive font-semibold">
+              <span className="w-2.5 h-2.5 rounded-xs bg-interactive"></span> Tension (&gt;50 MPa)
             </span>
           </div>
         </div>
 
-        <div className="relative flex pt-2.5">
+        <div className="relative flex pt-3">
           {/* Depth Axis Labels */}
-          <div className="w-14 h-[280px] flex flex-col justify-between text-[9.5px] font-mono text-slate-600 py-1 text-right pr-2">
+          <div className="w-14 h-[280px] flex flex-col justify-between text-[9.5px] readout text-muted py-1 text-right pr-2">
             <span>0 m</span>
             <span>350 m</span>
             <span>750 m</span>
@@ -109,21 +118,22 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
               height={280}
               role="img"
               aria-label="Synthetic reduced-order axial stress heatmap by modeled depth and crank angle"
-              className="w-full h-[280px] rounded-lg border border-slate-300 bg-slate-950"
+              className="w-full h-[280px] rounded-lg border border-hairline"
+              style={{ background: 'rgb(var(--bg-surface-2))' }}
             >
               Synthetic modeled axial stress heatmap.
             </canvas>
-            <div className="absolute top-[28%] right-2 bg-white/95 border border-sky-300 rounded px-1.5 py-0.5 text-[9px] font-mono text-sky-800 font-bold shadow-xs">
+            <div className="absolute top-[28%] right-2 bg-surface-1/95 border border-interactive/40 rounded px-1.5 py-0.5 text-[9px] readout text-interactive font-bold">
               Taper 1: 1.000" → 0.875" (350 m)
             </div>
-            <div className="absolute top-[63%] right-2 bg-white/95 border border-sky-300 rounded px-1.5 py-0.5 text-[9px] font-mono text-sky-800 font-bold shadow-xs">
+            <div className="absolute top-[63%] right-2 bg-surface-1/95 border border-interactive/40 rounded px-1.5 py-0.5 text-[9px] readout text-interactive font-bold">
               Taper 2: 0.875" → 0.750" (750 m)
             </div>
           </div>
         </div>
 
         {/* Phase Angle X-Axis */}
-        <div className="flex justify-between text-[9.5px] font-mono text-slate-600 pl-16 pr-2 pt-2">
+        <div className="flex justify-between text-[9.5px] readout text-muted pl-16 pr-2 pt-2">
           <span>0° (TDC)</span>
           <span>90° (Mid-Downstroke)</span>
           <span>180° (BDC)</span>
@@ -132,51 +142,51 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
         </div>
       </div>
 
-      <div className="text-[10.5px] font-mono text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+      <div className="readout text-[10.5px] text-caution bg-caution/10 border border-caution/30 rounded px-3 py-1.5">
         Synthetic reduced-order stress screen; colors are not measured strain, inspection findings, fatigue results, or certified structural limits.
       </div>
 
       {/* 3-Section Taper Property Table Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs tabular-nums">
-        <div className="hmi-panel p-3 bg-white border border-slate-200 rounded-lg shadow-xs">
-          <div className="font-bold text-slate-800 mb-1 font-sans">Section 1 &mdash; 1.000 in. rod</div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600 border-b border-slate-100">
-            <span>Depth:</span> <span className="font-semibold text-slate-800">0 – 350 m</span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 readout text-xs">
+        <div className="panel p-4">
+          <div className="font-bold text-ink mb-1 font-sans">Section 1 &mdash; 1.000 in. rod</div>
+          <div className="flex justify-between py-1 text-[11px] text-muted border-b border-hairline">
+            <span>Depth:</span> <span className="font-semibold text-ink">0 – 350 m</span>
           </div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600 border-b border-slate-100">
-            <span>Area:</span> <span className="font-semibold text-slate-800">5.067 cm²</span>
+          <div className="flex justify-between py-1 text-[11px] text-muted border-b border-hairline">
+            <span>Area:</span> <span className="font-semibold text-ink">5.067 cm²</span>
           </div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600">
-            <span>Fatigue / safety factor:</span> <span className="font-semibold text-slate-600">Not evaluated</span>
-          </div>
-        </div>
-
-        <div className="hmi-panel p-3 bg-white border border-slate-200 rounded-lg shadow-xs">
-          <div className="font-bold text-slate-800 mb-1 font-sans">Section 2 &mdash; 0.875 in. rod</div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600 border-b border-slate-100">
-            <span>Depth:</span> <span className="font-semibold text-slate-800">350 – 750 m</span>
-          </div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600 border-b border-slate-100">
-            <span>Area:</span> <span className="font-semibold text-slate-800">3.879 cm²</span>
-          </div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600">
-            <span>Fatigue / safety factor:</span> <span className="font-semibold text-slate-600">Not evaluated</span>
+          <div className="flex justify-between py-1 text-[11px] text-muted">
+            <span>Fatigue / safety factor:</span> <span className="font-semibold text-muted">Not evaluated</span>
           </div>
         </div>
 
-        <div className={`hmi-panel p-3 border-l-4 rounded-lg shadow-xs ${
-          isBuckling ? 'border-l-rose-500 bg-rose-50/60 border-slate-200' : 'border-l-sky-500 bg-white border-slate-200'
+        <div className="panel p-4">
+          <div className="font-bold text-ink mb-1 font-sans">Section 2 &mdash; 0.875 in. rod</div>
+          <div className="flex justify-between py-1 text-[11px] text-muted border-b border-hairline">
+            <span>Depth:</span> <span className="font-semibold text-ink">350 – 750 m</span>
+          </div>
+          <div className="flex justify-between py-1 text-[11px] text-muted border-b border-hairline">
+            <span>Area:</span> <span className="font-semibold text-ink">3.879 cm²</span>
+          </div>
+          <div className="flex justify-between py-1 text-[11px] text-muted">
+            <span>Fatigue / safety factor:</span> <span className="font-semibold text-muted">Not evaluated</span>
+          </div>
+        </div>
+
+        <div className={`panel p-4 border-l-2 ${
+          isBuckling ? 'border-l-critical' : 'border-l-safe'
         }`}>
-          <div className="font-bold text-slate-800 mb-1 font-sans">Section 3 &mdash; 0.750 in. rod</div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600 border-b border-slate-100">
-            <span>Depth:</span> <span className="font-semibold text-slate-800">750 – 1,150 m</span>
+          <div className="font-bold text-ink mb-1 font-sans">Section 3 &mdash; 0.750 in. rod</div>
+          <div className="flex justify-between py-1 text-[11px] text-muted border-b border-hairline">
+            <span>Depth:</span> <span className="font-semibold text-ink">750 – 1,150 m</span>
           </div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600 border-b border-slate-100">
-            <span>Area:</span> <span className="font-semibold text-slate-800">2.850 cm²</span>
+          <div className="flex justify-between py-1 text-[11px] text-muted border-b border-hairline">
+            <span>Area:</span> <span className="font-semibold text-ink">2.850 cm²</span>
           </div>
-          <div className="flex justify-between py-1 text-[11px] text-slate-600">
+          <div className="flex justify-between py-1 text-[11px] text-muted">
             <span>Model screen:</span>{' '}
-            <span className={`font-bold ${isBuckling ? 'text-rose-600' : 'text-sky-700'}`}>
+            <span className={`font-bold ${isBuckling ? 'text-critical' : 'text-safe'}`}>
               {isBuckling ? 'Compression indicator' : 'Tension floor met'}
             </span>
           </div>

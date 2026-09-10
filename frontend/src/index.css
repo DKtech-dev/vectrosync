@@ -2,82 +2,341 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   VectroSync design tokens
+   Semantic meaning is identical across themes; only the channel values change.
+   Values are space-separated RGB channels so Tailwind's `<alpha-value>` slot
+   (e.g. bg-safe/10, border-hairline) resolves correctly.
+   ========================================================================== */
+:root,
+[data-theme='dark'] {
+  --bg-canvas: 10 14 20; /* #0a0e14 */
+  --bg-surface-1: 16 21 29; /* #10151d */
+  --bg-surface-2: 22 28 38; /* #161c26 */
+  --border-hairline: 35 43 56; /* #232b38 */
+  --text-primary: 238 241 246; /* #eef1f6 */
+  --text-secondary: 139 147 163; /* #8b93a3 */
+  --text-tertiary: 91 100 114; /* #5b6472 */
+  --accent-safe: 45 212 191; /* #2dd4bf */
+  --accent-caution: 245 165 36; /* #f5a524 */
+  --accent-critical: 244 63 94; /* #f43f5e */
+  --accent-interactive: 99 102 241; /* #6366f1 */
+
+  --inset-highlight: 255 255 255 / 0.045;
+  --shadow-color: 0 0 0;
+  --shadow-strength: 0.5;
+  --skeleton-base: 22 28 38;
+  --skeleton-sheen: 45 54 70;
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg-canvas: 243 245 248; /* #f3f5f8 */
+  --bg-surface-1: 255 255 255; /* #ffffff */
+  --bg-surface-2: 238 241 246; /* #eef1f6 */
+  --border-hairline: 221 226 234; /* #dde2ea */
+  --text-primary: 19 23 34; /* #131722 */
+  --text-secondary: 91 100 114; /* #5b6472 */
+  --text-tertiary: 147 160 179; /* #93a0b3 */
+  --accent-safe: 15 148 136; /* #0f9488 */
+  --accent-caution: 180 83 9; /* #b45309 */
+  --accent-critical: 220 38 38; /* #dc2626 */
+  --accent-interactive: 79 70 229; /* #4f46e5 */
+
+  --inset-highlight: 255 255 255 / 0.7;
+  --shadow-color: 15 23 42;
+  --shadow-strength: 0.12;
+  --skeleton-base: 238 241 246;
+  --skeleton-sheen: 255 255 255;
+  color-scheme: light;
+}
+
 @layer base {
+  html {
+    background-color: rgb(var(--bg-canvas));
+  }
+
   body {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: rgb(var(--bg-canvas));
+    color: rgb(var(--text-primary));
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
 
-  button:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible,
-  [role='tab']:focus-visible,
-  [role='button']:focus-visible {
-    outline: 2px solid #0284c7;
+  /* Smooth theme transition — only the properties that actually change, so
+     interactive hovers stay snappy and we never animate layout. */
+  body,
+  .theme-transition,
+  .theme-transition * {
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      fill 200ms ease,
+      stroke 200ms ease;
+  }
+
+  /* Keyboard focus: a single, unmistakable indigo ring everywhere. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent-interactive));
     outline-offset: 2px;
+    border-radius: 2px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
   }
 }
 
-/* Industrial Modern Light Mission Control Panel */
-.hmi-panel {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+@layer components {
+  /* ---- Elevation -----------------------------------------------------------
+     Panels are defined by a hairline + a faint inset top highlight, NOT a
+     drop shadow. Exactly one element (the wellbore hero) opts into a real
+     shadow via .panel-hero. */
+  .panel {
+    background-color: rgb(var(--bg-surface-1));
+    border: 1px solid rgb(var(--border-hairline));
+    border-radius: 10px;
+    box-shadow: inset 0 1px 0 0 rgb(var(--inset-highlight));
+  }
+
+  /* Recessed area for chart beds / data wells — sits back, not forward. */
+  .panel-inset {
+    background-color: rgb(var(--bg-surface-2));
+    border: 1px solid rgb(var(--border-hairline));
+    border-radius: 8px;
+  }
+
+  /* The single hero surface. */
+  .panel-hero {
+    background-color: rgb(var(--bg-surface-1));
+    border: 1px solid rgb(var(--border-hairline));
+    border-radius: 12px;
+    box-shadow:
+      inset 0 1px 0 0 rgb(var(--inset-highlight)),
+      0 1px 2px rgb(var(--shadow-color) / calc(var(--shadow-strength) * 0.6)),
+      0 12px 32px -12px rgb(var(--shadow-color) / var(--shadow-strength));
+  }
+
+  /* The ONE canonical panel/section title style. Caps are reserved for this. */
+  .section-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgb(var(--text-primary));
+  }
+
+  /* Status chip base — one optional chip per panel. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  /* Numeric telemetry: monospace + tabular so digits don't jitter on count-up. */
+  .readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Buttons: 150ms press feedback. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      transform 150ms ease,
+      opacity 150ms ease;
+  }
+  .btn:active {
+    transform: scale(0.97);
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 }
 
-.hmi-panel-raised {
-  background-color: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
-/* Hairline rule */
-.hmi-border {
-  border-color: #e2e8f0;
-}
-
-/* Tabular Monospace Utilities */
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Custom Modern Light Scrollbars */
+/* ---- Scrollbars: quiet, theme-aware ------------------------------------- */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-  border: 1px solid #e2e8f0;
+  background: rgb(var(--text-tertiary) / 0.4);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgb(var(--text-tertiary) / 0.65);
 }
 
+/* ============================================================================
+   Motion — every animation maps to a real state change.
+   ========================================================================== */
 
-/* SCADA Live Pulse */
-@keyframes scada-pulse-red {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
+/* LIVE indicator: slow 2s breathing loop = an open, healthy stream. */
+@keyframes vs-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(var(--accent-safe) / 0.5);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+    opacity: 0.65;
+    box-shadow: 0 0 0 5px rgb(var(--accent-safe) / 0);
   }
 }
-
-.scada-pulse-estop {
-  animation: scada-pulse-red 1.2s infinite ease-out;
+.vs-live-dot {
+  animation: vs-breathe 2s ease-in-out infinite;
 }
 
+/* Supervisory badge: one-shot color sweep + soft pulse on L-level change. */
+@keyframes vs-badge-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--pulse-color, rgb(var(--accent-safe) / 0.55));
+  }
+  60% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.vs-badge-change {
+  animation: vs-badge-pulse 600ms ease-out;
+}
+
+/* Critical E-stop: continuous urgent pulse (a genuine, persistent alarm state). */
+@keyframes vs-estop {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--accent-critical) / 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgb(var(--accent-critical) / 0);
+  }
+}
+.vs-estop {
+  animation: vs-estop 1.2s ease-out infinite;
+}
+
+/* Panel entrance: 8px rise + fade, ONCE on initial load (staggered inline). */
+@keyframes vs-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.vs-enter {
+  opacity: 0;
+  animation: vs-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Chart path draw-in on scenario switch (~500ms reveal). */
+@keyframes vs-draw {
+  from {
+    stroke-dashoffset: var(--draw-length, 1000);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.vs-draw {
+  stroke-dasharray: var(--draw-length, 1000);
+  stroke-dashoffset: var(--draw-length, 1000);
+  animation: vs-draw 520ms cubic-bezier(0.33, 1, 0.68, 1) forwards;
+}
+
+/* Skeleton shimmer while telemetry is loading. */
+@keyframes vs-shimmer {
+  100% {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background-image: linear-gradient(
+    90deg,
+    rgb(var(--skeleton-base)) 0%,
+    rgb(var(--skeleton-sheen) / 0.55) 50%,
+    rgb(var(--skeleton-base)) 100%
+  );
+  background-size: 200% 100%;
+  background-position: 200% 0;
+  animation: vs-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* Modal/drawer entrances. */
+@keyframes vs-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.vs-overlay-in {
+  animation: vs-overlay-in 180ms ease-out;
+}
+@keyframes vs-slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.vs-slide-in-right {
+  animation: vs-slide-in-right 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Icon cross-fade for the theme toggle. */
+@keyframes vs-fade-in {
+  from {
+    opacity: 0;
+    transform: rotate(-30deg) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+.vs-icon-swap {
+  animation: vs-fade-in 200ms ease-out;
+}
+
+/* Respect reduced-motion globally: collapse everything to instant. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -87,5 +346,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+  .vs-enter {
+    opacity: 1;
+    transform: none;
+  }
+  .vs-draw {
+    stroke-dashoffset: 0;
+  }
 }
-

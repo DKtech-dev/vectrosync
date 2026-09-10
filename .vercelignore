@@ -38,3 +38,8 @@ submission/
 # Frontend Node Modules
 frontend/node_modules/
 node_modules/
+
+# Local Cockpit & Dev
+app.py
+requirements-cockpit.txt
+requirements-dev.txt

@@ -8,7 +8,6 @@ stress field or a lateral buckling/contact solution.
 from typing import Any
 
 import numpy as np
-import plotly.graph_objects as go
 
 
 def compute_spatiotemporal_stress_matrix(
@@ -164,10 +163,12 @@ def create_depth_stress_heatmap(
     depths_m: np.ndarray,
     stress_mpa: np.ndarray,
     is_buckling: bool = False,
-) -> go.Figure:
+) -> Any:
     """
     Renders a 2D spatiotemporal depth vs crank phase axial stress heatmap.
     """
+    import plotly.graph_objects as go
+
     colorscale = [
         [0.0, "#b91c1c"],
         [0.15, "#fca5a5"],

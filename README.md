@@ -146,15 +146,19 @@ print(f"Coupled twin float count: {results['coupled_float_count']}")  # 0
 
 ## 5. Enterprise SCADA Operator Console
 
-The frontend (`frontend/`) is engineered as a dark-slate SCADA mission control workstation (`#0b0f17` background, `#111827` panels, `#1e293b` borders):
+The frontend (`frontend/`) is engineered as a high-density industrial mission control workstation built on a design token architecture with instant Dark / Light mode switching:
 
-- **Live Diagnostic Header:** Displays active Edge solve latency (`EDGE: 120ms` / `2ms`), Bus communication health (`MODBUS-TCP // PORT 502`), Multi-Fidelity Solver toggle button, and Supervisory State badge.
+- **Theme Architecture & Design Tokens:**
+  - **Dual-Theme Support:** First-class Dark (`#0a0e14` canvas, `#10151d` panel) and Light (`#f3f5f8` canvas, `#ffffff` panel) palettes using RGB-channel CSS variables for dynamic opacity utilities (`bg-safe/10`).
+  - **Rigorous Typography:** Inter font for structural UI chrome; JetBrains Mono for all numeric readouts (kN, °C, SPM, cP, β, ₹) and machine hashes to prevent layout jitter during count-up.
+  - **State-Driven Motion:** Smooth 350ms `easeOutCubic` numeric rAF tweens, 500ms P-V dynacard draw-in on scenario switch, 2s breathing live indicator, and supervisory state badge transitions—with instant fallbacks under `prefers-reduced-motion`.
+- **Live Diagnostic Header:** Displays active Edge solve latency (`EDGE: 120ms` / `2ms`), Bus communication health (`MODBUS-TCP // PORT 502`), Theme toggle, Multi-Fidelity Solver toggle button, and Supervisory State badge.
 - **Wellbore Simulator (2D Kinematic & Stress Tensor):** Binds rod section rendering directly to the backend axial stress tensor:
-  - $\sigma > +2.0\text{ kN}$: Cyan (Optimal tension)
-  - $+0.5 \le \sigma \le +2.0\text{ kN}$: Amber (Marginal safe tension)
-  - $\sigma < +0.5\text{ kN}$: Flashing Red (Buckling risk / Rod float)
-- **High-Precision Dynacard Studio:** Surface ($0–3.5\text{ m}$ vs $0–150\text{ kN}$) and Downhole ($0–3.5\text{ m}$ vs $-20\text{ to }+50\text{ kN}$) dynamometer cards with permissible operational envelopes.
-- **Spatio-Temporal Stress Heatmap:** Interpolated depth-versus-crank-phase stress distribution across string tapers.
+  - $\sigma > +2.0\text{ kN}$: Safe Teal (Optimal tension)
+  - $+0.5 \le \sigma \le +2.0\text{ kN}$: Caution Amber (Marginal safe tension)
+  - $\sigma < +0.5\text{ kN}$: Critical Red (Buckling risk / Rod float)
+- **High-Precision Dynacard Studio:** Surface ($0–3.5\text{ m}$ vs $0–150\text{ kN}$) and Downhole ($0–3.5\text{ m}$ vs $-20\text{ to }+50\text{ kN}$) dynamometer cards with permissible operational envelopes and draw-in animation.
+- **Spatio-Temporal Stress Heatmap:** Theme-aware canvas rendering interpolated depth-versus-crank-phase stress distribution across string tapers.
 - **Why Engine Console:** Real-time explainability feed detailing physical causal paths and MPC reasoning.
 - **Audit Ledger Explorer:** Cryptographic SHA-256 verification of operational decisions and setpoint changes.
 

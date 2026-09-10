@@ -146,7 +146,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased">
+    <div className="theme-transition min-h-screen bg-canvas text-ink flex flex-col font-sans antialiased">
       {/* Top SCADA Industrial Mission Control Header */}
       <ScadaHeader
         scenarioId={simState?.scenario_id}
@@ -167,25 +167,25 @@ export default function App() {
       />
 
       {/* Main SCADA Workspace Container */}
-      <main aria-busy={loading} className="flex-1 max-w-[1780px] w-full mx-auto p-3 sm:p-4 lg:p-6 space-y-4">
-        <div role="status" className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-xs text-amber-950 flex flex-wrap items-center justify-between gap-2">
-          <strong className="font-mono uppercase tracking-wide">Research prototype · Synthetic model output · Advisory only</strong>
-          <span>No field/HIL validation and no direct PLC/VFD control authority.</span>
+      <main aria-busy={loading} className="flex-1 max-w-[1780px] w-full mx-auto p-4 lg:p-6 space-y-4">
+        <div role="status" className="chip w-full justify-between bg-caution/10 border border-caution/30 text-caution rounded-lg p-3 text-xs flex flex-wrap gap-2">
+          <strong className="section-title text-caution">Research prototype · Synthetic model output · Advisory only</strong>
+          <span className="font-sans font-normal text-muted">No field/HIL validation and no direct PLC/VFD control authority.</span>
         </div>
 
         {error && (
-          <div role="alert" className="bg-rose-50 border border-rose-300 rounded-lg p-3 text-sm text-rose-900 flex items-center justify-between gap-3">
+          <div role="alert" className="bg-critical/10 border border-critical/40 rounded-lg p-3 text-sm text-ink flex items-center justify-between gap-3">
             <span>{error}</span>
-            <button type="button" onClick={() => loadSimulation(simParams)} className="font-semibold underline underline-offset-2 rounded focus-visible:outline-none">Retry</button>
+            <button type="button" onClick={() => loadSimulation(simParams)} className="font-semibold text-critical underline underline-offset-2 rounded">Retry</button>
           </div>
         )}
 
         {/* Active Scenario Banner */}
         {simState?.scenario_name && (
-          <div className="bg-white border border-slate-200 rounded-lg shadow-xs p-3 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="panel p-3 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-sky-700">{simState.scenario_name}:</span>
-              <span className="text-slate-700 font-sans">
+              <span className="readout font-bold text-interactive">{simState.scenario_name}:</span>
+              <span className="text-muted font-sans">
                 {simState.scenario_id === 'SCENARIO_A_BASELINE_FAILURE' &&
                   `Synthetic freeze stress case: reduced-order model returns ${simState.temperature_c.toFixed(1)}°C and ${simState.actual_min_tension_kn.toFixed(2)} kN minimum tension.`}
                 {simState.scenario_id === 'SCENARIO_B_COUPLED_TWIN' &&
@@ -196,7 +196,7 @@ export default function App() {
                   'Synthetic nominal case for exploring the reduced-order thermal, rheology, and rod-load assumptions.'}
               </span>
             </div>
-            <span className="font-mono text-[11px] font-semibold text-slate-600 shrink-0 px-2.5 py-0.5 rounded bg-slate-100 border border-slate-200">
+            <span className="chip text-muted bg-surface-2 border-hairline shrink-0">
               Illustrative strata/depth assumption: 1,150 m TVD
             </span>
           </div>
@@ -204,6 +204,7 @@ export default function App() {
 
         {/* 4-KPI Primary Metric Strip */}
         {simState && (
+          <div className="vs-enter" style={{ animationDelay: '0ms' }}>
           <MetricCards
             temperatureC={simState.temperature_c}
             viscosityCp={simState.viscosity_cp}
@@ -214,12 +215,13 @@ export default function App() {
             isBuckling={simState.is_buckling_active}
             elapsedDays={simParams.elapsed_days}
           />
+          </div>
         )}
 
         {/* Center 2-Column Split: Wellbore Simulator (Left) + Multi-Tab Engineering Workspace (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           {/* Left Column (5/12): Subsurface Digital Twin Engine */}
-          <div className="lg:col-span-5 h-full">
+          <div className="lg:col-span-5 h-full vs-enter" style={{ animationDelay: '40ms' }}>
             {simState && (
               <WellboreSimulator
                 spm={simState.effective_spm}
@@ -238,9 +240,9 @@ export default function App() {
           </div>
 
           {/* Right Column (7/12): Multi-Tab Engineering Console */}
-          <div className="lg:col-span-7 bg-white border border-slate-200 rounded-lg shadow-xs p-4 flex flex-col justify-between">
+          <div className="lg:col-span-7 panel p-4 flex flex-col justify-between vs-enter" style={{ animationDelay: '80ms' }}>
             {/* Underline-Style Active Tab Bar */}
-            <div role="tablist" aria-label="Engineering analysis views" className="flex border-b border-slate-200 gap-1 mb-3 overflow-x-auto">
+            <div role="tablist" aria-label="Engineering analysis views" className="flex border-b border-hairline gap-1 mb-3 overflow-x-auto">
               {tabs.map((tab, tabIndex) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -255,10 +257,10 @@ export default function App() {
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     onKeyDown={(event) => handleTabKeyDown(event, tabIndex)}
-                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-medium border-b-2 transition whitespace-nowrap rounded-t ${
+                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition whitespace-nowrap rounded-t ${
                       isActive
-                        ? 'border-sky-600 text-sky-700 font-bold bg-sky-50'
-                        : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                        ? 'border-interactive text-interactive font-bold bg-interactive/10'
+                        : 'border-transparent text-muted hover:text-ink hover:border-hairline'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -269,7 +271,7 @@ export default function App() {
             </div>
 
             {/* Active Tab Content */}
-            <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex="0" className="min-h-[470px] focus:outline-none">
+            <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex="0" className="min-h-[470px]">
               {activeTab === 'dynacard' && simState && (
                 <DynacardStudio
                   dynacard={simState.dynacard}
@@ -307,14 +309,20 @@ export default function App() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
           {/* Causal Reasoning Diagnostic Console */}
           {simState && (
-            <WhyEngineConsole
-              diagnostics={simState.diagnostics}
-              isBuckling={simState.is_buckling_active}
-            />
+            <div className="vs-enter" style={{ animationDelay: '120ms' }}>
+              <WhyEngineConsole
+                diagnostics={simState.diagnostics}
+                isBuckling={simState.is_buckling_active}
+              />
+            </div>
           )}
 
           {/* Unvalidated multi-well planning-case economics */}
-          {simState && <EconomicsWaterfall economics={simState.economics} />}
+          {simState && (
+            <div className="vs-enter" style={{ animationDelay: '160ms' }}>
+              <EconomicsWaterfall economics={simState.economics} />
+            </div>
+          )}
         </div>
       </main>
 
@@ -330,16 +338,16 @@ export default function App() {
       />
 
       {/* Technical Enterprise SCADA Footer */}
-      <footer className="bg-[#0b0f17] border-t border-[#1e293b] py-3 px-6 text-[11px] text-slate-400 font-mono mt-auto">
+      <footer className="theme-transition bg-surface-1 border-t border-hairline py-3 px-6 text-[11px] text-faint readout mt-auto">
         <div className="max-w-[1780px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div>
             <span>Baghewala-inspired research case study &middot; No operator affiliation or deployment implied</span>
-            <span className="mx-2 text-slate-600">&middot;</span>
-            <span className="text-cyan-400 font-bold">VectroSync Advisory Research Prototype</span>
+            <span className="mx-2 text-hairline">&middot;</span>
+            <span className="text-interactive font-bold">VectroSync Advisory Research Prototype</span>
           </div>
           <div className="flex items-center gap-3 text-[10.5px]">
-            <span className="text-amber-300 font-semibold">Synthetic · Reduced-order · Advisory only</span>
-            <span className="text-slate-600">&middot;</span>
+            <span className="text-caution font-semibold">Synthetic · Reduced-order · Advisory only</span>
+            <span className="text-hairline">&middot;</span>
             <span>FastAPI + React 18 + deterministic card surrogate</span>
           </div>
         </div>
