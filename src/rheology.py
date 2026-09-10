@@ -5,7 +5,7 @@ Couette Concentric/Eccentric Annular Shear Drag, and Section-Wise Rod Damping Pr
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Union, Tuple, Optional, Any
+from typing import List, Dict, Union, Tuple, Optional, Any, Sequence
 import math
 import numpy as np
 
@@ -204,6 +204,28 @@ class HeavyOilRheology:
         self.A_mu = math.log(self.params.mu1_Pas) - (self.B * inv_T1)
         self.B_arrhenius = self.B
         self.A_arrhenius = self.A_mu
+
+    def calibrate_pvt_measurements(self, temperatures_c: Sequence[float], viscosities_pas: Sequence[float]) -> Tuple[float, float]:
+        """
+        Calibrates Arrhenius parameters A and B via linear regression on log(mu) vs 1/T_K:
+            ln(mu) = A + B / T_K
+        Updates model parameters from laboratory PVT rheometer measurements.
+        """
+        t_arr = np.asarray(temperatures_c, dtype=np.float64) + 273.15
+        mu_arr = np.asarray(viscosities_pas, dtype=np.float64)
+        if len(t_arr) < 2:
+            raise ValueError("At least two PVT calibration points are required.")
+        if np.any(mu_arr <= 0.0) or np.any(t_arr <= 0.0):
+            raise ValueError("Temperatures and viscosities must be strictly positive.")
+
+        inv_t = 1.0 / t_arr
+        ln_mu = np.log(mu_arr)
+        coeffs = np.polyfit(inv_t, ln_mu, deg=1)
+        self.B = float(coeffs[0])
+        self.A_mu = float(coeffs[1])
+        self.B_arrhenius = self.B
+        self.A_arrhenius = self.A_mu
+        return self.A_mu, self.B
 
     def oil_viscosity(self, temp_k: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """Dynamic viscosity of pure heavy crude in Pa.s."""

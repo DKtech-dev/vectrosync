@@ -6,7 +6,7 @@ production uplift and recaptured workover downtime.
 """
 
 from dataclasses import asdict, dataclass
-from typing import Dict
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -37,7 +37,7 @@ class EconomicAssumptions:
             raise ValueError("residual failure rate cannot exceed baseline in a savings case")
 
 
-def evaluate_case(case: EconomicAssumptions) -> Dict[str, object]:
+def evaluate_case(case: EconomicAssumptions) -> dict[str, Any]:
     """Evaluate one annual value hypothesis with traceable arithmetic."""
     case.validate()
     avoided_failures = case.well_count * (
@@ -122,7 +122,7 @@ ECONOMIC_CASES = {
 }
 
 
-def sensitivity_analysis() -> Dict[str, object]:
+def sensitivity_analysis() -> dict[str, Any]:
     results = {name: evaluate_case(case) for name, case in ECONOMIC_CASES.items()}
     return {
         "status": "hypothesis",

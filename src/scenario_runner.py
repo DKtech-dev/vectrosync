@@ -1,10 +1,7 @@
-"""
-Scenario Playback & Supervisory Controller (src/scenario_runner.py)
-Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
-Model: OIL-BAGHEWALA-EOR-V2
+"""Deterministic synthetic scenarios for the advisory research prototype.
 
-Provides deterministic synthetic presets for comparing a baseline stress case,
-a reduced-order governor response, and telemetry-timeout advisory logic.
+Baghewala is a contextual case-study label; no operator affiliation, field data,
+or field calibration is represented by these presets.
 """
 
 from dataclasses import dataclass
@@ -76,13 +73,13 @@ def compute_expected_downhole_tension(
 
 SCENARIO_PRESETS: Dict[ScenarioType, ScenarioConfig] = {
     ScenarioType.SCENARIO_A_BASELINE_FAILURE: ScenarioConfig(
-        name="Scenario A: The Baghewala Freeze (Baseline Failure)",
+        name="Scenario A: The Baghewala Freeze (Synthetic Compression Screen)",
         description=(
-            "Runs a synthetic 66°C stress case where the configured emulsion viscosity rises sharply "
-            "and the reduced-order card model predicts compression at 4.7 SPM."
+            "Runs a late-cycle CSS thermal decay stress case (day 491, 2.2x cooling -> 66.0°C) where "
+            "emulsion viscosity rises sharply and the reduced-order card model predicts compression at 4.7 SPM."
         ),
         cooling_multiplier=2.20,
-        elapsed_days=16.0,
+        elapsed_days=490.94,
         target_spm=4.7,
         water_cut=0.25,
         steam_quality=0.70,
@@ -96,13 +93,13 @@ SCENARIO_PRESETS: Dict[ScenarioType, ScenarioConfig] = {
     ),
 
     ScenarioType.SCENARIO_B_COUPLED_TWIN: ScenarioConfig(
-        name="Scenario B: Coupled Twin Predictive Intervention",
+        name="Scenario B: Constraint-Aware Speed Advisory",
         description=(
-            "Applies identical severe cooling conditions, but activates the Fast-Loop MPC 12 hours ahead, "
-            "proactively throttling speed from 4.7 to 2.8 SPM to strictly enforce positive rod tension."
+            "Applies the same late-cycle 66.0°C thermal state and evaluates the MPC governor "
+            "recommendation (throttling from 4.7 to 2.8 SPM), keeping minimum downhole tension safely positive (+2.36 kN)."
         ),
         cooling_multiplier=2.20,
-        elapsed_days=16.0,
+        elapsed_days=490.94,
         target_spm=4.7,
         water_cut=0.25,
         steam_quality=0.70,
@@ -116,10 +113,10 @@ SCENARIO_PRESETS: Dict[ScenarioType, ScenarioConfig] = {
     ),
 
     ScenarioType.SCENARIO_C_TELEMETRY_SEVERED: ScenarioConfig(
-        name="Scenario C: Telemetry Dropout & Failsafe Tripping",
+        name="Scenario C: Synthetic Telemetry Timeout",
         description=(
-            "Simulates an unexpected Modbus cable severance (>60s telemetry latency), triggering the supervisory "
-            "state machine into Level-2 Protective mode with a 3-stroke ramp-down to safe 2.0 SPM fallback."
+            "Simulates telemetry older than 60 seconds. The supervisory software enters Level 2 and recommends "
+            "a 2.0 SPM fallback; no Modbus connection, physical ramp, or actuator command is implemented."
         ),
         cooling_multiplier=1.65,
         elapsed_days=12.0,
@@ -136,8 +133,8 @@ SCENARIO_PRESETS: Dict[ScenarioType, ScenarioConfig] = {
     ),
 
     ScenarioType.DEFAULT_OPERATION: ScenarioConfig(
-        name="Standard Baseline Operation (Nominal)",
-        description="Standard calibrated state for Baghewala Field Well #14 under normal CSS thermal decay.",
+        name="Default Synthetic Operating Case",
+        description="Default uncalibrated Baghewala-inspired assumptions for demonstrating the CSS–SRP workflow.",
         cooling_multiplier=1.65,
         elapsed_days=12.0,
         target_spm=4.2,

@@ -1,14 +1,9 @@
-"""
-Real-Time Animated SVG 2D Wellbore & Pumping Unit Schematic (src/animated_well.py)
+"""Animated schematic for synthetic reduced-order model outputs.
 
-Renders a professional engineering-grade cross-section of the Baghewala Well #14
-sucker rod pumping system with live reciprocating motion, 3-section tapered rod
-string, near-wellbore thermal plume, and dynamic structural health indicators.
-
-Fixed from prior version: CSS color property was incorrectly set to badge text.
+The visualization is illustrative: motion is derived from requested SPM, while
+compression coloring is a screening alert—not a solved buckling/contact shape.
 """
 
-from typing import Optional
 import math
 
 
@@ -27,7 +22,7 @@ def render_animated_well_html(
     engineering schematic of the Baghewala Well #14 sucker rod pumping system.
 
     The reciprocation period is dynamically matched to the current SPM value.
-    Visual effects change based on structural health (buckling vs safe tension).
+    Visual effects distinguish a low-tension screen from a satisfied model floor.
     """
     safe_spm = max(0.5, float(spm))
     cycle_s = round(60.0 / safe_spm, 2)
@@ -47,23 +42,23 @@ def render_animated_well_html(
 
     # Status text and colors
     if is_danger:
-        status_text = "COMPRESSIVE FLOAT DETECTED — Min Tension Below +0.5 kN"
+        status_text = "MODELED COMPRESSION ALERT — Min Tension Below +0.5 kN"
         st_fg = "#991b1b"
         st_bg = "#fef2f2"
         st_bd = "#fca5a5"
     elif is_modbus_severed:
-        status_text = "TELEMETRY DROPOUT — Failsafe Protective Mode Active"
+        status_text = "SIMULATED TELEMETRY TIMEOUT — Protective Advisory Active"
         st_fg = "#92400e"
         st_bg = "#fffbeb"
         st_bd = "#fde68a"
     else:
-        status_text = "NOMINAL — All Structural Constraints Satisfied"
+        status_text = "MODEL SCREEN — Implemented Tension Floor Satisfied"
         st_fg = "#065f46"
         st_bg = "#ecfdf5"
         st_bd = "#a7f3d0"
 
     # Telemetry badge
-    tele_text = "MODBUS OFFLINE" if is_modbus_severed else "MODBUS ONLINE"
+    tele_text = "SIMULATED TIMEOUT" if is_modbus_severed else "SYNTHETIC STREAM"
     tele_color = "#c0392b" if is_modbus_severed else "#27ae60"
     tele_dot = "#c0392b" if is_modbus_severed else "#27ae60"
 
@@ -292,9 +287,9 @@ font-size:10px;font-weight:600;color:{tele_color};letter-spacing:0.02em;z-index:
     {f'''
     <g transform="translate(100, 555)" style="animation:flash 1.2s ease-in-out infinite">
       <rect x="0" y="0" width="155" height="42" rx="4" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
-      <text x="8" y="15" font-size="9.5" font-weight="700" fill="#991b1b" font-family="Inter,sans-serif">COMPRESSIVE BUCKLING</text>
-      <text x="8" y="28" font-size="8.5" fill="#7f1d1d" font-family="Inter,sans-serif">F_min = {min_tension_kn:.2f} kN  (limit: +0.5 kN)</text>
-      <text x="8" y="38" font-size="8" fill="#b91c1c" font-family="Inter,sans-serif">Section 3 rod floating on downstroke</text>
+      <text x="8" y="15" font-size="9.5" font-weight="700" fill="#991b1b" font-family="Inter,sans-serif">LOW-TENSION MODEL ALERT</text>
+      <text x="8" y="28" font-size="8.5" fill="#7f1d1d" font-family="Inter,sans-serif">F_min = {min_tension_kn:.2f} kN  (floor: +0.5 kN)</text>
+      <text x="8" y="38" font-size="8" fill="#b91c1c" font-family="Inter,sans-serif">Buckling/contact mechanics not resolved</text>
     </g>
     ''' if is_danger else ''}
 

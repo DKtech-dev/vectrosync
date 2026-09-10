@@ -94,3 +94,28 @@ def test_api_audit_verify():
     assert data["is_chain_valid"] is True
     assert data["tamper_detected"] is False
     assert len(data["events"]) > 0
+
+
+def test_api_transient_wave_solver():
+    """Verify simulation with high-fidelity transient wave solver via /api/simulate."""
+    payload = {
+        "target_spm": 3.8,
+        "elapsed_days": 10.0,
+        "cooling_multiplier": 1.0,
+        "water_cut": 0.25,
+        "plunger_sand_wear": 0.0,
+        "stroke_length_m": 2.54,
+        "mpc_enabled": True,
+        "modbus_severed": False,
+        "solver_type": "transient",
+    }
+    res = client.post("/api/simulate", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert data["solver_type"] == "transient"
+    assert data["model_status"]["rod_model"] == "transient_elastodynamic_wave_pde"
+    assert len(data["dynacard"]["surface_position_m"]) == 144
+    assert len(data["dynacard"]["surface_load_kn"]) == 144
+    assert data["solve_time_ms"] > 0.0
+

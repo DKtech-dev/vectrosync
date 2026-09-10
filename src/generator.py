@@ -97,6 +97,84 @@ class CoupledDataGenerator:
         })
         return df.to_csv(index=False)
 
+    def generate_ab_benchmark_experiment(
+        self,
+        n_steps: int = 24,
+        seed: int = 42,
+    ) -> Dict[str, Any]:
+        """
+        Executes the deterministic shared-seed A/B experiment (§2.2 of IMPROVEMENT_PLAN.md).
+        Both Branch A (Uncoupled Baseline at 4.7 SPM) and Branch B (Coupled MPC Twin)
+        receive the EXACT SAME latent disturbances (soak cooling) and measurement noise.
+        """
+        from typing import Any
+        from src.controller import FastMPCController, MPCConfig, WellState
+
+        rng = np.random.RandomState(seed)
+        hours = np.linspace(0.0, 12.0, n_steps)
+        temps = 80.0 - 25.0 * ((hours / 12.0) ** 1.2)
+
+        baseline_records = []
+        coupled_records = []
+
+        mpc = FastMPCController(MPCConfig(min_tension_kN=0.50))
+        active_spm = 4.7
+
+        for i, (h, t_true) in enumerate(zip(hours, temps)):
+            noise_t = float(rng.normal(0.0, 0.4))
+            noise_load = float(rng.normal(0.0, 0.5))
+
+            t_meas = float(t_true + noise_t)
+            mu_true = float(self.rheology.mixture_viscosity(t_true + 273.15, fw=0.35))
+
+            # Branch A: Uncoupled Baseline (fixed 4.7 SPM)
+            spm_a = 4.7
+            card_a = self.solver.simulate_card(spm=spm_a, temp_c=t_true, water_cut=0.35)
+            min_tens_a = float(card_a.min_downhole_tension_kn)
+
+            baseline_records.append({
+                "hour": round(float(h), 2),
+                "temperature_true_c": round(float(t_true), 2),
+                "temperature_meas_c": round(float(t_meas), 2),
+                "viscosity_pa_s": round(mu_true, 3),
+                "spm": spm_a,
+                "min_tension_kn": round(min_tens_a, 2),
+                "is_floating": bool(min_tens_a < 0.0),
+                "pprl_kn": round(float(card_a.pprl_kn) + noise_load, 2),
+            })
+
+            # Branch B: Coupled MPC Twin
+            forecast_remaining = [float(t) for t in temps[i:]]
+            if len(forecast_remaining) < 24:
+                forecast_remaining += [forecast_remaining[-1]] * (24 - len(forecast_remaining))
+
+            st = WellState(spm_current=active_spm, temperature_C=t_meas, viscosity_Pas=mu_true)
+            plan = mpc.solve(st, forecast_remaining)
+            active_spm = plan.optimal_spm
+
+            card_b = self.solver.simulate_card(spm=active_spm, temp_c=t_true, water_cut=0.35)
+            min_tens_b = float(card_b.min_downhole_tension_kn)
+
+            coupled_records.append({
+                "hour": round(float(h), 2),
+                "temperature_true_c": round(float(t_true), 2),
+                "temperature_meas_c": round(float(t_meas), 2),
+                "viscosity_pa_s": round(mu_true, 3),
+                "spm": round(float(active_spm), 2),
+                "min_tension_kn": round(min_tens_b, 2),
+                "is_floating": bool(min_tens_b < 0.0),
+                "pprl_kn": round(float(card_b.pprl_kn) + noise_load, 2),
+            })
+
+        return {
+            "seed": seed,
+            "hours": [round(float(h), 2) for h in hours],
+            "baseline": baseline_records,
+            "coupled": coupled_records,
+            "baseline_float_count": sum(1 for r in baseline_records if r["is_floating"]),
+            "coupled_float_count": sum(1 for r in coupled_records if r["is_floating"]),
+        }
+
 
 # Default Singleton
 DEFAULT_DATA_GENERATOR = CoupledDataGenerator()

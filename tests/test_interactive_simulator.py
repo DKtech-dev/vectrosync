@@ -25,11 +25,11 @@ class TestAnimatedWellTwin:
         )
         assert isinstance(html, str)
         assert "<svg" in html
-        assert "NOMINAL" in html
+        assert "MODEL SCREEN" in html
         assert "SECTION 1" in html
         assert "SECTION 3" in html
         assert "g-beam" in html
-        assert "MODBUS ONLINE" in html
+        assert "SYNTHETIC STREAM" in html
 
     def test_render_buckling_failure_state_html(self):
         html = render_animated_well_html(
@@ -40,8 +40,8 @@ class TestAnimatedWellTwin:
             is_modbus_severed=False,
         )
         assert isinstance(html, str)
-        assert "COMPRESSIVE" in html
-        assert "buck" in html
+        assert "MODELED COMPRESSION ALERT" in html
+        assert "Buckling/contact mechanics not resolved" in html
         assert "#c0392b" in html  # Red danger color
 
     def test_render_modbus_severance_state_html(self):
@@ -52,7 +52,7 @@ class TestAnimatedWellTwin:
             is_buckling=False,
             is_modbus_severed=True,
         )
-        assert "MODBUS OFFLINE" in html
+        assert "SIMULATED TIMEOUT" in html
 
 
 class TestWhyEngine:

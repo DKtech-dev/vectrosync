@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, CheckCircle2, AlertCircle, ArrowRight, FileText } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 export function CsvIngestor() {
   const [csvText, setCsvText] = useState(`Time_Stamp,POLISHED_ROD_LOAD_KLBS,Stroke_Disp_in,Speed_SPM,BHT_degF
@@ -21,20 +22,20 @@ export function CsvIngestor() {
       const formData = new FormData();
       formData.append('csv_text', csvText);
 
-      const res = await fetch('/api/csv/ingest', {
+      const res = await apiFetch('/api/csv/ingest', {
         method: 'POST',
         body: formData,
       });
 
       const data = await res.json();
       if (res.ok) {
-        const safeForControl = data.control_valid === true;
+        const schemaChecksPassed = data.control_valid === true;
         const warningText = data.warnings?.length ? ` ${data.warnings.join(' ')}` : '';
         setIngestStatus({
-          success: safeForControl,
-          message: safeForControl
-            ? `Parsed ${data.row_count} rows; safety gate passed.${warningText}`
-            : `Parsed for analysis only; control gate inhibited.${warningText}`,
+          success: schemaChecksPassed,
+          message: schemaChecksPassed
+            ? `Parsed ${data.row_count} rows; backend schema checks passed. Preview remains analysis-only.${warningText}`
+            : `Parsed ${data.row_count} rows for analysis preview; backend control-valid flag is false.${warningText}`,
         });
         setParsedData(data.column_data);
       } else {
@@ -60,11 +61,11 @@ export function CsvIngestor() {
 
   return (
     <div className="flex flex-col gap-3 font-sans">
-      <div className="flex items-center justify-between pb-2 border-b border-slate-200 text-xs font-medium">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-200 text-xs font-medium gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <FileText className="w-4 h-4 text-sky-600" />
           <span className="font-bold text-slate-800 font-mono uppercase tracking-wide">
-            Adaptive SCADA Telemetry Ingestion &amp; Unit Conversion
+            CSV Engineering Data Preview &amp; Unit Conversion
           </span>
           <span className="font-mono text-[10.5px] text-slate-500">Imperial / SI Auto-Mapper</span>
         </div>
@@ -76,26 +77,28 @@ export function CsvIngestor() {
         <div className="bg-white rounded-lg border border-slate-200 p-4 flex flex-col justify-between shadow-xs">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono font-semibold text-slate-800">Raw SCADA Telemetry Data Stream</span>
+              <span className="text-xs font-mono font-semibold text-slate-800">CSV Input (Synthetic Sample Shown)</span>
               <label className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono bg-slate-100 border border-slate-300 rounded hover:bg-slate-200 text-slate-700 transition">
                 <Upload className="w-3 h-3 text-sky-600" />
                 Upload .csv
-                <input type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
+                <input aria-label="Upload CSV or text data file" type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
               </label>
             </div>
 
             <textarea
+              aria-label="CSV engineering data input"
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
               rows={7}
               className="w-full text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:border-sky-500 tabular-nums"
-              placeholder="Paste raw SCADA CSV content here..."
+              placeholder="Paste CSV engineering data here..."
             />
           </div>
 
           <div className="mt-3 flex justify-between items-center font-mono">
             <span className="text-[10.5px] text-slate-500">Accepts: klbs, in, °F, kN, m, K</span>
             <button
+              type="button"
               onClick={handleIngest}
               disabled={loading}
               className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-md text-xs font-semibold transition flex items-center gap-1.5 shadow-xs"
@@ -112,7 +115,7 @@ export function CsvIngestor() {
             <div className="text-xs font-mono font-semibold text-slate-800 mb-2">Standardized SI Normalized Dataset</div>
             
             {ingestStatus && (
-              <div className={`p-2 rounded-md mb-2 text-xs font-mono flex items-center gap-1.5 ${
+              <div role="status" className={`p-2 rounded-md mb-2 text-xs font-mono flex items-center gap-1.5 ${
                 ingestStatus.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' : 'bg-rose-50 text-rose-800 border border-rose-300'
               }`}>
                 {ingestStatus.success ? <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" /> : <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />}
@@ -149,14 +152,14 @@ export function CsvIngestor() {
               </div>
             ) : (
               <div className="text-center py-10 text-slate-400 font-mono text-xs">
-                Click "Ingest & Standardize" to preview mapped engineering telemetry
+                Click "Ingest & Standardize" to preview mapped engineering data
               </div>
             )}
           </div>
 
-          <div className="text-[10.5px] text-slate-600 flex items-center gap-2 mt-3 pt-2 border-t border-slate-200 font-mono">
-            <span className="font-semibold text-emerald-700">✓ Gap-Discipline:</span>
-            <span>Linear interpolation is flagged; only validated schemas may pass the control gate</span>
+          <div className="text-[10.5px] text-slate-600 flex items-start gap-2 mt-3 pt-2 border-t border-slate-200 font-mono">
+            <span className="font-semibold text-sky-700 shrink-0">Analysis only:</span>
+            <span>Parsing and schema flags do not validate sensor provenance or authorize control; this console has no actuator connection.</span>
           </div>
         </div>
       </div>

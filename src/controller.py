@@ -17,6 +17,7 @@ from src.thermal import ThermalDecayEngine, DEFAULT_THERMAL_ENGINE
 from src.rheology import HeavyOilRheology, DEFAULT_RHEOLOGY_MODEL
 from src.rod_conservative import ConservativeRodWaveSolver, DEFAULT_WAVE_SOLVER, DynacardResult
 from src.failsafe import FailsafeStateMachine, FailsafeLevel, DEFAULT_FAILSAFE
+from src.mpc import ConstrainedMPC, DEFAULT_CONSTRAINED_MPC
 
 
 @dataclass
@@ -29,10 +30,14 @@ class MPCConfig:
     w_du: float = 0.5                 # SPM slew / rate-of-change penalty weight
     w_slack: float = 1000.0           # Slack variable penalty for hard tension constraint
     min_tension_kN: float = 0.50      # Minimum downhole positive tension floor (Anti-Float)
-    max_pprl_kN: float = 282.7        # 90% of rod tensile rating
+    max_pprl_kN: float = 99.0         # 90% of 110.0 kN rod string / surface unit working rating
     min_spm: float = 1.0              # Kinematic minimum pump speed
     max_spm: float = 5.5              # Kinematic maximum pump speed
     max_delta_spm: float = 0.50       # Maximum allowable SPM ramp per hour
+    solver_mode: str = "surrogate"    # "optimization" (real SLSQP MPC) or "surrogate" (fast analytical)
+    robust_z: float = 1.282           # 90% confidence uncertainty-tightening factor
+    sigma_min_tension_kN: float = 0.10 # Downhole load model uncertainty std dev (kN)
+    sigma_pprl_kN: float = 1.50       # Surface load model uncertainty std dev (kN)
 
 
 @dataclass
@@ -114,9 +119,19 @@ class FastMPCController:
         self.rheology = rheology_engine if rheology_engine is not None else DEFAULT_RHEOLOGY_MODEL
         self.solver = wave_solver if wave_solver is not None else DEFAULT_WAVE_SOLVER
         self.failsafe = failsafe if failsafe is not None else DEFAULT_FAILSAFE
+        self.real_mpc = ConstrainedMPC(
+            config=self.config,
+            thermal_engine=self.thermal,
+            rheology_engine=self.rheology,
+            wave_solver=self.solver,
+            failsafe=self.failsafe,
+        )
 
     def solve(self, state: WellState, thermal_forecast_C: List[float]) -> MPCResult:
         """Build a constraint-aware advisory trajectory with explicit infeasibility."""
+        if getattr(self.config, "solver_mode", "optimization") == "optimization":
+            return self.real_mpc.solve(state, thermal_forecast_C)
+
         t_start = time.perf_counter()
         n = self.config.horizon_steps
         gamma = 0.10  # Identified surrogate coefficient; see docs/MODEL_CARD.md.
@@ -148,7 +163,7 @@ class FastMPCController:
         intrinsically_infeasible_steps: List[int] = []
         for k, mu_k in enumerate(mu_profile):
             tension_bound = (3.5 - self.config.min_tension_kN) / max(0.01, gamma * mu_k)
-            pprl_bound = (self.config.max_pprl_kN - 120.0 - 8.0 * mu_k) / 15.0
+            pprl_bound = (self.config.max_pprl_kN - 47.0 - 4.0 * mu_k) / 10.0
             raw_bound = min(tension_bound, pprl_bound, self.config.max_spm)
             if raw_bound < self.config.min_spm:
                 intrinsically_infeasible_steps.append(k)
@@ -171,7 +186,7 @@ class FastMPCController:
             spm_traj.append(spm_next)
             spm_curr = spm_next
             min_tensions.append(3.5 - gamma * mu_profile[k] * spm_next)
-            pprls.append(120.0 + 15.0 * spm_next + 8.0 * mu_profile[k])
+            pprls.append(47.0 + 10.0 * spm_next + 4.0 * mu_profile[k])
 
         tension_residuals = [v - self.config.min_tension_kN for v in min_tensions]
         pprl_residuals = [self.config.max_pprl_kN - v for v in pprls]

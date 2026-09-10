@@ -24,7 +24,7 @@ class TestModbusTelemetryDropoutTrip:
         sm.current_spm = 4.5
 
         # Phase 1: Healthy Modbus Communication (t = 2.0 s -> LEVEL-0)
-        d0 = sm.evaluate(telemetry_age_s=2.0, f_downhole_min_kN=1.8, pprl_kN=180.0, proposed_spm=4.5)
+        d0 = sm.evaluate(telemetry_age_s=2.0, f_downhole_min_kN=1.8, pprl_kN=75.0, proposed_spm=4.5)
         assert d0.state == FailsafeLevel.LEVEL_0_NORMAL
         assert d0.control_enabled is True
         ledger.record_event(
@@ -34,7 +34,7 @@ class TestModbusTelemetryDropoutTrip:
         )
 
         # Phase 2: Short Disconnect / Network Jitter (t = 25.0 s -> LEVEL-1 Degraded Hold)
-        d1 = sm.evaluate(telemetry_age_s=25.0, f_downhole_min_kN=1.8, pprl_kN=180.0, proposed_spm=4.5)
+        d1 = sm.evaluate(telemetry_age_s=25.0, f_downhole_min_kN=1.8, pprl_kN=75.0, proposed_spm=4.5)
         assert d1.state == FailsafeLevel.LEVEL_1_DEGRADED
         assert d1.control_enabled is True
         ledger.record_event(
@@ -44,17 +44,17 @@ class TestModbusTelemetryDropoutTrip:
         )
 
         # Phase 3: Major Disconnect (t = 65.0 s -> LEVEL-2 Protective Fallback Trip)
-        d2_trip = sm.evaluate(telemetry_age_s=65.0, f_downhole_min_kN=1.8, pprl_kN=180.0, proposed_spm=4.5, stroke_completed=False)
+        d2_trip = sm.evaluate(telemetry_age_s=65.0, f_downhole_min_kN=1.8, pprl_kN=75.0, proposed_spm=4.5, stroke_completed=False)
         assert d2_trip.state == FailsafeLevel.LEVEL_2_PROTECTIVE
         assert d2_trip.control_enabled is False
 
         # Phase 4: Deterministic 3-Stroke Ramp Down to 2.0 SPM
         # Stroke 1
-        d2_s1 = sm.evaluate(telemetry_age_s=70.0, f_downhole_min_kN=1.8, pprl_kN=180.0, proposed_spm=4.5, stroke_completed=True)
+        d2_s1 = sm.evaluate(telemetry_age_s=70.0, f_downhole_min_kN=1.8, pprl_kN=75.0, proposed_spm=4.5, stroke_completed=True)
         # Stroke 2
-        d2_s2 = sm.evaluate(telemetry_age_s=75.0, f_downhole_min_kN=1.8, pprl_kN=180.0, proposed_spm=4.5, stroke_completed=True)
+        d2_s2 = sm.evaluate(telemetry_age_s=75.0, f_downhole_min_kN=1.8, pprl_kN=75.0, proposed_spm=4.5, stroke_completed=True)
         # Stroke 3: reaches safe baseline 2.0 SPM
-        d2_s3 = sm.evaluate(telemetry_age_s=80.0, f_downhole_min_kN=1.8, pprl_kN=180.0, proposed_spm=4.5, stroke_completed=True)
+        d2_s3 = sm.evaluate(telemetry_age_s=80.0, f_downhole_min_kN=1.8, pprl_kN=75.0, proposed_spm=4.5, stroke_completed=True)
         assert math.isclose(d2_s3.spm_command, 2.0, abs_tol=1e-4)
 
         ledger.record_event(
@@ -66,11 +66,11 @@ class TestModbusTelemetryDropoutTrip:
         # Phase 5: Modbus Cable Reconnected (latency drops to 1.0s)
         # Requires 5 consecutive healthy strokes + operator acknowledgment to restore Level 0
         for stroke in range(4):
-            d_rec = sm.evaluate(telemetry_age_s=1.0, f_downhole_min_kN=1.8, pprl_kN=180.0, proposed_spm=4.5, stroke_completed=True, operator_ack=False)
+            d_rec = sm.evaluate(telemetry_age_s=1.0, f_downhole_min_kN=1.8, pprl_kN=75.0, proposed_spm=4.5, stroke_completed=True, operator_ack=False)
             assert d_rec.state == FailsafeLevel.LEVEL_2_PROTECTIVE  # Not cleared yet without 5 strokes + ACK
 
         # Stroke 5 with operator ACK
-        d_restored = sm.evaluate(telemetry_age_s=1.0, f_downhole_min_kN=1.8, pprl_kN=180.0, proposed_spm=4.5, stroke_completed=True, operator_ack=True)
+        d_restored = sm.evaluate(telemetry_age_s=1.0, f_downhole_min_kN=1.8, pprl_kN=75.0, proposed_spm=4.5, stroke_completed=True, operator_ack=True)
         assert d_restored.state == FailsafeLevel.LEVEL_0_NORMAL
         assert d_restored.control_enabled is True
 

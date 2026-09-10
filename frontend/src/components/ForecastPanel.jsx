@@ -5,7 +5,7 @@ export function ForecastPanel({ forecast12h }) {
   if (!forecast12h || forecast12h.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-500 font-mono text-xs bg-[#111827] rounded border border-[#1e293b]">
-        Generating 12-hour predictive physics trajectory...
+        Generating reduced-order 12-hour model projection...
       </div>
     );
   }
@@ -69,29 +69,33 @@ export function ForecastPanel({ forecast12h }) {
 
   return (
     <div className="flex flex-col gap-3 font-sans">
-      <div className="flex items-center justify-between pb-2 border-b border-slate-200 text-xs font-medium">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-200 text-xs font-medium gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <TrendingUp className="w-4 h-4 text-sky-600" />
           <span className="font-bold text-slate-800 font-mono uppercase tracking-wide">
-            12-Hour Multi-Physics Predictive Horizon
+            12-Hour Reduced-Order Model Projection
           </span>
-          <span className="font-mono text-[10.5px] text-slate-500">Fast-Loop MPC Trajectory</span>
+          <span className="font-mono text-[10.5px] text-slate-500">Advisory governor trajectory</span>
         </div>
         <span className="font-mono text-[11px] text-sky-700 font-medium">24 Steps (&Delta;t = 30 min)</span>
       </div>
 
+      <div className="text-[10.5px] font-mono text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+        Uncalibrated synthetic projection; values are not a field forecast, autonomous control plan, or operating instruction.
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* 1. Formation Temperature Decay */}
-        {renderSparkline('temperature_c', '#0284c7', 'Formation Temperature', '°C')}
+        {renderSparkline('temperature_c', '#0284c7', 'Modeled Formation Temperature', '°C')}
 
         {/* 2. Heavy Crude Viscosity Surge */}
-        {renderSparkline('viscosity_cp', '#d97706', 'Crude Dynamic Viscosity', 'cP', (v) => `${(v / 1000).toFixed(1)}k`)}
+        {renderSparkline('viscosity_cp', '#d97706', 'Modeled Crude Viscosity', 'cP', (v) => `${(v / 1000).toFixed(1)}k`)}
 
         {/* 3. Couette Shear Drag */}
-        {renderSparkline('drag_beta', '#dc2626', 'Couette Shear Drag (β)', 'N·s/m²', (v) => v.toFixed(2))}
+        {renderSparkline('drag_beta', '#dc2626', 'Reduced-Order Drag Coefficient (β)', 'N·s/m²', (v) => v.toFixed(2))}
 
         {/* 4. Advisory MPC Speed Schedule */}
-        {renderSparkline('spm_trajectory', '#059669', 'Advisory Speed Schedule', 'SPM')}
+        {renderSparkline('spm_trajectory', '#059669', 'Model-Recommended Speed Schedule', 'SPM')}
       </div>
     </div>
   );

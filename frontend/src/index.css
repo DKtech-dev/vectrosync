@@ -10,6 +10,16 @@
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [role='tab']:focus-visible,
+  [role='button']:focus-visible {
+    outline: 2px solid #0284c7;
+    outline-offset: 2px;
+  }
 }
 
 /* Industrial Modern Light Mission Control Panel */
@@ -53,19 +63,6 @@
   background: #94a3b8;
 }
 
-/* Compressive Buckling Alert Vibration Animation */
-@keyframes buck-vibe {
-  0% { transform: translateX(0px); }
-  20% { transform: translateX(-3px) rotate(-0.5deg); }
-  40% { transform: translateX(3px) rotate(0.5deg); }
-  60% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
-  100% { transform: translateX(0px); }
-}
-
-.animate-buckling {
-  animation: buck-vibe 0.14s infinite ease-in-out;
-}
 
 /* SCADA Live Pulse */
 @keyframes scada-pulse-red {

@@ -5,13 +5,10 @@ bottom loads and divides by local section area. It is not a recovered nodal
 stress field or a lateral buckling/contact solution.
 """
 
-import numpy as np
-from typing import Tuple, Any, Dict, Optional, List
+from typing import Any
 
-try:
-    import plotly.graph_objects as go
-except ImportError:
-    go = None
+import numpy as np
+import plotly.graph_objects as go
 
 
 def compute_spatiotemporal_stress_matrix(
@@ -20,7 +17,7 @@ def compute_spatiotemporal_stress_matrix(
     dynacard_result: Any,
     spm: float = 3.5,
     is_buckling: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Estimate a 2D axial stress map by interpolating endpoint card loads.
 
@@ -53,21 +50,23 @@ def compute_rod_section_stresses(
     depths_m: np.ndarray,
     node_areas_m2: np.ndarray,
     dynacard_result: Any,
-    stress_matrix_mpa: Optional[np.ndarray] = None,
-) -> Dict[str, Any]:
+    stress_matrix_mpa: np.ndarray | None = None,
+) -> dict[str, Any]:
     """
-    Computes axial stress tensor and section summaries for sections 1, 2, and 3
-    directly from physical wave solver nodal forces.
-    
-    Taper Section Boundaries (Baghewala Well #14):
+    Summarize the interpolated endpoint-load visualization by rod section.
+
+    These are not physical wave-solver nodal forces, a buckling solution, fatigue
+    results, or certified safety margins.
+
+    Synthetic taper-section boundaries:
     - Section 1 (0 to 350 m): 1.0 in rod (A = 5.067e-4 m^2)
     - Section 2 (350 to 750 m): 7/8 in rod (A = 3.879e-4 m^2)
     - Section 3 (750 to 1150 m): 3/4 in rod (A = 2.850e-4 m^2)
 
-    SCADA Mission Control Visual Binding:
-    - Cyan (#06b6d4): Safe positive axial tension > +2.0 kN
-    - Amber (#f59e0b): Caution / moderate tension between +0.50 kN and +2.0 kN
-    - Red (#ef4444): Compressive rod float / buckling hazard < 0.0 kN
+    Visualization binding:
+    - Cyan (#06b6d4): modeled minimum force above +2.0 kN
+    - Amber (#f59e0b): modeled minimum force between 0 and +2.0 kN
+    - Red (#ef4444): modeled compression below 0.0 kN
     """
     if stress_matrix_mpa is None:
         _, _, stress_matrix_mpa = compute_spatiotemporal_stress_matrix(
@@ -113,18 +112,17 @@ def compute_rod_section_stresses(
         max_force = float(np.max(sec_forces_kn))
         mean_force = float(np.mean(sec_forces_kn))
 
-        is_sec_buckling = bool(min_force < 0.0)
+        is_compression_screen = bool(min_force < 0.0)
 
-        # SCADA mission control color mapping
         if min_force < 0.0:
-            color = "#ef4444"  # Red: compressive buckling hazard
-            status = "CRITICAL_BUCKLING"
+            color = "#ef4444"
+            status = "MODELED_COMPRESSION"
         elif min_force < 2.0:
-            color = "#f59e0b"  # Amber: moderate tension caution (+0.5 to +2.0 kN)
-            status = "ELEVATED_RISK"
+            color = "#f59e0b"
+            status = "BELOW_ADVISORY_MARGIN"
         else:
-            color = "#06b6d4"  # Cyan: safe positive tension (> +2.0 kN)
-            status = "NOMINAL_SAFE"
+            color = "#06b6d4"
+            status = "TENSION_SCREEN_MET"
 
         sec_data = {
             "section_index": sec_idx,
@@ -139,7 +137,8 @@ def compute_rod_section_stresses(
             "max_force_kn": round(max_force, 2),
             "mean_force_kn": round(mean_force, 2),
             "color": color,
-            "is_buckling": is_sec_buckling,
+            # Retained for API compatibility; true means modeled compression only.
+            "is_buckling": is_compression_screen,
             "status": status,
         }
 
@@ -147,6 +146,7 @@ def compute_rod_section_stresses(
         section_dict[f"section_{sec_idx}"] = sec_data
 
     min_tens_kn = float(getattr(dynacard_result, "min_downhole_tension_kn", np.min(section_results[2]["min_force_kn"])))
+    # Legacy API naming: this flag indicates modeled compression, not solved buckling.
     is_buckling_active = bool(min_tens_kn < 0.0 or section_results[2]["is_buckling"])
 
     return {

@@ -42,6 +42,9 @@ class TestPydanticIngestionSchemas:
             stroke_length_m=2.54,
             motor_power_kw=45.0,
             tubing_head_temp_c=180.0,
+            confirmed=True,
+            control_valid=True,
+            provenance="[measured]",
         )
         assert pkt.spm == 4.5
         assert pkt.stroke_length_m == 2.54

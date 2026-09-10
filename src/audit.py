@@ -1,11 +1,13 @@
-"""
-Cryptographic SHA-256 Provenance & Audit Ledger (src/audit.py)
-Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
-Model: OIL-BAGHEWALA-EOR-V2
+"""In-memory SHA-256 event chain for application-level tamper evidence.
 
-Implements canonical JSON hashing, genesis initialization, and an in-memory,
-thread-safe tamper-evident event chain. It is not durable, signed, externally
-anchored, or immutable storage.
+The chain is thread-safe but not durable, signed, externally anchored, or proof
+that user-supplied provenance labels are authentic.
+Provenance layering: data objects (see src/adapter.py) may carry the broader
+data-level tag set, including the '[unverified]' default assigned to raw inputs
+before validation. This ledger, however, only certifies events under the strict
+4-tier taxonomy below. Data must be classified as measured, model, synthetic,
+or calibrated before it can enter the chain; 'unverified' data is rejected so
+that no uncertified claim is ever hash-chained.
 """
 
 from dataclasses import dataclass, field
@@ -19,6 +21,9 @@ import time
 import datetime
 import numpy as np
 
+# Canonical 4-tier provenance taxonomy for ledger certification (Requirement R5).
+# Data-level defaults like '[unverified]' (see src/adapter.py) are intentionally
+# excluded: unclassified data must never enter the hash-chained record.
 PROVENANCE_TAGS = {"[measured]", "[model]", "[synthetic]", "[calibrated]"}
 
 

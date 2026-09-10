@@ -1,10 +1,7 @@
-"""
-Data Adaptation & Ingestion Engine (src/adapter.py)
-Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
-Model: OIL-BAGHEWALA-EOR-V2
+"""Data normalization and fail-closed quality gates for the research prototype.
 
-Implements Multi-Unit Engineering Conversion Matrix, Regex Heuristic Auto-Mapping,
-Pydantic Schemas with Range Constraints, Gap Imputation, and Safety Gate Verification.
+Baghewala identifiers are synthetic case-study labels and do not imply operator
+provenance. A provenance string is metadata, not authentication of a data source.
 """
 
 from dataclasses import dataclass, field
@@ -20,6 +17,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ProvenanceTag(str, Enum):
+    UNVERIFIED = "[unverified]"
     MEASURED = "[measured]"
     MODEL = "[model]"
     SYNTHETIC = "[synthetic]"
@@ -361,10 +359,10 @@ class SCADATelemetryPacket(BaseModel):
     casing_head_pressure_bar: Optional[float] = None
     tubing_head_pressure_bar: Optional[float] = None
     water_cut: Optional[float] = 0.35
-    confirmed: Optional[bool] = True
-    control_valid: Optional[bool] = True
-    well_id: str = "OIL-BAGHEWALA-EOR-V2"
-    provenance: str = "[measured]"
+    confirmed: Optional[bool] = False
+    control_valid: Optional[bool] = False
+    well_id: str = "synthetic-baghewala-14"
+    provenance: str = "[unverified]"
 
     @field_validator("surface_position_m", "surface_load_kn")
     def check_min_samples(cls, v):
@@ -379,11 +377,20 @@ class SCADATelemetryPacket(BaseModel):
         return self
 
     def is_control_safe(self) -> bool:
+        """Return whether this packet passed software advisory gates.
+
+        This result is not authorization for actuation and does not authenticate
+        a claimed measured provenance tag.
+        """
+        if self.confirmed is not True or self.control_valid is not True:
+            return False
         if self.spm < 0.5 or self.spm > 6.0:
             return False
         if len(self.surface_position_m) < 10 or len(self.surface_load_kn) < 10:
             return False
-        if any(math.isnan(x) for x in self.surface_position_m) or any(math.isnan(y) for y in self.surface_load_kn):
+        if not all(math.isfinite(x) for x in self.surface_position_m):
+            return False
+        if not all(math.isfinite(y) for y in self.surface_load_kn):
             return False
         return True
 
@@ -398,7 +405,7 @@ class LabPVTSample(BaseModel):
     pressure_bar: float = Field(default=1.0, ge=0.0)
     bubble_point_bar: Optional[float] = 0.0
     gas_oil_ratio_m3_m3: Optional[float] = 0.0
-    provenance: str = "[measured]"
+    provenance: str = "[unverified]"
 
     @property
     def viscosity_pa_s(self) -> float:
@@ -424,19 +431,19 @@ class WellTestRecord(BaseModel):
     gas_rate_mscfd: Optional[float] = 0.0
     spm: Optional[float] = 3.5
     date_iso: Optional[str] = None
-    provenance: str = "[measured]"
+    provenance: str = "[unverified]"
 
 
 class StandardDynoCard(BaseModel):
     card_id: str = "CARD-001"
-    well_id: str = "OIL-BAGHEWALA-EOR-V2"
+    well_id: str = "synthetic-baghewala-14"
     timestamp: Union[datetime.datetime, float] = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
     spm: float = 3.5
     stroke_length_m: float = 2.54
     position_m: List[float]
     load_kn: List[float]
     card_type: str = "surface"
-    provenance: str = "[measured]"
+    provenance: str = "[unverified]"
 
     @field_validator("position_m", "load_kn")
     def validate_144_points(cls, v):
@@ -464,9 +471,9 @@ class StandardDynoCard(BaseModel):
 
 
 class WellConfiguration(BaseModel):
-    well_name: str = "OIL-BAGHEWALA-EOR-V2"
+    well_name: str = "synthetic-baghewala-14"
     asset_attribution: str = (
-        "Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited"
+        "Synthetic Baghewala-inspired research case; no Oil India Limited affiliation or field validation"
     )
     depth_m: float = 1150.0
     reservoir_depth_m: float = 1150.0
@@ -508,6 +515,9 @@ class ParsedDataset:
             spm=float(spm),
             stroke_length_m=float(stroke_length_m),
             tubing_head_temp_c=float(temp),
+            confirmed=True,
+            control_valid=True,
+            provenance="[unverified]",
         )
         return [pkt]
 
@@ -568,7 +578,7 @@ class AdaptiveCSVParser:
 
             if nans.iloc[0] or nans.iloc[-1]:
                 control_valid = False
-                warnings.append(f"Edge missing values detected in channel '{channel}' - autonomous control inhibited.")
+                warnings.append(f"Edge missing values detected in channel '{channel}' - advisory use inhibited.")
 
             gap_lengths = []
             curr_gap = 0
@@ -697,7 +707,7 @@ class DynoCardDataPoint(BaseModel):
     crank_angle_deg: Optional[float] = None
     position_m: float
     load_kn: float
-    provenance: ProvenanceTag = ProvenanceTag.MEASURED
+    provenance: ProvenanceTag = ProvenanceTag.UNVERIFIED
 
 
 class IngestionReport(BaseModel):

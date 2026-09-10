@@ -5,7 +5,7 @@ export function EconomicsWaterfall({ economics }) {
   if (!economics) {
     return (
       <div className="hmi-panel p-4 text-xs text-slate-500 font-mono bg-[#111827] border-[#1e293b]">
-        Computing sector economics...
+        Computing unvalidated planning-case arithmetic...
       </div>
     );
   }
@@ -23,14 +23,14 @@ export function EconomicsWaterfall({ economics }) {
   const items = [
     { label: 'Workover Hypothesis', value: workover_avoidance_cr_inr, sub: `${assumptions.baseline_failures_per_well_year ?? '—'} → ${assumptions.residual_failures_per_well_year ?? '—'} failures/well-year`, barColor: 'bg-emerald-500' },
     { label: 'Energy Hypothesis', value: power_efficiency_cr_inr, sub: `${assumptions.energy_saved_kwh_well_day ?? '—'} kWh/well-day`, barColor: 'bg-cyan-500' },
-    { label: 'Deferment Recapture', value: oil_uplift_cr_inr, sub: `${assumptions.avoided_downtime_days_per_well_year ?? '—'} days × ${assumptions.deferred_oil_rate_bopd ?? '—'} BOPD`, barColor: 'bg-blue-500' },
+    { label: 'Deferment Hypothesis', value: oil_uplift_cr_inr, sub: `${assumptions.avoided_downtime_days_per_well_year ?? '—'} days × ${assumptions.deferred_oil_rate_bopd ?? '—'} BOPD`, barColor: 'bg-blue-500' },
     { label: 'Base Net Hypothesis', value: total_annual_value_cr_inr, sub: `${well_count}-well planning case; unvalidated`, total: true, barColor: 'bg-gradient-to-r from-cyan-400 to-emerald-400' },
   ];
 
   return (
     <div className="hmi-panel p-4 flex flex-col justify-between bg-white border border-slate-200 rounded-lg shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-slate-200 mb-3 gap-2">
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-emerald-600" />
           <span className="text-xs font-mono font-bold text-slate-800 uppercase tracking-wide">
@@ -39,12 +39,12 @@ export function EconomicsWaterfall({ economics }) {
         </div>
         <div className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 border border-emerald-300 rounded-md tabular-nums flex items-center gap-1 shadow-xs">
           <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-          <span>₹{total_annual_value_cr_inr.toFixed(2)} Cr / Year Base Case</span>
+          <span>₹{total_annual_value_cr_inr.toFixed(2)} Cr/year assumption</span>
         </div>
       </div>
 
       <div className="text-[10.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-3 font-mono">
-        {evidence_status.replaceAll('_', ' ')} · Replace assumptions with operator-approved evidence before investment decisions.
+        UNVALIDATED COMMERCIAL HYPOTHESIS · {evidence_status.replaceAll('_', ' ')} · Scenario arithmetic, not a forecast, realized benefit, or investment basis.
       </div>
 
       {/* Value Creation Grid */}

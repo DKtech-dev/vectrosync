@@ -74,15 +74,15 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
     <div className="flex flex-col gap-3 font-sans">
       {/* 2D Contour Canvas */}
       <div className="bg-white rounded-lg border border-slate-200 p-3.5 relative shadow-xs">
-        <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 text-xs font-medium">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between pb-2.5 border-b border-slate-200 text-xs font-medium gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Layers className="w-4 h-4 text-sky-600" />
             <span className="font-bold text-slate-800 font-mono uppercase tracking-wide">
-              Spatiotemporal Axial Stress Distribution &mdash; σ(x, θ)
+              Reduced-Order Modeled Axial Stress &mdash; σ(x, θ)
             </span>
             <span className="font-mono text-[10.5px] text-slate-500">116 Nodes &times; 144 Crank Angles</span>
           </div>
-          <div className="flex items-center gap-3 font-mono text-[10.5px]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10.5px]">
             <span className="flex items-center gap-1.5 text-rose-600 font-semibold">
               <span className="w-2.5 h-2.5 rounded-xs bg-rose-600"></span> Compression (&lt;0 MPa)
             </span>
@@ -107,8 +107,12 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
               ref={canvasRef}
               width={520}
               height={280}
+              role="img"
+              aria-label="Synthetic reduced-order axial stress heatmap by modeled depth and crank angle"
               className="w-full h-[280px] rounded-lg border border-slate-300 bg-slate-950"
-            />
+            >
+              Synthetic modeled axial stress heatmap.
+            </canvas>
             <div className="absolute top-[28%] right-2 bg-white/95 border border-sky-300 rounded px-1.5 py-0.5 text-[9px] font-mono text-sky-800 font-bold shadow-xs">
               Taper 1: 1.000" → 0.875" (350 m)
             </div>
@@ -128,6 +132,10 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
         </div>
       </div>
 
+      <div className="text-[10.5px] font-mono text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+        Synthetic reduced-order stress screen; colors are not measured strain, inspection findings, fatigue results, or certified structural limits.
+      </div>
+
       {/* 3-Section Taper Property Table Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs tabular-nums">
         <div className="hmi-panel p-3 bg-white border border-slate-200 rounded-lg shadow-xs">
@@ -139,7 +147,7 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
             <span>Area:</span> <span className="font-semibold text-slate-800">5.067 cm²</span>
           </div>
           <div className="flex justify-between py-1 text-[11px] text-slate-600">
-            <span>Safety factor:</span> <span className="font-semibold text-emerald-700">1.85 (Safe)</span>
+            <span>Fatigue / safety factor:</span> <span className="font-semibold text-slate-600">Not evaluated</span>
           </div>
         </div>
 
@@ -152,7 +160,7 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
             <span>Area:</span> <span className="font-semibold text-slate-800">3.879 cm²</span>
           </div>
           <div className="flex justify-between py-1 text-[11px] text-slate-600">
-            <span>Safety factor:</span> <span className="font-semibold text-emerald-700">1.62 (Safe)</span>
+            <span>Fatigue / safety factor:</span> <span className="font-semibold text-slate-600">Not evaluated</span>
           </div>
         </div>
 
@@ -167,9 +175,9 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
             <span>Area:</span> <span className="font-semibold text-slate-800">2.850 cm²</span>
           </div>
           <div className="flex justify-between py-1 text-[11px] text-slate-600">
-            <span>Safety factor:</span>{' '}
-            <span className={`font-bold ${isBuckling ? 'text-rose-600' : 'text-emerald-700'}`}>
-              {isBuckling ? '0.42 (BUCKLE HAZARD)' : '1.45 (Safe)'}
+            <span>Model screen:</span>{' '}
+            <span className={`font-bold ${isBuckling ? 'text-rose-600' : 'text-sky-700'}`}>
+              {isBuckling ? 'Compression indicator' : 'Tension floor met'}
             </span>
           </div>
         </div>

@@ -29,6 +29,7 @@ rheology:
   max_damping_nu: 3.00
 
 rod_string:
+  material_ultimate_tensile_strength_kn: 314.15  # 1.0 inch Grade D section yield (A * sigma_y)
   total_length_m: 1150.0
   youngs_modulus_pa: 2.07e11
   steel_density_kg_m3: 7850.0

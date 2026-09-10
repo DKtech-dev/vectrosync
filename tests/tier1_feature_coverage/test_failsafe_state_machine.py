@@ -166,7 +166,7 @@ class TestFailsafeStateMachineTransitions:
         decision = sm.evaluate(
             telemetry_age_s=2.5,
             f_downhole_min_kN=1.8,
-            pprl_kN=180.0,
+            pprl_kN=75.0,
             proposed_spm=4.5,
         )
         assert decision.state == FailsafeLevel.LEVEL_0_NORMAL
@@ -180,7 +180,7 @@ class TestFailsafeStateMachineTransitions:
         decision = sm.evaluate(
             telemetry_age_s=25.0,  # 25 seconds telemetry gap
             f_downhole_min_kN=1.5,
-            pprl_kN=180.0,
+            pprl_kN=75.0,
             proposed_spm=4.8,
         )
         assert decision.state == FailsafeLevel.LEVEL_1_DEGRADED
@@ -194,24 +194,24 @@ class TestFailsafeStateMachineTransitions:
         sm.current_spm = 5.0  # Currently running at 5.0 SPM
 
         # Stroke 0: Trip event (telemetry loss = 65s)
-        d0 = sm.evaluate(telemetry_age_s=65.0, f_downhole_min_kN=1.2, pprl_kN=180.0, proposed_spm=5.0, stroke_completed=False)
+        d0 = sm.evaluate(telemetry_age_s=65.0, f_downhole_min_kN=1.2, pprl_kN=75.0, proposed_spm=5.0, stroke_completed=False)
         assert d0.state == FailsafeLevel.LEVEL_2_PROTECTIVE
         assert d0.control_enabled is False
 
         # Stroke 1: First completed stroke -> ramps from 5.0 down to 4.0 SPM (delta = (5.0 - 2.0)/3 = 1.0)
-        d1 = sm.evaluate(telemetry_age_s=70.0, f_downhole_min_kN=1.2, pprl_kN=180.0, proposed_spm=5.0, stroke_completed=True)
+        d1 = sm.evaluate(telemetry_age_s=70.0, f_downhole_min_kN=1.2, pprl_kN=75.0, proposed_spm=5.0, stroke_completed=True)
         assert math.isclose(d1.spm_command, 4.0, abs_tol=1e-4)
 
         # Stroke 2: Second completed stroke -> ramps down to 3.0 SPM
-        d2 = sm.evaluate(telemetry_age_s=75.0, f_downhole_min_kN=1.2, pprl_kN=180.0, proposed_spm=5.0, stroke_completed=True)
+        d2 = sm.evaluate(telemetry_age_s=75.0, f_downhole_min_kN=1.2, pprl_kN=75.0, proposed_spm=5.0, stroke_completed=True)
         assert math.isclose(d2.spm_command, 3.0, abs_tol=1e-4)
 
         # Stroke 3: Third completed stroke -> reaches safe baseline 2.0 SPM
-        d3 = sm.evaluate(telemetry_age_s=80.0, f_downhole_min_kN=1.2, pprl_kN=180.0, proposed_spm=5.0, stroke_completed=True)
+        d3 = sm.evaluate(telemetry_age_s=80.0, f_downhole_min_kN=1.2, pprl_kN=75.0, proposed_spm=5.0, stroke_completed=True)
         assert math.isclose(d3.spm_command, 2.0, abs_tol=1e-4)
 
         # Stroke 4+: Remains locked at 2.0 SPM
-        d4 = sm.evaluate(telemetry_age_s=85.0, f_downhole_min_kN=1.2, pprl_kN=180.0, proposed_spm=5.0, stroke_completed=True)
+        d4 = sm.evaluate(telemetry_age_s=85.0, f_downhole_min_kN=1.2, pprl_kN=75.0, proposed_spm=5.0, stroke_completed=True)
         assert math.isclose(d4.spm_command, 2.0, abs_tol=1e-4)
 
     def test_level_3_trip_on_rod_compression(self):
@@ -220,7 +220,7 @@ class TestFailsafeStateMachineTransitions:
         decision = sm.evaluate(
             telemetry_age_s=1.0,  # Telemetry fresh
             f_downhole_min_kN=-0.8,  # Compression! (Severe floating)
-            pprl_kN=180.0,
+            pprl_kN=75.0,
             proposed_spm=4.5,
         )
         assert decision.state == FailsafeLevel.LEVEL_3_EMERGENCY

@@ -273,6 +273,14 @@ class ConservativeRodWaveSolver:
         self.cfl_ratio = 0.80
         self.dt = self.cfl_ratio * (self.dx / self.c_acoustic)
 
+        # Downhole plunger boundary model
+        self.pump_boundary = PlungerBoundary(
+            PumpBoundaryParameters(
+                plunger_diameter_m=self.d_plunger,
+                depth_m=self.total_length,
+            )
+        )
+
     def _map_mesh_properties(self) -> None:
         self.node_area = np.zeros(self.n_nodes, dtype=np.float64)
         self.node_diameter = np.zeros(self.n_nodes, dtype=np.float64)

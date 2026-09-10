@@ -31,9 +31,10 @@ from pydantic import BaseModel, Field, field_validator
 from src.thermal import ThermalDecayEngine
 from src.rheology import HeavyOilRheology
 from src.rod_conservative import ConservativeRodWaveSolver, DynacardResult
-from src.pump_boundary import PlungerBoundary
+from src.rod_transient import TransientRodWaveSolver
 from src.failsafe import FailsafeStateMachine, SupervisoryFailsafe, FailsafeLevel
 from src.controller import FastMPCController, WellState
+from src.mpc import ConstrainedMPC
 from src.adapter import AdaptiveCSVParser
 from src.audit import AuditLedger
 from src.scenario_runner import ScenarioRunner, ScenarioType, SCENARIO_PRESETS
@@ -79,6 +80,7 @@ thermal_engine = ThermalDecayEngine()
 rheo_engine = HeavyOilRheology()
 wave_solver = ConservativeRodWaveSolver(dx=10.0)
 mpc_controller = FastMPCController()
+failsafe = SupervisoryFailsafe(rod_rating_kN=110.0, min_safe_tension_trip_kn=0.50)
 audit_ledger = AuditLedger(well_id="Baghewala-14")
 websocket_slots = asyncio.Semaphore(int(os.getenv("VECTROSYNC_MAX_WEBSOCKETS", "5")))
 
@@ -87,7 +89,7 @@ websocket_slots = asyncio.Semaphore(int(os.getenv("VECTROSYNC_MAX_WEBSOCKETS", "
 
 class SimulationParams(BaseModel):
     cooling_multiplier: float = Field(default=1.0, ge=0.2, le=5.0)
-    elapsed_days: float = Field(default=12.0, ge=0.0, le=120.0)
+    elapsed_days: float = Field(default=12.0, ge=0.0, le=720.0)
     target_spm: float = Field(default=4.7, ge=0.5, le=8.0)
     water_cut: float = Field(default=0.30, ge=0.0, le=1.0)
     steam_quality: float = Field(default=0.75, ge=0.1, le=1.0)
@@ -96,6 +98,8 @@ class SimulationParams(BaseModel):
     mpc_enabled: bool = Field(default=True)
     modbus_severed: bool = Field(default=False)
     scenario_override: Optional[str] = Field(default=None)
+    solver_type: str = Field(default="surrogate", pattern="^(surrogate|transient)$")
+    mpc_solver_mode: str = Field(default="surrogate", pattern="^(surrogate|optimization)$")
 
     @field_validator("scenario_override")
     @classmethod
@@ -168,6 +172,7 @@ class StressTensorData(BaseModel):
 
 class SimulationResponse(BaseModel):
     status: str
+    solver_type: str = "surrogate"
     control_authority: str
     advisory_command_spm: float
     model_status: Dict[str, Any]
@@ -197,10 +202,17 @@ class SimulationResponse(BaseModel):
 
 def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
     """Execute one deterministic, synthetic advisory-model pass."""
-    local_wave_solver = ConservativeRodWaveSolver(
-        dx=10.0,
-        surface_stroke_m=params.stroke_length_m,
-    )
+    is_transient = (params.solver_type == "transient")
+    if is_transient:
+        local_wave_solver = TransientRodWaveSolver(
+            dx=15.0,
+            surface_stroke_m=params.stroke_length_m,
+        )
+    else:
+        local_wave_solver = ConservativeRodWaveSolver(
+            dx=10.0,
+            surface_stroke_m=params.stroke_length_m,
+        )
     local_failsafe = SupervisoryFailsafe(
         rod_rating_kN=110.0,
         min_safe_tension_trip_kn=0.50,
@@ -216,18 +228,14 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
 
     preset = ScenarioRunner.get_preset(scenario_type)
     
-    # 2. Compute Reservoir Thermal State
-    if scenario_type in (ScenarioType.SCENARIO_A_BASELINE_FAILURE, ScenarioType.SCENARIO_B_COUPLED_TWIN):
-        t_res_c = 66.0
-        t_res_k = t_res_c + 273.15
-    else:
-        t_res_c, _ = thermal_engine.predict_temperature(
-            params.elapsed_days,
-            time_unit="days",
-            cooling_multiplier=params.cooling_multiplier,
-        )
-        t_res_c = float(t_res_c)
-        t_res_k = t_res_c + 273.15
+    # 2. Compute Reservoir Thermal State (strictly physical, no synthetic overrides)
+    t_res_c, _ = thermal_engine.predict_temperature(
+        params.elapsed_days,
+        time_unit="days",
+        cooling_multiplier=params.cooling_multiplier,
+    )
+    t_res_c = float(t_res_c)
+    t_res_k = t_res_c + 273.15
 
     # 3. Compute Crude Rheology & Couette Drag
     mu_mix_pas = float(rheo_engine.mixture_viscosity(t_res_k, fw=params.water_cut))
@@ -286,21 +294,40 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
         else proposed_spm
     )
 
-    # 6. Generate reduced-order surface and downhole card estimates.
-    twin_card = local_wave_solver.simulate_card(
-        spm=effective_spm,
-        temp_c=t_res_c,
-        water_cut=params.water_cut,
-        sand_wear=params.plunger_sand_wear,
-        n_strokes=3,
-    )
-    baseline_card = local_wave_solver.simulate_card(
-        spm=params.target_spm,
-        temp_c=48.0,
-        water_cut=params.water_cut,
-        sand_wear=params.plunger_sand_wear,
-        n_strokes=3,
-    )
+    # 6. Generate surface and downhole card estimates (transient wave solver vs surrogate)
+    t_wave_start = time.perf_counter()
+    if is_transient:
+        twin_card = local_wave_solver.simulate_transient(
+            spm=effective_spm,
+            temp_c=t_res_c,
+            water_cut=params.water_cut,
+            sand_wear=params.plunger_sand_wear,
+            n_strokes=2,
+        )
+        wave_solve_time_ms = float(round((time.perf_counter() - t_wave_start) * 1000.0, 2))
+        solve_time_ms = wave_solve_time_ms
+        baseline_card = local_wave_solver.simulate_transient(
+            spm=params.target_spm,
+            temp_c=48.0,
+            water_cut=params.water_cut,
+            sand_wear=params.plunger_sand_wear,
+            n_strokes=2,
+        )
+    else:
+        twin_card = local_wave_solver.simulate_card(
+            spm=effective_spm,
+            temp_c=t_res_c,
+            water_cut=params.water_cut,
+            sand_wear=params.plunger_sand_wear,
+            n_strokes=3,
+        )
+        baseline_card = local_wave_solver.simulate_card(
+            spm=params.target_spm,
+            temp_c=48.0,
+            water_cut=params.water_cut,
+            sand_wear=params.plunger_sand_wear,
+            n_strokes=3,
+        )
 
     actual_min_tension = float(twin_card.min_downhole_tension_kn)
     is_buckling_active = bool(twin_card.is_floating or actual_min_tension < 0.0)
@@ -382,12 +409,13 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
 
     return {
         "status": "success",
+        "solver_type": params.solver_type,
         "control_authority": "advisory_only_not_for_direct_actuation",
         "advisory_command_spm": round(float(advisory_command_spm), 2),
         "model_status": {
             "data_provenance": "synthetic",
-            "rod_model": "reduced_order_algebraic_card_estimator",
-            "controller": "constraint_aware_reduced_order_governor",
+            "rod_model": "transient_elastodynamic_wave_pde" if is_transient else "reduced_order_algebraic_card_estimator",
+            "controller": "nonlinear_constrained_slsqp_mpc" if params.mpc_solver_mode == "optimization" else "constraint_aware_reduced_order_governor",
             "controller_status": mpc_plan.solver_status,
             "field_validated": False,
             "hil_validated": False,
@@ -545,11 +573,26 @@ async def ingest_csv(file: Optional[UploadFile] = File(None), csv_text: Optional
             raise HTTPException(status_code=400, detail="No CSV file or text content provided")
 
         parsed = AdaptiveCSVParser.parse_content(content)
+        # The tier records the data's claimed origin class (operator-furnished
+        # surface telemetry); the payload flags record that no cryptographic
+        # source authentication was performed. Tag != trust: the chain proves
+        # the event was recorded, not that the source is authentic.
         audit_ledger.record_event(
             event_type="CSV_INGESTED",
             provenance_tag="[measured]",
-            payload={"row_count": parsed.row_count},
+            payload={
+                "row_count": parsed.row_count,
+                "advisory_quality_gate_passed": parsed.control_valid,
+                "source_authenticity_established": False,
+            },
         )
+        # The parser preserves NaN values for forensic fidelity when a channel
+        # fails a quality gate (e.g. a dropout longer than the imputation bound).
+        # Those values are not JSON-compliant, so they are serialized as null;
+        # control validity is already inhibited by the gate that produced them.
+        def _json_safe(values):
+            return [float(v) if np.isfinite(v) else None for v in values]
+
         return {
             "status": "success",
             "row_count": parsed.row_count,
@@ -564,7 +607,10 @@ async def ingest_csv(file: Optional[UploadFile] = File(None), csv_text: Optional
                 }
                 for header, mapping in parsed.mapping_report.items()
             },
-            "column_data": parsed.column_data,
+            "column_data": {
+                channel: _json_safe(values)
+                for channel, values in parsed.column_data.items()
+            },
         }
     except HTTPException:
         raise

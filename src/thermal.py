@@ -313,6 +313,74 @@ class ThermalDecayEngine:
             return float(t_cal_c[0]), float(t_avg_c[0])
         return t_cal_c, t_avg_c
 
+    def predict_temperature_with_uncertainty(
+        self,
+        t_days_or_hours: Union[float, np.ndarray],
+        time_unit: str = "hours",
+        cooling_multiplier: float = 1.0,
+    ) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]]:
+        """
+        Returns calibrated temperature, average temperature, and propagated standard deviation sigma_T (°C).
+        sigma_T models the epistemic uncertainty in subsurface heat conduction and convective loss.
+        """
+        t_cal_c, t_avg_c = self.predict_temperature(
+            t_days_or_hours, time_unit=time_unit, cooling_multiplier=cooling_multiplier
+        )
+        is_scalar = np.isscalar(t_days_or_hours)
+        t_arr = np.atleast_1d(np.asarray(t_days_or_hours, dtype=np.float64))
+        t_days = t_arr if time_unit.lower() in ("days", "day", "d") else t_arr / 24.0
+
+        # Epistemic standard deviation: 2.0°C initial sensor noise expanding up to 5.0°C under cooling
+        sigma_base = 2.0
+        sigma_max = 5.0
+        tau_uncertainty = 180.0  # days
+        sigma_t = sigma_base + (sigma_max - sigma_base) * (1.0 - np.exp(-t_days / tau_uncertainty))
+
+        if is_scalar:
+            return float(t_cal_c), float(t_avg_c), float(sigma_t[0])
+        return t_cal_c, t_avg_c, sigma_t
+
+    def fit_rise_multiplier(
+        self,
+        t_days: np.ndarray,
+        t_meas_c: np.ndarray,
+        reg_lambda: float = 0.05,
+    ) -> Tuple[float, float]:
+        """
+        Calibrates asymptotic rise multiplier k_ref via regularized least squares on temperature rise (T - TR):
+            Delta T_meas ~ k_hat(t) * (T_avg(t) - TR)
+        Returns optimal k_ref and residual standard error (variance).
+        """
+        t_days_arr = np.asarray(t_days, dtype=np.float64)
+        t_meas_arr = np.asarray(t_meas_c, dtype=np.float64)
+
+        if len(t_days_arr) != len(t_meas_arr) or len(t_days_arr) == 0:
+            raise ValueError("Input arrays must have non-zero matching lengths.")
+
+        # Compute uncalibrated average temperatures
+        tau_sec = t_days_arr * 86400.0
+        t_avg_k = self.temperature_avg(tau_sec)
+        delta_t_model = np.maximum(t_avg_k - self.params.TR, 1e-4)
+        delta_t_meas = np.maximum((t_meas_arr + 273.15) - self.params.TR, 0.0)
+
+        # Regress k_ref: k_hat = k_ref + (1 - k_ref) * (t_ref / (t_ref + t))
+        # k_hat = 1.0 - (1.0 - k_ref) * (t / (t_ref + t))
+        phi = t_days_arr / (self.params.t_ref + t_days_arr)
+        # delta_t_meas / delta_t_model = 1.0 - (1.0 - k_ref) * phi
+        y = 1.0 - (delta_t_meas / delta_t_model)
+        # Estimate theta = (1.0 - k_ref) with ridge regularization around default prior (1 - 0.7042 = 0.2958)
+        prior_theta = 1.0 - 0.7042
+        theta_hat = (np.sum(phi * y) + reg_lambda * prior_theta) / (np.sum(phi ** 2) + reg_lambda)
+        k_ref_opt = float(np.clip(1.0 - theta_hat, 0.30, 0.99))
+
+        # Update params
+        self.params.k_ref = k_ref_opt
+
+        # Residual standard deviation
+        pred_c, _ = self.predict_temperature(t_days_arr, time_unit="days")
+        residual_var = float(np.mean((t_meas_arr - pred_c) ** 2))
+        return k_ref_opt, residual_var
+
     def predict_decay_trajectory(
         self,
         times_days: Union[List[float], np.ndarray],

@@ -1,38 +1,35 @@
-"""
-VectroSync Enterprise Industrial Twin — Interactive Simulator (app.py)
-Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
-Model: OIL-BAGHEWALA-EOR-V2
+"""Streamlit cockpit for the synthetic, advisory-only VectroSync prototype.
 
-Professional industrial application shell. All physics computation
-delegated to clean-room engine modules in src/.
+Baghewala and operator references are contextual case-study labels only; this
+repository contains no operator affiliation, field data, or deployment evidence.
 """
 
 import time
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import streamlit as st
 import streamlit.components.v1 as components
+from plotly.subplots import make_subplots
 
-from src.thermal import ThermalDecayEngine, ThermalAssetParameters
-from src.rheology import HeavyOilRheology, RheologyParameters
-from src.rod_conservative import ConservativeRodWaveSolver, DynacardResult
-from src.pump_boundary import PlungerBoundary
-from src.failsafe import FailsafeStateMachine, SupervisoryFailsafe, FailsafeLevel
-from src.controller import FastMPCController, MPCConfig, WellState
-from src.adapter import AdaptiveCSVParser, UnitConverter, ColumnMapper
-from src.audit import AuditLedger
-
+from src.adapter import AdaptiveCSVParser
 from src.animated_well import render_animated_well_html
-from src.why_engine import WhyEngine, DiagnosticReasoning
-from src.scenario_runner import ScenarioRunner, ScenarioType, SCENARIO_PRESETS
+from src.audit import AuditLedger
+from src.controller import FastMPCController, WellState
 from src.depth_stress import compute_spatiotemporal_stress_matrix, create_depth_stress_heatmap
+from src.economics import sensitivity_analysis
+from src.failsafe import FailsafeLevel, SupervisoryFailsafe
+from src.rheology import HeavyOilRheology
+from src.rod_conservative import ConservativeRodWaveSolver
+from src.scenario_runner import ScenarioRunner, ScenarioType
+from src.thermal import ThermalDecayEngine
+from src.why_engine import WhyEngine
 
 # ─── Page Config ───────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="VectroSync Enterprise Industrial Twin | Baghewala Well #14",
+    page_title="VectroSync Advisory Research Prototype",
     page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -336,17 +333,22 @@ st.markdown(f"""
 <div class="app-header">
     <div>
         <div class="title">
-            VECTROSYNC ENTERPRISE INDUSTRIAL TWIN
-            <span class="tag">OIL-BAGHEWALA-EOR-V2</span>
-            <span class="tag">WELL #14</span>
+            VECTROSYNC ADVISORY RESEARCH PROTOTYPE
+            <span class="tag">SYNTHETIC CASE</span>
+            <span class="tag">NO ACTUATION</span>
         </div>
-        <div class="subtitle">Oil India Limited &middot; Baghewala Field &middot; Jodhpur Sandstone at 1,150 m TVD &middot; CSS + SRP Optimization</div>
+        <div class="subtitle">Baghewala-inspired CSS + SRP case study &middot; no Oil India Limited affiliation, field data, or validation</div>
     </div>
     <div>
         {_state_badge()}
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+st.warning(
+    "Research prototype · synthetic model output · advisory only. "
+    "Not a PLC/SIS, not field validated, and not authorized for direct actuation."
+)
 
 
 # ─── Scenario Toolbar ─────────────────────────────────────────
@@ -356,7 +358,7 @@ st.markdown('<div class="scenario-bar"><div class="scenario-label">Scenario Cont
 sc1, sc2, sc3, sc4 = st.columns(4)
 
 with sc1:
-    if st.button("Baseline Failure (A)", width='stretch', help="Cooldown to 50 C, 4.7 SPM fixed, compressive buckling"):
+    if st.button("Compression Screen (A)", width='stretch', help="Synthetic cooldown case; reduced-order model returns negative minimum tension"):
         st.session_state.active_scenario = ScenarioType.SCENARIO_A_BASELINE_FAILURE
         st.session_state.modbus_severed = False
         st.session_state.failsafe.reset()
@@ -364,7 +366,7 @@ with sc1:
         st.rerun()
 
 with sc2:
-    if st.button("Coupled Twin (B)", width='stretch', help="MPC intervention, throttle to 2.8 SPM, +0.65 kN maintained"):
+    if st.button("Advisory Governor (B)", width='stretch', help="Synthetic constraint-aware speed recommendation; no actuator command"):
         st.session_state.active_scenario = ScenarioType.SCENARIO_B_COUPLED_TWIN
         st.session_state.modbus_severed = False
         st.session_state.failsafe.reset()
@@ -372,18 +374,18 @@ with sc2:
         st.rerun()
 
 with sc3:
-    if st.button("Telemetry Dropout (C)", width='stretch', help="Modbus cable severed, failsafe ramp to 2.0 SPM"):
+    if st.button("Telemetry Timeout (C)", width='stretch', help="Simulated stale-data condition with a 2.0 SPM protective recommendation"):
         st.session_state.active_scenario = ScenarioType.SCENARIO_C_TELEMETRY_SEVERED
         st.session_state.modbus_severed = True
         st.session_state.audit_ledger.record_event(event_type="SCENARIO_TRIGGERED", provenance_tag="[synthetic]", payload={"scenario": "C"})
         st.rerun()
 
 with sc4:
-    if st.button("Reset to Nominal", width='stretch', help="Restore default calibrated state"):
+    if st.button("Reset Synthetic Case", width='stretch', help="Restore default synthetic assumptions"):
         st.session_state.active_scenario = ScenarioType.DEFAULT_OPERATION
         st.session_state.modbus_severed = False
         st.session_state.failsafe.reset()
-        st.session_state.audit_ledger.record_event(event_type="SCENARIO_RESET", provenance_tag="[measured]", payload={"scenario": "DEFAULT"})
+        st.session_state.audit_ledger.record_event(event_type="SCENARIO_RESET", provenance_tag="[synthetic]", payload={"scenario": "DEFAULT"})
         st.rerun()
 
 
@@ -400,7 +402,7 @@ st.sidebar.caption(f"Active: {scenario_cfg.name}")
 with st.sidebar.expander("Thermal & Steam", expanded=False):
     cooling_mult = st.slider("Cooling Rate Multiplier", 0.5, 3.0, float(scenario_cfg.cooling_multiplier), 0.05)
     steam_quality = st.slider("Steam Quality (X)", 0.40, 0.95, float(scenario_cfg.steam_quality), 0.05)
-    elapsed_days = st.slider("CSS Cycle Elapsed (days)", 0.0, 90.0, float(scenario_cfg.elapsed_days), 0.5)
+    elapsed_days = st.slider("CSS Cycle Elapsed (days)", 0.0, 720.0, float(scenario_cfg.elapsed_days), 0.5)
 
 with st.sidebar.expander("Rheology & Fluid", expanded=False):
     water_cut_val = st.slider("Water Cut (fw)", 0.05, 0.85, float(scenario_cfg.water_cut), 0.05)
@@ -414,10 +416,10 @@ st.sidebar.divider()
 is_modbus_cut = scenario_cfg.modbus_severed or st.session_state.modbus_severed
 if is_modbus_cut:
     simulated_telemetry_age = 75.0
-    st.sidebar.error("Modbus Dropout  (latency > 60s)")
+    st.sidebar.error("Simulated telemetry timeout  (> 60s)")
 else:
     simulated_telemetry_age = 1.2
-    st.sidebar.success("Modbus Online  (< 2s)")
+    st.sidebar.success("Synthetic telemetry nominal  (< 2s case)")
 
 
 # ─── Physics Computation Pass ──────────────────────────────────
@@ -538,7 +540,7 @@ with col_analysis:
     with tab_card:
         fig_card = go.Figure()
 
-        # Baseline downhole (uncoupled) from pure physical wave solver
+        # Baseline downhole estimate from the reduced-order algebraic card model.
         fig_card.add_trace(go.Scatter(
             x=twin_card.surface_position_m,
             y=baseline_card.downhole_load_kn,
@@ -558,20 +560,20 @@ with col_analysis:
         fig_card.add_trace(go.Scatter(
             x=twin_card.surface_position_m,
             y=twin_card.downhole_load_kn,
-            name="Coupled Downhole" if not is_buckling_active else "Buckled Downhole",
+            name="Advisory Downhole Estimate" if not is_buckling_active else "Compression-Screen Estimate",
             line=dict(color="#059669" if not is_buckling_active else "#ef4444", width=2.5),
             mode="lines",
         ))
 
         fig_card.add_hline(
             y=0.5, line_dash="dash", line_color="#d97706", line_width=1,
-            annotation_text="+0.5 kN structural limit",
+            annotation_text="+0.5 kN advisory floor",
             annotation_position="bottom right",
             annotation_font=dict(size=9, color="#92400e"),
         )
 
         fig_card.update_layout(
-            title=dict(text="Elastic Dynamometer Card — Baseline vs Coupled Twin", font=dict(size=13, color="#1f2937")),
+            title=dict(text="Reduced-Order Synthetic Cards — Baseline vs Advisory", font=dict(size=13, color="#1f2937")),
             xaxis=dict(title=dict(text="Polished Rod Displacement (m)", font=dict(size=11)), **AXIS_STYLE),
             yaxis=dict(title=dict(text="Axial Load (kN)", font=dict(size=11)), **AXIS_STYLE),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0, font=dict(size=9, color="#6b7280")),
@@ -584,9 +586,9 @@ with col_analysis:
         # Telemetry readout
         callout_cls = "callout-ok" if not is_buckling_active else "callout-err"
         callout_msg = (
-            "Tension preserved — string within fatigue endurance envelope"
+            "Implemented tension screen satisfied at this synthetic point; fatigue life is not evaluated"
             if not is_buckling_active
-            else f"Compressive buckling active — rod float on downstroke (F_min = {actual_min_tension:.2f} kN)"
+            else f"Modeled compression indicator (F_min = {actual_min_tension:.2f} kN); buckling/contact are not resolved"
         )
 
         st.markdown(f"""
@@ -596,7 +598,7 @@ with col_analysis:
             <div class="data-row"><span class="data-key">Downhole Min</span>
                 <span class="data-val" style="color:{'#059669' if actual_min_tension >= 0.5 else '#dc2626'}">{actual_min_tension:+.2f} kN</span>
             </div>
-            <div class="data-row"><span class="data-key">Net Oil</span><span class="data-val">{twin_card.oil_production_bopd:.1f} BOPD</span></div>
+            <div class="data-row"><span class="data-key">Synthetic Oil Estimate</span><span class="data-val">{twin_card.oil_production_bopd:.1f} BOPD</span></div>
             <div class="{callout_cls}">{callout_msg}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -623,7 +625,7 @@ with col_analysis:
                 <div class="data-row"><span class="data-key">Depth</span><span class="data-val">0 – 350 m</span></div>
                 <div class="data-row"><span class="data-key">Area</span><span class="data-val">5.067 cm2</span></div>
                 <div class="data-row"><span class="data-key">Mass</span><span class="data-val">3.98 kg/m</span></div>
-                <div class="data-row"><span class="data-key">SF</span><span class="data-val">1.85</span></div>
+                <div class="data-row"><span class="data-key">Fatigue / SF</span><span class="data-val">Not evaluated</span></div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -634,20 +636,20 @@ with col_analysis:
                 <div class="data-row"><span class="data-key">Depth</span><span class="data-val">350 – 750 m</span></div>
                 <div class="data-row"><span class="data-key">Area</span><span class="data-val">3.879 cm2</span></div>
                 <div class="data-row"><span class="data-key">Mass</span><span class="data-val">3.05 kg/m</span></div>
-                <div class="data-row"><span class="data-key">SF</span><span class="data-val">1.62</span></div>
+                <div class="data-row"><span class="data-key">Fatigue / SF</span><span class="data-val">Not evaluated</span></div>
             </div>
             """, unsafe_allow_html=True)
 
         with tc3:
-            sf3 = "0.72 (BUCKLE)" if is_buckling_active else "1.45"
-            sf3_color = "#dc2626" if is_buckling_active else "#059669"
+            section3_screen = "Compression indicator" if is_buckling_active else "No low-tension alert"
+            section3_color = "#dc2626" if is_buckling_active else "#059669"
             st.markdown(f"""
             <div class="taper-card">
                 <h4>Section 3 — 3/4 in.</h4>
                 <div class="data-row"><span class="data-key">Depth</span><span class="data-val">750 – 1,150 m</span></div>
                 <div class="data-row"><span class="data-key">Area</span><span class="data-val">2.850 cm2</span></div>
                 <div class="data-row"><span class="data-key">Mass</span><span class="data-val">2.24 kg/m</span></div>
-                <div class="data-row"><span class="data-key">SF</span><span class="data-val" style="color:{sf3_color}">{sf3}</span></div>
+                <div class="data-row"><span class="data-key">Model Screen</span><span class="data-val" style="color:{section3_color}">{section3_screen}</span></div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -664,7 +666,7 @@ with col_analysis:
                 "Formation Temperature (C)",
                 "Crude Viscosity (cP)",
                 "Couette Shear Drag (N.s/m2)",
-                "MPC Speed Modulation (SPM)",
+                "Advisory Speed Trajectory (SPM)",
             ),
         )
 
@@ -690,13 +692,13 @@ with col_analysis:
     # ── Tab 4: CSV Ingestion ──
     with tab_csv:
         st.markdown('<div class="section-head">Adaptive CSV Ingestion</div>', unsafe_allow_html=True)
-        up_file = st.file_uploader("Upload SCADA / Well Test CSV", type=["csv", "txt"])
-        use_default = st.checkbox("Load sample Baghewala Well #14 telemetry", value=True)
+        up_file = st.file_uploader("Upload untrusted SCADA / well-test CSV", type=["csv", "txt"])
+        use_default = st.checkbox("Load synthetic sample telemetry", value=True)
 
         if up_file is not None:
             csv_str = up_file.getvalue().decode("utf-8")
         elif use_default:
-            csv_str = """# OIL INDIA LIMITED - FIELD SCADA TELEMETRY (BAGHEWALA-14)
+            csv_str = """# SYNTHETIC DEMONSTRATION TELEMETRY - NOT FIELD DATA
 Time_Stamp,POLISHED_ROD_LOAD_KLBS,Stroke_Disp_in,Speed_SPM,BHT_degF
 2026-09-01 10:00:00,12.5,0.0,4.2,176.0
 2026-09-01 10:00:01,18.4,15.2,4.2,176.0
@@ -711,7 +713,12 @@ Time_Stamp,POLISHED_ROD_LOAD_KLBS,Stroke_Disp_in,Speed_SPM,BHT_degF
         if csv_str is not None:
             try:
                 parsed = AdaptiveCSVParser.parse_content(csv_str)
-                st.success(f"Ingested {parsed.row_count} rows. Bounded gaps linearly imputed.")
+                if parsed.control_valid:
+                    st.success(f"Advisory quality gate passed for {parsed.row_count} rows; source authenticity is not established.")
+                else:
+                    st.warning(f"Advisory use inhibited for {parsed.row_count} rows.")
+                for warning in parsed.warnings:
+                    st.caption(f"• {warning}")
                 df_conv = pd.DataFrame(parsed.column_data)
                 st.dataframe(df_conv.head(6), width='stretch')
             except Exception as ex:
@@ -722,7 +729,7 @@ Time_Stamp,POLISHED_ROD_LOAD_KLBS,Stroke_Disp_in,Speed_SPM,BHT_degF
         st.markdown('<div class="section-head">SHA-256 Provenance Audit Chain</div>', unsafe_allow_html=True)
         is_tamper_free, err = st.session_state.audit_ledger.verify_chain()
         if is_tamper_free:
-            st.success("Ledger integrity verified (0 tamper detections)")
+            st.success("In-memory hash-chain continuity verified; source authenticity and durability are not established")
         else:
             st.error(f"Ledger breach: {err}")
 
@@ -763,40 +770,47 @@ with col_reason:
         <div class="reason-text">{diag.trigger_event}</div>
         <div class="reason-section">2. Forward Horizon Assessment</div>
         <div class="reason-text">{diag.forward_horizon}</div>
-        <div class="reason-section">3. Dispatched Action</div>
+        <div class="reason-section">3. Recommended Advisory</div>
         <div class="reason-text">{diag.dispatched_action}</div>
-        <div class="reason-section">4. Structural Outcome</div>
+        <div class="reason-section">4. Modeled Assessment</div>
         <div class="reason-text">{diag.structural_outcome}</div>
     </div>
     """, unsafe_allow_html=True)
 
 # ── Economics ──
 with col_econ:
-    st.markdown('<div class="section-head">Asset Economics — 23-Well Field</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-head">Commercial Sensitivity — Synthetic 23-Well Planning Case</div>',
+        unsafe_allow_html=True,
+    )
 
-    wells = 23
-    oil_usd = 75.0
-    fx = 83.5
-    repair_inr = 850000.0
-    base_fail = 2.4
-    twin_fail = 0.35
-    kwh_day = 48.0
-    tariff = 7.5
-    bopd_gain = 4.2
-
-    sav_workover = wells * (base_fail - twin_fail) * repair_inr
-    sav_power = wells * kwh_day * 365 * tariff
-    gain_oil = wells * bopd_gain * 365 * oil_usd * fx
-    total_val = sav_workover + sav_power + gain_oil
+    economics = sensitivity_analysis()
+    base_case = economics["base"]
+    workover_hypothesis = base_case["workover_avoidance_cr_inr"]
+    energy_hypothesis = base_case["power_efficiency_cr_inr"]
+    deferment_hypothesis = base_case["oil_uplift_cr_inr"]
+    platform_cost = base_case["annual_platform_cost_cr_inr"]
+    net_hypothesis = base_case["total_annual_value_cr_inr"]
 
     fig_w = go.Figure(go.Waterfall(
         orientation="v",
-        measure=["relative", "relative", "relative", "total"],
-        x=["Workover Avoidance", "Power Efficiency", "Oil Uplift", "Total Annual Value"],
+        measure=["relative", "relative", "relative", "relative", "total"],
+        x=["Workover Hyp.", "Energy Hyp.", "Deferment Hyp.", "Platform Cost", "Net Hypothesis"],
         textposition="outside",
-        text=[f"Rs {sav_workover / 1e7:.2f} Cr", f"Rs {sav_power / 1e7:.2f} Cr",
-              f"Rs {gain_oil / 1e7:.2f} Cr", f"Rs {total_val / 1e7:.2f} Cr"],
-        y=[sav_workover / 1e7, sav_power / 1e7, gain_oil / 1e7, total_val / 1e7],
+        text=[
+            f"Rs {workover_hypothesis:.2f} Cr",
+            f"Rs {energy_hypothesis:.2f} Cr",
+            f"Rs {deferment_hypothesis:.2f} Cr",
+            f"-Rs {platform_cost:.2f} Cr",
+            f"Rs {net_hypothesis:.2f} Cr",
+        ],
+        y=[
+            workover_hypothesis,
+            energy_hypothesis,
+            deferment_hypothesis,
+            -platform_cost,
+            net_hypothesis,
+        ],
         connector=dict(line=dict(color="#d1d5db")),
         decreasing=dict(marker=dict(color="#ef4444")),
         increasing=dict(marker=dict(color="#059669")),
@@ -805,13 +819,29 @@ with col_econ:
 
     fig_w.update_layout(
         height=300,
-        title=dict(text="Annual Value Creation (Crores INR)", font=dict(size=13, color="#1f2937")),
+        title=dict(text="Unvalidated Annual Value Hypothesis (Crores INR)", font=dict(size=13, color="#1f2937")),
         **PLOT_LAYOUT,
     )
     fig_w.update_xaxes(**AXIS_STYLE, tickfont=dict(size=9))
     fig_w.update_yaxes(**AXIS_STYLE)
     fig_w.update_layout(modebar=dict(remove=["toImage", "lasso2d", "select2d"]))
     st.plotly_chart(fig_w, width='stretch')
+
+    sensitivity_table = pd.DataFrame(
+        {
+            "Case": ["Low", "Base", "High"],
+            "Net hypothesis (Cr INR/year)": [
+                economics["low"]["total_annual_value_cr_inr"],
+                economics["base"]["total_annual_value_cr_inr"],
+                economics["high"]["total_annual_value_cr_inr"],
+            ],
+        }
+    )
+    st.dataframe(sensitivity_table, hide_index=True, width='stretch')
+    st.caption(
+        "Commercial hypothesis only. Failure, energy, deferment, price, FX, and platform-cost assumptions "
+        "require operator/finance approval and a controlled pilot before investment use."
+    )
 
 
 # ─── Footer ────────────────────────────────────────────────────

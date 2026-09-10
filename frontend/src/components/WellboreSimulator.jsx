@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { getApiKey } from '../utils/api';
 
 export function WellboreSimulator({
   spm = 3.5,
@@ -11,14 +12,77 @@ export function WellboreSimulator({
   simSpeed = 1,
   stressHeatmap = null,
   dynacard = null,
+  onWsStatusChange = null,
 }) {
   const [phaseDeg, setPhaseDeg] = useState(0);
   const [inspectedDepth, setInspectedDepth] = useState(950);
   const [showStrata, setShowStrata] = useState(true);
+  const [isWsConnected, setIsWsConnected] = useState(false);
+  const wsRef = useRef(null);
 
-  // Real-time kinematics clock driven by SPM and speed multiplier
+  // WebSocket Live Stream consumer (/ws/live-stream)
   useEffect(() => {
-    if (!isPlaying) return;
+    let ws;
+    let isMounted = true;
+
+    try {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const apiKey = getApiKey();
+      const query = apiKey ? `?api_key=${encodeURIComponent(apiKey)}` : '';
+      const wsUrl = `${protocol}//${window.location.host}/ws/live-stream${query}`;
+      ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        if (isMounted) {
+          setIsWsConnected(true);
+          if (onWsStatusChange) onWsStatusChange(true);
+        }
+      };
+
+      ws.onmessage = (event) => {
+        if (!isMounted || !isPlaying) return;
+        try {
+          const packet = JSON.parse(event.data);
+          if (typeof packet.phase_deg === 'number') {
+            setPhaseDeg(packet.phase_deg);
+          }
+        } catch {
+          // Ignore parse errors on raw stream
+        }
+      };
+
+      ws.onerror = () => {
+        if (isMounted) {
+          setIsWsConnected(false);
+          if (onWsStatusChange) onWsStatusChange(false);
+        }
+      };
+
+      ws.onclose = () => {
+        if (isMounted) {
+          setIsWsConnected(false);
+          if (onWsStatusChange) onWsStatusChange(false);
+        }
+      };
+    } catch {
+      if (isMounted) {
+        setIsWsConnected(false);
+        if (onWsStatusChange) onWsStatusChange(false);
+      }
+    }
+
+    return () => {
+      isMounted = false;
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [isPlaying, onWsStatusChange]);
+
+  // Real-time kinematics clock fallback when WebSocket is offline
+  useEffect(() => {
+    if (!isPlaying || isWsConnected) return;
 
     let animationFrame;
     let lastTime = performance.now();
@@ -33,7 +97,7 @@ export function WellboreSimulator({
 
     animationFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrame);
-  }, [spm, isPlaying, simSpeed]);
+  }, [spm, isPlaying, simSpeed, isWsConnected]);
 
   // Geometric Kinematics
   const phaseRad = (phaseDeg * Math.PI) / 180;
@@ -72,19 +136,15 @@ export function WellboreSimulator({
 
     const forceKn = (stressMpa * 1e6 * areaM2) / 1000;
 
-    // Requirement 5 Color Classification:
-    // sigma > +2.0 kN: Sky/Cyan (#0284c7)
-    // +0.5 to +2.0 kN: Amber (#d97706)
-    // < 0.0 kN: Red (#dc2626) buckling animation
-    // 0.0 to 0.5 kN: Orange protective alert (#ea580c)
+    // Visual screening only: color by the implemented axial-force thresholds.
     let fill = '#0284c7'; // Sky default
     let stroke = '#0369a1';
-    let buckle = false;
+    let compressionAlert = false;
 
     if (forceKn < 0.0 || (isSection3 && (isBuckling || minTensionKn < 0.0))) {
       fill = '#dc2626'; // Red
       stroke = '#991b1b';
-      buckle = isSection3;
+      compressionAlert = isSection3;
     } else if (forceKn < 0.5) {
       fill = '#ea580c'; // Orange
       stroke = '#c2410c';
@@ -101,7 +161,7 @@ export function WellboreSimulator({
       forceKn,
       fill,
       stroke,
-      buckle,
+      compressionAlert,
     };
   };
 
@@ -114,7 +174,6 @@ export function WellboreSimulator({
     let section = 'Section 3: 3/4" Rod';
     let areaCm2 = 2.850;
     let areaM2 = 2.850e-4;
-    const yieldStrengthMpa = 586.0; // API Grade D sucker rod yield strength (586 MPa)
 
     if (depth <= 350) {
       section = 'Section 1: 1.0" Rod';
@@ -138,21 +197,18 @@ export function WellboreSimulator({
 
     const forceKn = (stressMpa * 1e6 * areaM2) / 1000;
 
-    let safetyFactor = 1.0;
-    if (stressMpa < 0 || forceKn < 0) {
-      safetyFactor = 0.42; // Unstable compressive buckling
-    } else if (forceKn < 0.5) {
-      safetyFactor = 0.88; // Anti-float margin violated
-    } else {
-      safetyFactor = Math.min(4.0, Math.max(1.0, yieldStrengthMpa / Math.max(1.0, Math.abs(stressMpa))));
-    }
+    const tensionScreen = forceKn < 0.0
+      ? 'Modeled compression'
+      : forceKn < 0.5
+        ? 'Below advisory floor'
+        : 'Advisory floor met';
 
     return {
       section,
       areaCm2,
       stressMpa,
       forceKn,
-      safetyFactor,
+      tensionScreen,
     };
   };
 
@@ -161,23 +217,35 @@ export function WellboreSimulator({
   return (
     <div className="hmi-panel p-4 flex flex-col h-full bg-white border border-slate-200 rounded-lg shadow-xs">
       {/* Viewport Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 mb-2.5 gap-2">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
           <span className="text-xs font-mono font-bold text-slate-800 uppercase tracking-wide">
-            Subsurface Wellbore Schematic &mdash; 2D Physics Twin
+            Animated Wellbore Schematic &mdash; Reduced-Order Model
           </span>
         </div>
 
         {/* Viewport Info */}
         <div className="flex items-center gap-2 font-mono text-[11px] text-slate-500">
+          {isWsConnected ? (
+            <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              WS STREAM (25Hz)
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 border border-slate-200 text-slate-500">
+              LOCAL KINEMATICS
+            </span>
+          )}
           <button
+            type="button"
+            aria-pressed={showStrata}
             onClick={() => setShowStrata(!showStrata)}
             className={`px-2 py-0.5 rounded text-[10.5px] border transition ${
               showStrata ? 'bg-slate-100 border-slate-300 text-sky-700 font-bold' : 'bg-white border-slate-200 text-slate-400'
             }`}
           >
-            STRATA
+            CASE STRATA
           </button>
           <span>θ = {phaseDeg.toFixed(1)}°</span>
           <span>&middot;</span>
@@ -191,9 +259,13 @@ export function WellboreSimulator({
         <div className="relative w-full h-[520px] flex justify-center">
           <svg
             viewBox="0 0 480 620"
+            role="img"
+            aria-labelledby="wellbore-model-title wellbore-model-desc"
             className="w-full h-full max-w-[480px]"
             xmlns="http://www.w3.org/2000/svg"
           >
+            <title id="wellbore-model-title">Animated synthetic wellbore model</title>
+            <desc id="wellbore-model-desc">Illustrative pumping-unit and three-section rod-string schematic driven by reduced-order model values; not a field visualization.</desc>
             <defs>
               {/* Thermal Steam Plume Gradient */}
               <radialGradient id="scadaThermalPlume" cx="50%" cy="50%" r="50%">
@@ -338,7 +410,7 @@ export function WellboreSimulator({
               <circle cx="240" cy="350" r="4" fill="#ffffff" fillOpacity="0.6" />
 
               {/* Section 3: 3/4" Rod (750 to 1,150 m -> y=390 to 550) */}
-              <g className={sec3.buckle ? 'animate-buckling' : ''}>
+              <g>
                 <rect
                   x="238"
                   y="390"
@@ -346,11 +418,11 @@ export function WellboreSimulator({
                   height="160"
                   fill={sec3.fill}
                   stroke={sec3.stroke}
-                  strokeWidth={sec3.buckle ? '2' : '1'}
+                  strokeWidth={sec3.compressionAlert ? '2' : '1'}
                 />
-                <circle cx="240" cy="430" r="3.5" fill={sec3.buckle ? '#fecaca' : '#ffffff'} fillOpacity="0.7" />
-                <circle cx="240" cy="480" r="3.5" fill={sec3.buckle ? '#fecaca' : '#ffffff'} fillOpacity="0.7" />
-                <circle cx="240" cy="520" r="3.5" fill={sec3.buckle ? '#fecaca' : '#ffffff'} fillOpacity="0.7" />
+                <circle cx="240" cy="430" r="3.5" fill={sec3.compressionAlert ? '#fecaca' : '#ffffff'} fillOpacity="0.7" />
+                <circle cx="240" cy="480" r="3.5" fill={sec3.compressionAlert ? '#fecaca' : '#ffffff'} fillOpacity="0.7" />
+                <circle cx="240" cy="520" r="3.5" fill={sec3.compressionAlert ? '#fecaca' : '#ffffff'} fillOpacity="0.7" />
               </g>
 
               {/* DOWNHOLE PLUNGER PUMP (1,150 m TVD) */}
@@ -393,18 +465,18 @@ export function WellboreSimulator({
               <line x1="270" y1="575" x2="275" y2="575" />
             </g>
 
-            {/* Compressive Buckling Alert Callout */}
-            {(sec3.buckle || isBuckling) && (
+            {/* Reduced-order compression-screen callout */}
+            {(sec3.compressionAlert || isBuckling) && (
               <g transform="translate(65, 430)">
                 <rect x="0" y="0" width="145" height="52" rx="4" fill="#fef2f2" stroke="#dc2626" strokeWidth="1.5" />
                 <text x="8" y="16" className="text-[9.5px] fill-rose-700 font-mono font-bold">
-                  COMPRESSIVE BUCKLING
+                  MODELED COMPRESSION SCREEN
                 </text>
                 <text x="8" y="30" className="text-[8.5px] fill-rose-800 font-mono">
                   F_down = {minTensionKn.toFixed(2)} kN (&lt; 0.0 kN)
                 </text>
                 <text x="8" y="42" className="text-[8px] fill-slate-500 font-mono">
-                  Section 3 float on downstroke
+                  Investigate section 3 assumption
                 </text>
               </g>
             )}
@@ -412,10 +484,11 @@ export function WellboreSimulator({
         </div>
 
         {/* Technical Depth Inspector Tool (Bottom Rail) */}
-        <div className="bg-white border-t border-slate-200 p-2.5 flex items-center justify-between text-xs font-mono">
+        <div className="bg-white border-t border-slate-200 p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
           <div className="flex items-center gap-3">
-            <span className="text-slate-500 font-sans font-medium text-[11px]">Depth node:</span>
+            <label htmlFor="modeled-depth-node" className="text-slate-500 font-sans font-medium text-[11px]">Modeled depth node:</label>
             <select
+              id="modeled-depth-node"
               value={inspectedDepth}
               onChange={(e) => setInspectedDepth(parseInt(e.target.value))}
               className="text-xs font-mono bg-slate-50 border border-slate-300 rounded px-2 py-0.5 text-slate-800 focus:outline-none focus:border-sky-500"
@@ -427,7 +500,7 @@ export function WellboreSimulator({
             </select>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px] tabular-nums">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] tabular-nums">
             <div>
               <span className="text-slate-500">Stress: </span>
               <span className={`font-bold ${insp.stressMpa < 0 ? 'text-rose-600' : 'text-slate-800'}`}>
@@ -443,13 +516,16 @@ export function WellboreSimulator({
               </span>
             </div>
             <div>
-              <span className="text-slate-500">Safety factor: </span>
-              <span className={`font-bold ${insp.safetyFactor < 1.0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                {insp.safetyFactor.toFixed(2)}
+              <span className="text-slate-500">Tension screen: </span>
+              <span className={`font-bold ${insp.forceKn < 0.5 ? 'text-rose-600' : 'text-sky-700'}`}>
+                {insp.tensionScreen}
               </span>
             </div>
           </div>
         </div>
+      </div>
+      <div className="mt-2.5 text-[10.5px] font-mono text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+        Synthetic animated schematic; geometry, strata, stress, and force are model assumptions/outputs, not live downhole observations. Buckling, contact, fatigue, and safety factor are not evaluated.
       </div>
     </div>
   );

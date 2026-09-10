@@ -60,3 +60,5 @@ submission/*_render.html
 .wheels/
 .DS_Store
 .vercel
+.github/
+

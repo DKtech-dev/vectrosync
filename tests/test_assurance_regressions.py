@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.server import app
-from src.adapter import AdaptiveCSVParser
+from src.adapter import AdaptiveCSVParser, SCADATelemetryPacket
 from src.audit import AuditLedger
 from src.controller import FastMPCController, WellState
 from src.economics import ECONOMIC_CASES, evaluate_case, sensitivity_analysis
@@ -47,6 +47,20 @@ def test_empty_audit_chain_is_not_valid() -> None:
     valid, error = ledger.verify_chain()
     assert valid is False
     assert "genesis" in error.lower()
+
+
+def test_unconfirmed_telemetry_defaults_to_advisory_unsafe() -> None:
+    packet = SCADATelemetryPacket(
+        timestamp=0.0,
+        surface_position_m=[0.0] * 10,
+        surface_load_kn=[100.0] * 10,
+        spm=3.5,
+        stroke_length_m=2.54,
+    )
+    assert packet.confirmed is False
+    assert packet.control_valid is False
+    assert packet.provenance == "[unverified]"
+    assert packet.is_control_safe() is False
 
 
 def test_unknown_csv_schema_fails_closed() -> None:

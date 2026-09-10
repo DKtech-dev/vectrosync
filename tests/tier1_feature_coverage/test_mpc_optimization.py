@@ -172,10 +172,10 @@ class TestMPCOptimization:
         assert np.all(diffs <= 0.5 + 1e-6)
 
     def test_mpc_pprl_tensile_rating_safety(self):
-        """Predicted PPRL surface load stays strictly within 90% rod rating limit (282.7 kN)."""
+        """Predicted PPRL surface load stays strictly within 90% rod rating limit (99.0 kN for 110.0 kN unit)."""
         controller = FastMPCController()
         state = WellState(spm_current=4.5, temperature_C=150.0, viscosity_Pas=0.2)
         forecast = list(np.linspace(150.0, 100.0, 24))
 
         result = controller.solve(state, forecast)
-        assert max(result.predicted_pprl_kN) <= 282.7
+        assert max(result.predicted_pprl_kN) <= 99.0 + 1e-5

@@ -32,7 +32,7 @@ export function ParameterDrawer({
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-sky-600" />
             <h3 id="parameter-drawer-title" className="font-sans font-bold text-sm text-slate-900 uppercase tracking-wide">
-              Disturbance Cockpit &mdash; Physics Overrides
+              Synthetic Case Inputs &mdash; Model Assumptions
             </h3>
           </div>
           <button
@@ -48,6 +48,9 @@ export function ParameterDrawer({
 
         {/* Drawer Body */}
         <div className="p-4 overflow-y-auto flex-1 space-y-5 text-xs bg-white">
+          <p className="text-[11px] font-mono leading-relaxed text-amber-900 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+            Changes rerun an unvalidated reduced-order model only. They do not command equipment or alter a live control system.
+          </p>
           {/* Thermal & Steam */}
           <div className="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
             <div className="font-bold text-sky-800 text-[11px] pb-1.5 border-b border-slate-200 uppercase tracking-wider">
@@ -61,6 +64,7 @@ export function ParameterDrawer({
               </div>
               <input
                 type="range"
+                aria-label="Cooling rate multiplier"
                 min="0.5"
                 max="3.0"
                 step="0.05"
@@ -77,6 +81,7 @@ export function ParameterDrawer({
               </div>
               <input
                 type="range"
+                aria-label="Reserved steam quality input"
                 min="0.4"
                 max="0.95"
                 step="0.05"
@@ -95,6 +100,7 @@ export function ParameterDrawer({
               </div>
               <input
                 type="range"
+                aria-label="Synthetic CSS cycle elapsed days"
                 min="0.0"
                 max="60.0"
                 step="0.5"
@@ -118,6 +124,7 @@ export function ParameterDrawer({
               </div>
               <input
                 type="range"
+                aria-label="Water cut assumption"
                 min="0.05"
                 max="0.85"
                 step="0.05"
@@ -134,6 +141,7 @@ export function ParameterDrawer({
               </div>
               <input
                 type="range"
+                aria-label="Plunger sand wear assumption"
                 min="0.0"
                 max="1.0"
                 step="0.05"
@@ -157,6 +165,7 @@ export function ParameterDrawer({
               </div>
               <input
                 type="range"
+                aria-label="Requested pumping speed for the model"
                 min="1.0"
                 max="6.0"
                 step="0.1"
@@ -173,6 +182,7 @@ export function ParameterDrawer({
               </div>
               <input
                 type="range"
+                aria-label="Assumed stroke length"
                 min="1.5"
                 max="3.2"
                 step="0.05"
@@ -195,7 +205,7 @@ export function ParameterDrawer({
               <span className="font-bold text-rose-800 text-xs">Simulate Modbus Cable Severance</span>
             </label>
             <p className="text-[11px] text-rose-700/80 mt-1 pl-6 leading-relaxed">
-              Simulates Modbus-TCP latency &gt; 60s, triggering Level 2 Supervisory protective fallback to 2.0 SPM.
+              Configures a synthetic stale-data case (&gt;60 s) and reports the model's Level 2 fallback recommendation of 2.0 SPM; no bus is connected.
             </p>
           </div>
         </div>
@@ -203,6 +213,7 @@ export function ParameterDrawer({
         {/* Drawer Footer */}
         <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
           <button
+            type="button"
             onClick={onReset}
             disabled={loading}
             className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 transition"
@@ -212,12 +223,13 @@ export function ParameterDrawer({
           </button>
 
           <button
+            type="button"
             onClick={onApply}
             disabled={loading}
             className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
           >
             <Check className="w-3.5 h-3.5" />
-            {loading ? 'Solving Wave PDE...' : 'Apply Simulation'}
+            {loading ? 'Running Reduced-Order Model...' : 'Apply Model Inputs'}
           </button>
         </div>
       </div>

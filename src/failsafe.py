@@ -49,7 +49,7 @@ class FailsafeStateMachine:
 
     def __init__(
         self,
-        rod_rating_kN: float = 314.15,
+        rod_rating_kN: float = 110.0,  # Working rod string / unit capacity (configs/well_baghewala_14.yaml). Material yield: 314.15 kN
         safe_spm: float = 2.0,
         telemetry_sync_normal_sec: float = 10.0,
         telemetry_timeout_degraded_sec: float = 60.0,
@@ -245,13 +245,18 @@ class FailsafeStateMachine:
         min_tension_kn: float,
         simulated_disconnect: bool = False,
         manual_emergency: bool = False,
+        stroke_completed: bool = False,
+        operator_ack: bool = False,
     ) -> Tuple[FailsafeLevel, str, float]:
         if manual_emergency:
             dec = self.trip_manual_emergency()
             return FailsafeLevel(dec.state), dec.alarm_message or "Manual emergency trip", dec.spm_command
 
         if self.is_latched or self.state == FailsafeLevel.LEVEL_3_EMERGENCY:
-            return FailsafeLevel.LEVEL_3_EMERGENCY, "EMERGENCY OVERLOAD: PPRL exceeded rating (latched)", 0.0
+            if operator_ack:
+                self.reset_emergency_trip()
+            else:
+                return FailsafeLevel.LEVEL_3_EMERGENCY, "EMERGENCY OVERLOAD: PPRL exceeded rating (latched)", 0.0
 
         metrics = (current_time, last_telemetry_time, pprl_kn, min_tension_kn)
         if not all(math.isfinite(float(value)) for value in metrics):
@@ -273,15 +278,24 @@ class FailsafeStateMachine:
 
         telemetry_age = 9999.0 if simulated_disconnect else max(0.0, current_time - last_telemetry_time)
 
-        if telemetry_age > self.t_timeout_degraded:
-            self.state = FailsafeLevel.LEVEL_2_PROTECTIVE
-            self.current_spm = self.safe_spm
-            return FailsafeLevel.LEVEL_2_PROTECTIVE, "TELEMETRY TIMEOUT: Stale data > 60s", self.safe_spm
+        if telemetry_age > self.t_timeout_degraded or min_tension_kn < self.min_safe_tension:
+            if self.state != FailsafeLevel.LEVEL_2_PROTECTIVE:
+                self.state = FailsafeLevel.LEVEL_2_PROTECTIVE
+                self.ramp_strokes_remaining = self.fallback_ramp_strokes
+                self.initial_ramp_spm = self.current_spm
+                self.consecutive_normal_strokes = 0
 
-        if min_tension_kn < self.min_safe_tension:
-            self.state = FailsafeLevel.LEVEL_2_PROTECTIVE
-            self.current_spm = self.safe_spm
-            return FailsafeLevel.LEVEL_2_PROTECTIVE, "ROD FLOAT RISK: Downhole tension below safe floor", self.safe_spm
+            if stroke_completed and self.ramp_strokes_remaining > 0:
+                self.ramp_strokes_remaining -= 1
+                step_size = (self.initial_ramp_spm - self.safe_spm) / float(self.fallback_ramp_strokes)
+                self.current_spm = max(self.safe_spm, self.initial_ramp_spm - (self.fallback_ramp_strokes - self.ramp_strokes_remaining) * step_size)
+
+            reason = (
+                "TELEMETRY TIMEOUT: Stale data > 60s"
+                if telemetry_age > self.t_timeout_degraded
+                else "ROD FLOAT RISK: Downhole tension below safe floor"
+            )
+            return FailsafeLevel.LEVEL_2_PROTECTIVE, reason, self.safe_spm
 
         if telemetry_age > self.t_sync_normal:
             self.state = FailsafeLevel.LEVEL_1_DEGRADED
