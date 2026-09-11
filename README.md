@@ -3,7 +3,8 @@
 
 [![Live synthetic demo](https://img.shields.io/badge/Live-synthetic_demo-0ea5e9?style=for-the-badge)](https://vectrosync.vercel.app)
 [![Mirror](https://img.shields.io/badge/Live-mirror-64748b?style=for-the-badge)](https://vectrosync-digital-twin.vercel.app)
-[![Verification](https://img.shields.io/badge/tests-304_passing-16a34a?style=for-the-badge)](#verification)
+[![Verification](https://img.shields.io/badge/tests-315_passing-16a34a?style=for-the-badge)](#verification)
+[![Cinematic Film](https://img.shields.io/badge/Cinematic_Film-60s_1080p-a855f7?style=for-the-badge)](#cinematic-executive-film)
 [![Control authority](https://img.shields.io/badge/control-advisory_only-f59e0b?style=for-the-badge)](#safety-and-evidence-boundary)
 [![Python](https://img.shields.io/badge/Python-3.11_%7C_3.14-3776ab?style=for-the-badge&logo=python&logoColor=white)](#local-setup)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react&logoColor=black)](#operator-console)
@@ -38,16 +39,26 @@ flowchart LR
 1. **Multi-Fidelity Dual Physics Solvers:**
    - **Level 1 (Fast Surrogate):** 144-phase algebraic force-balance surrogate ($\approx 2\text{ ms}$) for rapid horizon forecasting, edge screening, and reachability bounding.
    - **Level 2 (High-Fidelity Transient Wave PDE):** Full 1D elastodynamic wave solver with variable cross-section tapers, harmonic interface area averaging, explicit CFL subcycling ($1.56\text{ ms}$ steps), and coupled non-linear pump valve boundary dynamics ($\approx 120\text{ ms}$).
-2. **Real Constrained Numerical MPC:**
-   - Employs Sequential Least Squares Programming (`scipy.optimize.minimize` SLSQP) over a 24-step horizon.
+2. **Two Genuine AI Systems, Both Reachable Live (see [docs/VERIFICATION.md](docs/VERIFICATION.md)):**
+   - **Chance-constrained nonlinear MPC:** Sequential Least Squares Programming (`scipy.optimize.minimize` SLSQP), 72 decision variables, 96 constraints, over a 24-step horizon, tightened to a 90% one-sided confidence bound. Selected via `mpc_solver_mode: "optimization"`; the default fast path is a backward-reachability governor (not an optimizer) that the API is honest about labeling separately.
+   - **Extended Kalman Filter:** recursive Bayesian estimation of downhole temperature and viscosity from surface measurements, with an analytic Arrhenius Jacobian and Joseph-form covariance update, persisted across requests within the running process.
    - Enforces hard downhole anti-float tension floors ($\ge 0.50\text{ kN}$), Peak Polished Rod Load limits ($\le 99.0\text{ kN}$), and actuator slew rate bounds ($|\Delta \text{SPM}| \le 0.25\text{ SPM/step}$).
    - Employs symmetric quadratic slack variables and automatically falls back to safe degraded modes upon infeasibility.
-3. **Deterministic Shared-Seed A/B Benchmarking:**
+3. **Deterministic Shared-Seed A/B Benchmarking, reachable live via `GET /api/experiment/ab`:**
    - Direct, reproducible comparison under identical latent thermal disturbances and measurement noise.
    - Baseline (fixed 4.7 SPM) experiences 19 severe float events (downhole compression down to $-16.45\text{ kN}$).
    - Coupled Twin holds positive downhole tension ($+1.58$ to $+5.51\text{ kN}$) with zero float incidents.
 4. **Traceable 4-Tier Verification Ladder:**
-   - 304 automated tests covering Method of Manufactured Solutions (MMS), CFL numerical stability, energy conservation, taper interface force continuity, EKF parameter recovery, Modbus dropout, and real-world production campaigns.
+   - 315 automated tests covering Method of Manufactured Solutions (MMS), CFL numerical stability, energy conservation, taper interface force continuity, cross-solver PPRL agreement, EKF parameter recovery, Modbus dropout, and real-world production campaigns.
+
+---
+
+## Cinematic Executive Film
+
+A 60-second high-concept engineering film illustrating the subterranean thermodynamics, the catastrophic compressive rod buckling failure mode, and VectroSync's autonomous closed-loop resolution is available in the repository root:
+
+- **Master Film Deliverable:** [`VectroSync_Cinematic_Movie.mp4`](file:///home/dk/Documents/main/VectroSync_Cinematic_Movie.mp4) (1080p Full HD, 48kHz Stereo Master, 84.5 MB, < 100 MB).
+- **Executive Presentation:** 4-Act narrative arc with custom neural voiceover, multi-layer synthesized soundscape (sub-bass braam impact on rod compression, acoustic sweep on digital twin activation), and real-time SCADA HUD overlays.
 
 ---
 
@@ -190,14 +201,14 @@ stateDiagram-v2
 
 ## 7. Verification & Test Suite
 
-The verification suite contains **304 passing automated tests** structured across four rigorous tiers:
+The verification suite contains **315 passing automated tests** structured across four rigorous tiers:
 
 ```bash
 pytest tests/
 ```
 
 ```text
-============================== 304 passed in 79.79s ==============================
+============================== 315 passed in 74.58s ==============================
 ```
 
 ### Verification Ladder Structure:
@@ -215,10 +226,11 @@ pytest tests/
    - Deterministic shared-seed A/B benchmark validation.
    - Modbus telemetry dropout and 3-stroke graceful ramp-down.
    - Causal thermal decay to fluid drag coupling chain.
-4. **Tier 4: Production Campaign Workloads (Tests 281–304):**
+4. **Tier 4: Production Campaign Workloads:**
    - Multi-day continuous cyclic steam production campaigns.
    - REST API and high-frequency WebSocket stress testing.
    - End-to-end multi-fidelity simulation passes.
+   - Cross-solver PPRL agreement (surrogate vs. transient PDE) and grid-convergence checks; see [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
 ---
 
@@ -234,7 +246,8 @@ Canonical API routes are exposed via FastAPI under the `/api` namespace:
 | `POST` | `/api/simulate` | Execute multi-fidelity simulation (`surrogate` or `transient`) |
 | `POST` | `/api/csv/ingest` | Parse and quality-gate field telemetry files |
 | `GET` | `/api/audit/verify` | Cryptographically verify SHA-256 event chain integrity |
-| `WS` | `/ws/live-stream` | High-frequency (25 Hz) telemetry stream |
+| `GET` | `/api/experiment/ab` | Live, re-seedable deterministic A/B benchmark (uncoupled baseline vs. coupled MPC twin) |
+| `WS` | `/ws/live-stream` | High-frequency (25 Hz) telemetry stream, driven by the most recently computed simulation |
 
 ### Example Multi-Fidelity Simulation Request:
 ```bash
@@ -314,8 +327,8 @@ docker compose up --build
 │   ├── state_estimator.py     # EKF and physics prior state estimators
 │   ├── thermal.py             # Boberg-Lantz thermal decay and uncertainty model
 │   └── generator.py           # Deterministic shared-seed A/B benchmark generator
-├── tests/                     # 304 automated tests (Tiers 1-4)
-├── docs/                      # Model Card, Assurance Case, Commercial Case
+├── tests/                     # 315 automated tests (Tiers 1-4)
+├── docs/                      # Model Card, Assurance Case, Commercial Case, Verification Ledger
 ├── Dockerfile                 # Multi-stage container build
 └── docker-compose.yml         # Container orchestration
 ```

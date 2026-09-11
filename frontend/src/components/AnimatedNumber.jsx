@@ -11,8 +11,16 @@ import { useCountUp } from '../utils/motion';
  */
 export function AnimatedNumber({ value, format = (v) => v.toFixed(1), duration = 350, className = '' }) {
   const animated = useCountUp(value, { duration });
-  const safe = typeof value === 'number' && Number.isFinite(value) ? animated : value;
-  return <span className={`readout ${className}`}>{format(safe)}</span>;
+  const isValid = typeof value === 'number' && Number.isFinite(value);
+  let display = '\u2014';
+  if (isValid) {
+    try {
+      display = format(animated);
+    } catch {
+      display = '\u2014';
+    }
+  }
+  return <span className={`readout ${className}`}>{display}</span>;
 }
 
 export default AnimatedNumber;

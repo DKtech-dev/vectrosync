@@ -61,4 +61,6 @@ submission/*_render.html
 .DS_Store
 .vercel
 .github/
+cinematic_build/
+*.m4a
 

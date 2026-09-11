@@ -29,32 +29,37 @@ export function BasinMap({ currentTempC = 260.0, currentSpm = 4.7 }) {
   const activeWellObj = wells.find((w) => w.id === selectedWell) || wells[0];
 
   return (
-    <div className="flex flex-col gap-3 font-sans">
+    <div className="flex flex-col gap-4 font-sans">
       {/* Basin Map Viewport */}
-      <div className="panel p-4 relative">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between pb-3 border-b border-hairline text-xs font-medium gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Navigation className="w-4 h-4 text-muted" />
-            <span className="section-title">Synthetic Sector Layout &mdash; 23-Well Planning Assumption</span>
-            <span className="text-[10.5px] text-muted">Baghewala-inspired case &middot; not geospatial data</span>
+      <div className="card-nested p-4 relative">
+        <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-3 pb-4 mb-4 border-b border-hairline">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Navigation className="w-4 h-4 text-muted" />
+              <span className="text-[13px] font-semibold text-ink">23-well planning assumption</span>
+            </div>
+            <span className="caption">Baghewala-inspired case &middot; not geospatial data</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
-            <span className="flex items-center gap-1.5 text-interactive font-semibold">
-              <span className="w-2.5 h-2.5 rounded-full bg-interactive"></span> Active synthetic case (W14)
+          {/* Legend: active node reads as interactive, everything else is tertiary */}
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="caption flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-interactive"></span>
+              Active synthetic case (W14)
             </span>
-            <span className="flex items-center gap-1.5 text-muted">
-              <span className="w-2.5 h-2.5 rounded-full bg-faint"></span> Illustrative nodes
+            <span className="caption flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-tertiary"></span>
+              Illustrative nodes
             </span>
           </div>
         </div>
 
-        <div className="mt-3 rounded-md border border-caution/30 bg-caution/10 px-3 py-1.5 text-[10.5px] readout text-caution">
-          Synthetic display only: 18 illustrative nodes are shown. Positions, names, temperatures, speeds, and states are not field inventory or surveyed coordinates; the 23-well figure is a separate planning assumption.
-        </div>
+        <p className="caption mb-4">
+          Synthetic display only: 18 illustrative nodes shown. Positions, names, temperatures, speeds, and states are not field inventory or surveyed coordinates; the 23-well figure is a separate planning assumption.
+        </p>
 
-        <div className="relative pt-3">
-          <svg viewBox="0 0 520 370" role="group" aria-labelledby="synthetic-map-title synthetic-map-desc" className="w-full h-auto bg-surface-2 rounded-lg border border-hairline">
+        <div className="relative">
+          <svg viewBox="0 0 520 370" role="group" aria-labelledby="synthetic-map-title synthetic-map-desc" className="w-full h-auto panel-nested">
             <title id="synthetic-map-title">Synthetic illustrative sector layout</title>
             <desc id="synthetic-map-desc">Eighteen selectable demonstration nodes arranged in a conceptual layout. This is not a real well map.</desc>
             <defs>
@@ -86,7 +91,7 @@ export function BasinMap({ currentTempC = 260.0, currentSpm = 4.7 }) {
             {/* Central Steam Generation Plant (CSGF) */}
             <rect x="225" y="15" width="30" height="18" style={{ fill: 'rgb(var(--bg-surface-1))', stroke: 'rgb(var(--accent-interactive))' }} strokeWidth="1" />
             <text x="240" y="27" className="text-[7.5px] fill-interactive font-mono font-bold" textAnchor="middle">CSGF</text>
-            <text x="260" y="27" className="text-[8px] fill-muted font-mono">Central Steam Plant</text>
+            <text x="260" y="27" className="text-[8px] fill-tertiary font-mono">Central Steam Plant</text>
 
             {/* Field Wells Nodes */}
             {wells.map((well) => {
@@ -97,7 +102,6 @@ export function BasinMap({ currentTempC = 260.0, currentSpm = 4.7 }) {
                 <g
                   key={well.id}
                   transform={`translate(${well.x}, ${well.y})`}
-                  className="cursor-pointer transition-transform hover:scale-125"
                   role="button"
                   tabIndex="0"
                   aria-label={`Select ${well.id}, ${well.status}`}
@@ -109,27 +113,35 @@ export function BasinMap({ currentTempC = 260.0, currentSpm = 4.7 }) {
                     }
                   }}
                 >
-                  {/* Well Marker */}
-                  <circle
-                    cx="0"
-                    cy="0"
-                    r={isActiveTwin ? '7' : isSelected ? '5.5' : '4'}
-                    fill={isActiveTwin ? 'rgb(var(--accent-interactive))' : isSelected ? 'rgb(var(--accent-interactive))' : 'rgb(var(--text-tertiary))'}
-                    stroke="rgb(var(--bg-surface-1))"
-                    strokeWidth="1.5"
-                  />
-
-                  {/* Well Label */}
-                  <text
-                    x="0"
-                    y="13"
-                    className={`text-[8px] font-mono ${
-                      isActiveTwin ? 'fill-interactive font-bold' : isSelected ? 'fill-ink font-bold' : 'fill-faint'
-                    }`}
-                    textAnchor="middle"
+                  {/* Inner group carries the hover scale so it never fights
+                      the outer translate() (CSS transform overrides the SVG
+                      transform attribute on the same element). */}
+                  <g
+                    className="cursor-pointer transition-transform hover:scale-125"
+                    style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                   >
-                    {well.id.replace('Case-', '')}
-                  </text>
+                    {/* Well Marker */}
+                    <circle
+                      cx="0"
+                      cy="0"
+                      r={isActiveTwin ? '7' : isSelected ? '5.5' : '4'}
+                      fill={isActiveTwin ? 'rgb(var(--accent-interactive))' : isSelected ? 'rgb(var(--accent-interactive))' : 'rgb(var(--text-tertiary))'}
+                      stroke="rgb(var(--bg-surface-1))"
+                      strokeWidth="1.5"
+                    />
+
+                    {/* Well Label */}
+                    <text
+                      x="0"
+                      y="13"
+                      className={`text-[8px] font-mono ${
+                        isActiveTwin ? 'fill-interactive font-bold' : isSelected ? 'fill-ink font-bold' : 'fill-tertiary'
+                      }`}
+                      textAnchor="middle"
+                    >
+                      {well.id.replace('Case-', '')}
+                    </text>
+                  </g>
                 </g>
               );
             })}
@@ -137,28 +149,34 @@ export function BasinMap({ currentTempC = 260.0, currentSpm = 4.7 }) {
         </div>
       </div>
 
-      {/* Selected Well Telemetry Inspector */}
-      <div className="panel p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      {/* Selected Well Telemetry Inspector — label -> number -> caption */}
+      <div className="card-nested p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-interactive/10 border border-interactive/30 text-interactive flex items-center justify-center readout font-bold text-xs">
+          <div className="w-8 h-8 rounded-md bg-interactive/10 border border-interactive/30 text-interactive flex items-center justify-center readout text-[11px] font-semibold">
             {activeWellObj.id.replace('Case-W', 'W-')}
           </div>
-          <div>
-            <div className="readout font-bold text-ink">{activeWellObj.id} &middot; illustrative case node</div>
-            <div className="text-[11px] text-muted readout">
-              Model state: <span className="font-semibold text-ink">{activeWellObj.status}</span> &middot; assumed 7&quot; casing / 3-section string
+          <div className="flex flex-col gap-1">
+            <span className="readout text-[13px] font-medium text-ink">{activeWellObj.id}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="chip">
+                <span className="chip-dot" />
+                {activeWellObj.status}
+              </span>
+              <span className="caption">
+                Illustrative case node &middot; assumed 7&quot; casing / 3-section string
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 readout text-[11px]">
-          <div>
-            <span className="text-muted">Modeled temperature: </span>
-            <AnimatedNumber value={activeWellObj.temp} format={(v) => `${v.toFixed(1)}°C`} className="font-bold text-ink" />
+        <div className="flex flex-wrap items-start gap-6">
+          <div className="flex flex-col gap-1">
+            <span className="unit-label text-tertiary">Modeled temp &middot; °C</span>
+            <AnimatedNumber value={activeWellObj.temp} format={(v) => v.toFixed(1)} className="metric-secondary text-ink" />
           </div>
-          <div>
-            <span className="text-muted">Case speed: </span>
-            <AnimatedNumber value={activeWellObj.spm} format={(v) => `${v.toFixed(1)} SPM`} className="font-bold text-ink" />
+          <div className="flex flex-col gap-1">
+            <span className="unit-label text-tertiary">Case speed &middot; SPM</span>
+            <AnimatedNumber value={activeWellObj.spm} format={(v) => v.toFixed(1)} className="metric-secondary text-ink" />
           </div>
         </div>
       </div>

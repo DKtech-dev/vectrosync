@@ -15,9 +15,9 @@ function resolveInitialTheme() {
     } catch {
       /* ignore */
     }
-    if (window.matchMedia?.('(prefers-color-scheme: light)').matches) return 'light';
   }
-  return 'dark';
+  // Light is the product default for this interface.
+  return 'light';
 }
 
 export function ThemeProvider({ children }) {
@@ -29,21 +29,6 @@ export function ThemeProvider({ children }) {
     document.documentElement.style.colorScheme = theme;
   }, [theme]);
 
-  // Follow the OS preference until the user makes an explicit choice.
-  useEffect(() => {
-    if (!window.matchMedia) return undefined;
-    const mql = window.matchMedia('(prefers-color-scheme: light)');
-    const onChange = (event) => {
-      try {
-        if (window.localStorage.getItem(STORAGE_KEY)) return; // user override wins
-      } catch {
-        /* ignore */
-      }
-      setThemeState(event.matches ? 'light' : 'dark');
-    };
-    mql.addEventListener?.('change', onChange);
-    return () => mql.removeEventListener?.('change', onChange);
-  }, []);
 
   const setTheme = useCallback((next) => {
     setThemeState(next);

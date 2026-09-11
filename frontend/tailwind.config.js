@@ -7,36 +7,35 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['JetBrains Mono', 'IBM Plex Mono', 'Fira Code', 'monospace'],
+        sans: ['Plus Jakarta Sans', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'IBM Plex Mono', 'monospace'],
       },
       colors: {
-        // Surfaces
         canvas: 'rgb(var(--bg-canvas) / <alpha-value>)',
         'surface-1': 'rgb(var(--bg-surface-1) / <alpha-value>)',
         'surface-2': 'rgb(var(--bg-surface-2) / <alpha-value>)',
         hairline: 'rgb(var(--border-hairline) / <alpha-value>)',
-        // Text
+
         ink: 'rgb(var(--text-primary) / <alpha-value>)',
         muted: 'rgb(var(--text-secondary) / <alpha-value>)',
         faint: 'rgb(var(--text-tertiary) / <alpha-value>)',
-        // Semantic accents (identical meaning across themes)
+        secondary: 'rgb(var(--text-secondary) / <alpha-value>)',
+        tertiary: 'rgb(var(--text-tertiary) / <alpha-value>)',
+
+        interactive: 'rgb(var(--accent-interactive) / <alpha-value>)',
+        'interactive-soft': 'rgb(var(--accent-interactive-soft) / <alpha-value>)',
         safe: 'rgb(var(--accent-safe) / <alpha-value>)',
         caution: 'rgb(var(--accent-caution) / <alpha-value>)',
         critical: 'rgb(var(--accent-critical) / <alpha-value>)',
-        interactive: 'rgb(var(--accent-interactive) / <alpha-value>)',
-      },
-      spacing: {
-        // Reinforce the 4/8/12/16/24/32 rhythm as named steps.
-        'gap-xs': '4px',
-        'gap-sm': '8px',
-        'gap-md': '12px',
-        'gap-lg': '16px',
-        'gap-xl': '24px',
-        'gap-2xl': '32px',
       },
       borderRadius: {
-        panel: '10px',
+        master: '28px',
+        card: '18px',
+        panel: '18px',
+      },
+      boxShadow: {
+        card: '0 10px 30px -5px rgb(0 0 0 / 0.04), 0 2px 6px -1px rgb(0 0 0 / 0.03)',
+        float: '0 20px 50px -12px rgb(0 0 0 / 0.10), 0 4px 12px -2px rgb(0 0 0 / 0.04)',
       },
     },
   },

@@ -1,0 +1,341 @@
+/* ============================================================================
+   VectroSync landing page -- cinematic hero
+   Adapted from a full-bleed looping-video hero: white canvas, black display
+   type, gray secondary copy, a serif headline with gray-italic emphasis
+   words, and a soft top/bottom white gradient blending the video into the
+   page. Structure and motion timings follow the reference; content and
+   the video asset are VectroSync's own.
+   ========================================================================== */
+
+.vs-landing {
+  --ink: #000000;
+  --muted: #6f6f6f;
+  --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  background: #ffffff;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.vs-landing * {
+  box-sizing: border-box;
+}
+
+/* ---- Video background ------------------------------------------------------ */
+.vs-landing .video-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  background: #ffffff;
+}
+.vs-landing .bg-video,
+.vs-landing .bg-canvas-fallback {
+  position: absolute;
+  top: 300px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 300px);
+  object-fit: cover;
+  pointer-events: none;
+  transition: opacity 0.1s linear;
+}
+.vs-landing .bg-canvas-fallback {
+  opacity: 1;
+}
+.vs-landing .video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, #fff 0%, rgba(255, 255, 255, 0.15) 24%, transparent 46%, transparent 72%, #fff 100%);
+}
+
+/* ---- Page skeleton ----------------------------------------------------------- */
+.vs-landing .page {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.vs-landing .nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(16px, 2.6vh, 24px) clamp(20px, 4vw, 32px);
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  animation: vsl-fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.vs-landing .nav-logo {
+  font-family: var(--font-display);
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.vs-landing .nav-links {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 2.4vw, 30px);
+}
+.vs-landing .nav-links a {
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+.vs-landing .nav-links a.active,
+.vs-landing .nav-links a:hover {
+  color: var(--ink);
+}
+.vs-landing .nav-cta {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 10px 24px;
+  font-size: 14px;
+  background: #000;
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.vs-landing .nav-cta:hover {
+  transform: scale(1.03);
+}
+.vs-landing .nav-burger {
+  display: none;
+}
+
+/* ---- Hero -------------------------------------------------------------------- */
+.vs-landing .hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 clamp(20px, 5vw, 24px) clamp(40px, 8vh, 96px);
+  min-height: 0;
+}
+
+.vs-landing .kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  margin-bottom: clamp(20px, 3vh, 30px);
+  animation: vsl-fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.vs-landing .kicker .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0d9488;
+}
+
+.vs-landing .headline {
+  margin: 0;
+  max-width: 920px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(38px, 8vw, 96px);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  animation: vsl-fade-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.vs-landing .headline em {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.vs-landing .subhead {
+  max-width: 620px;
+  margin: clamp(20px, 3vh, 32px) auto 0;
+  font-size: clamp(15px, 1.4vw, 18px);
+  line-height: 1.6;
+  color: var(--muted);
+  animation: vsl-fade-rise-delay 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vs-landing .hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: clamp(28px, 4vh, 44px);
+  border-radius: 999px;
+  padding: clamp(15px, 2vh, 19px) clamp(38px, 4vw, 52px);
+  font-size: 16px;
+  font-weight: 500;
+  background: #000;
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+  animation: vsl-fade-rise-delay-2 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.vs-landing .hero-cta:hover {
+  transform: scale(1.03);
+}
+
+/* ---- Proof strip (adapted from the reference's trust row) -------------------- */
+.vs-landing .proof-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(20px, 4vw, 48px);
+  margin-top: clamp(30px, 5vh, 56px);
+  padding-top: clamp(20px, 3vh, 28px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  width: min(100%, 720px);
+  animation: vsl-fade-rise-delay-2 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.vs-landing .proof-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.vs-landing .proof-value {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.6vw, 30px);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.vs-landing .proof-label {
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+/* ---- Entrance animations ------------------------------------------------------ */
+@keyframes vsl-fade-rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.vs-landing .headline { animation-name: vsl-fade-rise; }
+@keyframes vsl-fade-rise-delay {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.vs-landing .subhead { animation-delay: 0.2s; }
+@keyframes vsl-fade-rise-delay-2 {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.vs-landing .hero-cta { animation-delay: 0.4s; }
+.vs-landing .proof-strip { animation-delay: 0.55s; }
+.vs-landing .kicker { animation-delay: 0.05s; }
+
+/* ---- Mobile menu -------------------------------------------------------------- */
+.vs-landing .menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  animation: vsl-fade-rise 0.25s ease-out both;
+}
+.vs-landing .menu-sheet {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, 88vw);
+  background: #fff;
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.16);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.vs-landing .menu-sheet a {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: var(--ink);
+  font-size: 15px;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.vs-landing .menu-sheet a.active {
+  background: #f4f4f4;
+}
+.vs-landing .menu-sheet .menu-cta {
+  margin-top: 6px;
+  text-align: center;
+  background: #000;
+  color: #fff;
+  padding: 13px 14px;
+  border-radius: 999px;
+}
+
+@media (max-width: 720px) {
+  .vs-landing .nav-links,
+  .vs-landing .nav-cta {
+    display: none;
+  }
+  .vs-landing .nav-burger {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #000;
+    border: 0;
+    cursor: pointer;
+    position: relative;
+  }
+  .vs-landing .nav-burger span {
+    position: absolute;
+    width: 16px;
+    height: 1.5px;
+    background: #fff;
+    border-radius: 2px;
+  }
+  .vs-landing .nav-burger span:nth-child(1) { transform: translateY(-5px); }
+  .vs-landing .nav-burger span:nth-child(3) { transform: translateY(5px); }
+  .vs-landing .proof-strip {
+    gap: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vs-landing * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

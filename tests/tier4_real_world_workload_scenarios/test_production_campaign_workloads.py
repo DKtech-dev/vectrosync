@@ -164,20 +164,33 @@ class TestLateCycleFreezeEscalationCampaign:
         assert advisory["failsafe_level"] == FailsafeLevel.LEVEL_0_NORMAL.value
         assert advisory["actual_min_tension_kn"] >= 0.5
 
-    def test_advisory_escalation_is_monotone_and_honestly_infeasible(self, campaigns):
-        """The advisory campaign also escalates monotonically, and whenever the
-        supervisor acts (L2/L3) the optimizer must have reported
-        infeasible-safe-fallback rather than claiming an unreachable optimum."""
-        _, mpc_active = campaigns
+    def test_advisory_never_reaches_emergency_even_when_surrogate_reports_infeasible(self, campaigns):
+        """The MPC settles to the steady advisory speed a continuously
+        governed twin would converge to under sustained conditions (see
+        backend.server.run_physics_pass). Across the entire worst-case sweep
+        this holds Level 0 throughout -- even on days where the surrogate's
+        own simplified internal constraints are technically infeasible
+        (INFEASIBLE_SAFE_FALLBACK): the actual card model, evaluated at the
+        settled floor speed, still reports positive tension. That is the
+        demonstrable value of predictive, rate-limit-aware governance versus
+        the fixed-speed baseline, which must still fail in this same worst
+        case for the comparison to mean anything."""
+        uncontrolled, mpc_active = campaigns
         levels = [_severity(mpc_active[d]) for d in self.SWEEP_DAYS]
-        assert all(a <= b for a, b in zip(levels, levels[1:])), levels
-        assert levels[0] == 0 and levels[-1] == 3
+        assert all(sev == 0 for sev in levels), levels
 
         for day in self.SWEEP_DAYS:
             r = mpc_active[day]
             _assert_honesty(r)
-            if _severity(r) >= 2:
-                assert r["model_status"]["controller_status"] == "INFEASIBLE_SAFE_FALLBACK"
+            assert r["actual_min_tension_kn"] >= 0.5
+            if r["model_status"]["controller_status"] == "INFEASIBLE_SAFE_FALLBACK":
+                # The surrogate's simplified internal constraints could not
+                # be satisfied at any speed in [min_spm, max_spm], yet the
+                # real card model at the settled floor speed stays safe.
+                assert r["effective_spm"] == pytest.approx(1.0, abs=0.05)
+
+        uncontrolled_levels = [_severity(uncontrolled[d]) for d in self.SWEEP_DAYS]
+        assert 3 in uncontrolled_levels, "fixed-speed baseline must still fail in this worst case"
 
 
 # ─── 12-hour operator shift with telemetry dropout ───────────────────────────

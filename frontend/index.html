@@ -3,13 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VectroSync CSS-SRP Advisory Research Prototype</title>
+    <title>Intelligence Designed To See It Coming — VectroSync</title>
     <meta name="description" content="Synthetic reduced-order CSS-SRP advisory twin for research and demonstration." />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Retro dot-matrix display face for the landing page headline/stat glyphs -->
+    <link
+      href="https://db.onlinewebfonts.com/c/8cb707a9b8a73f8a7403336b861c3074?family=BubbledotICG-FinePos"
       rel="stylesheet"
     />
 
@@ -18,12 +23,11 @@
       (function () {
         try {
           var stored = localStorage.getItem('vectrosync-theme');
-          var system = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-          var theme = stored === 'light' || stored === 'dark' ? stored : system;
+          var theme = stored === 'light' || stored === 'dark' ? stored : 'light';
           document.documentElement.setAttribute('data-theme', theme);
           document.documentElement.style.colorScheme = theme;
         } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.setAttribute('data-theme', 'light');
         }
       })();
     </script>

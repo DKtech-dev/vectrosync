@@ -1,10 +1,43 @@
-import React from 'react';
-import { Terminal, Shield, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, ArrowUp, ShieldCheck, AlertTriangle, Quote } from 'lucide-react';
 import { SkeletonPanel } from './Skeleton';
 
+const INTENTS = [
+  {
+    match: (q) => /reduc|throttl|why.*speed|slow/i.test(q),
+    field: 'dispatched_action',
+    prompt: 'Why was the speed advisory reduced?',
+  },
+  {
+    match: (q) => /trigger|what.*(state|happen)|cause/i.test(q),
+    field: 'trigger_event',
+    prompt: 'What triggered the current state?',
+  },
+  {
+    match: (q) => /tension|floor|satisf|safe/i.test(q),
+    field: 'structural_outcome',
+    prompt: 'Is the tension floor satisfied?',
+  },
+  {
+    match: (q) => /horizon|forecast|12.?h/i.test(q),
+    field: 'forward_horizon',
+    prompt: 'What does the 12-hour horizon show?',
+  },
+];
+
+/**
+ * A grounded query surface over the model explanation trace: every answer is
+ * one of the four diagnostics fields already computed by the backend
+ * WhyEngine for this exact model pass, never free-form generation. The
+ * source field is always cited beneath the answer so the mechanism stays
+ * auditable rather than opaque.
+ */
 export function WhyEngineConsole({ diagnostics, isBuckling }) {
+  const [query, setQuery] = useState('');
+  const [answer, setAnswer] = useState(null);
+
   if (!diagnostics) {
-    return <SkeletonPanel title="Awaiting model explanation trace" lines={2} />;
+    return <SkeletonPanel title="Awaiting model explanation trace" lines={3} />;
   }
 
   const {
@@ -16,72 +49,143 @@ export function WhyEngineConsole({ diagnostics, isBuckling }) {
     timestamp_iso,
   } = diagnostics;
 
+  const fieldText = {
+    trigger_event,
+    forward_horizon,
+    dispatched_action,
+    structural_outcome,
+  };
+
+  const steps = [
+    { key: 'trigger_event', label: 'Input trigger', body: trigger_event },
+    { key: 'forward_horizon', label: 'Horizon assessment', body: forward_horizon },
+    { key: 'dispatched_action', label: 'Recommendation', body: dispatched_action, tone: 'caution' },
+  ];
+
+  const handleAsk = (q) => {
+    const text = q.trim();
+    if (!text) return;
+    const intent = INTENTS.find((i) => i.match(text));
+    if (intent) {
+      setAnswer({ text: fieldText[intent.field], field: intent.field, question: text });
+    } else {
+      setAnswer({ text: null, field: null, question: text });
+    }
+  };
+
   return (
-    <div className={`panel p-4 flex flex-col justify-between border-l-4 ${
-      isBuckling ? 'border-l-critical' : 'border-l-safe'
-    }`}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-hairline mb-3 gap-2">
-        <div className="flex items-center gap-2">
-          <Terminal className={`w-4 h-4 ${isBuckling ? 'text-critical' : 'text-safe'}`} />
-          <span className="section-title">
-            Model Explanation Trace &mdash; Synthetic Advisory
+    <div className="card p-5">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="icon-badge w-9 h-9 bg-interactive/10 text-interactive">
+            <Sparkles className="w-4 h-4" />
           </span>
+          <div>
+            <h2 className="card-title">Ask VectroSync Twin</h2>
+            <p className="caption">Grounded in this pass's diagnostics -- every answer cites its source field</p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 readout text-[10.5px] text-muted">
-          <span className="chip text-muted bg-surface-2 border-hairline">
-            {provenance_tag}
-          </span>
-          <span>&middot;</span>
-          <span className="readout">{timestamp_iso?.slice(11, 19)} UTC</span>
+        <span className="caption hidden sm:block readout">{timestamp_iso?.slice(11, 19)} UTC</span>
+      </div>
+
+      {/* Query bar */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleAsk(query);
+        }}
+        className="flex items-center gap-2 rounded-full border border-hairline bg-surface-2 pl-4 pr-1.5 py-1.5 focus-within:border-interactive/50 mb-3"
+      >
+        <Sparkles className="w-4 h-4 text-faint shrink-0" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Ask the VectroSync twin about this model output"
+          placeholder="Ask about this model pass..."
+          className="flex-1 bg-transparent text-[13px] text-ink placeholder:text-faint outline-none min-w-0"
+        />
+        <button type="submit" aria-label="Submit question" className="btn btn-primary w-8 h-8 rounded-full p-0 shrink-0">
+          <ArrowUp className="w-4 h-4" />
+        </button>
+      </form>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        {INTENTS.map((i) => (
+          <button
+            key={i.prompt}
+            type="button"
+            onClick={() => {
+              setQuery(i.prompt);
+              handleAsk(i.prompt);
+            }}
+            className="pill bg-surface-2 text-muted hover:text-ink"
+          >
+            {i.prompt}
+          </button>
+        ))}
+      </div>
+
+      {/* Grounded answer, if a question was asked */}
+      {answer && (
+        <div className="card-nested p-4 mb-4 border-l-2 border-l-interactive">
+          <div className="flex items-start gap-2.5">
+            <Quote className="w-4 h-4 text-interactive shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-[13px] text-ink leading-relaxed">
+                {answer.text || "I can only answer from this model pass's diagnostics -- try one of the prompts above."}
+              </p>
+              {answer.field && (
+                <span className="chip text-interactive bg-interactive/10 mt-2 inline-flex">
+                  computed from diagnostics.{answer.field}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full explanation trace */}
+      <div className="card-nested p-4 mb-4">
+        <div className="flex flex-col gap-3">
+          {steps.map((step) => (
+            <div key={step.label} className="flex gap-3">
+              <span
+                className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${
+                  step.tone === 'caution' ? 'bg-caution' : 'bg-faint'
+                }`}
+              />
+              <div className="min-w-0">
+                <div className="text-[13px] font-semibold text-ink">{step.label}</div>
+                <p className="text-[13px] text-muted leading-relaxed mt-0.5">{step.body}</p>
+              </div>
+            </div>
+          ))}
+
+          {/* Outcome */}
+          <div
+            className={`flex gap-3 rounded-xl p-3 mt-1 ${
+              isBuckling ? 'bg-critical/10' : 'bg-safe/10'
+            }`}
+          >
+            {isBuckling ? (
+              <AlertTriangle className="w-4 h-4 text-critical shrink-0 mt-0.5" />
+            ) : (
+              <ShieldCheck className="w-4 h-4 text-safe shrink-0 mt-0.5" />
+            )}
+            <div className="min-w-0">
+              <div className={`text-[13px] font-semibold ${isBuckling ? 'text-critical' : 'text-safe'}`}>
+                Modeled constraint result
+              </div>
+              <p className="text-[13px] text-ink/80 leading-relaxed mt-0.5">{structural_outcome}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 4-Step Diagnostic Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-        {/* Step 1: Trigger Event */}
-        <div className="panel-inset p-3 flex flex-col justify-between">
-          <div className="text-[11px] text-muted mb-2 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-interactive"></span>
-            1. Model input trigger
-          </div>
-          <p className="text-muted leading-relaxed text-[11px]">{trigger_event}</p>
-        </div>
-
-        {/* Step 2: Forward Horizon Assessment */}
-        <div className="panel-inset p-3 flex flex-col justify-between">
-          <div className="text-[11px] text-muted mb-2 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-interactive"></span>
-            2. Model horizon assessment
-          </div>
-          <p className="text-muted leading-relaxed text-[11px]">{forward_horizon}</p>
-        </div>
-
-        {/* Step 3: Advisory recommendation */}
-        <div className="panel-inset p-3 flex flex-col justify-between">
-          <div className="text-[11px] text-muted mb-2 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-caution"></span>
-            3. Recommendation (not dispatched)
-          </div>
-          <p className="text-ink font-medium leading-relaxed text-[11px]">{dispatched_action}</p>
-        </div>
-
-        {/* Step 4: Modeled constraint result */}
-        <div className={`rounded-lg p-3 border flex flex-col justify-between ${
-          isBuckling
-            ? 'bg-critical/10 text-ink border-critical/30'
-            : 'bg-safe/10 text-ink border-safe/30'
-        }`}>
-          <div className="text-[11px] text-muted mb-2 flex items-center gap-2">
-            {isBuckling ? <AlertTriangle className="w-3 h-3 text-critical" /> : <Shield className="w-3 h-3 text-safe" />}
-            4. Modeled constraint result
-          </div>
-          <p className="leading-relaxed text-[11px] font-medium text-ink">{structural_outcome}</p>
-        </div>
-      </div>
-      <div className="mt-3 readout text-[10.5px] text-muted bg-surface-2 border border-hairline rounded px-3 py-2">
-        Explanation of reduced-order software outputs only; no action was dispatched and no structural condition or outcome is confirmed.
-      </div>
+      <p className="caption pt-3 border-t border-hairline">
+        {provenance_tag} · explanation of software outputs only; no action was dispatched and no structural condition is confirmed.
+      </p>
     </div>
   );
 }

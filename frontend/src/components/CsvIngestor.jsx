@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, CheckCircle2, AlertCircle, ArrowRight, FileText } from 'lucide-react';
+import { Upload, ArrowRight, FileText } from 'lucide-react';
 import { apiFetch } from '../utils/api';
 import { Skeleton } from './Skeleton';
 
@@ -61,25 +61,26 @@ export function CsvIngestor() {
   };
 
   return (
-    <div className="flex flex-col gap-3 font-sans">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-hairline text-xs gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <FileText className="w-4 h-4 text-faint" />
-          <span className="section-title">
-            CSV Engineering Data Preview &amp; Unit Conversion
-          </span>
-          <span className="readout text-[10.5px] text-muted">Imperial / SI Auto-Mapper</span>
+    <div className="flex flex-col gap-4 font-sans">
+      {/* Section header — one panel title; resolver/mapper names are captions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-hairline">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-faint" />
+            <span className="text-[13px] font-semibold text-ink">Engineering data preview &amp; unit conversion</span>
+          </div>
+          <span className="caption">Imperial / SI auto-mapper</span>
         </div>
-        <span className="readout text-[11px] text-muted">Regex Column Resolver</span>
+        <span className="caption">Regex column resolver</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Raw SCADA Input */}
-        <div className="panel p-4 flex flex-col justify-between">
+        <div className="card-nested p-4 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-ink">CSV Input (Synthetic Sample Shown)</span>
-              <label className="btn bg-surface-2 border border-hairline text-muted hover:text-ink cursor-pointer px-3 py-1 text-[11px]">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="text-[12px] font-medium text-ink">CSV input (synthetic sample shown)</span>
+              <label className="btn px-3 py-1.5 panel-nested text-muted hover:text-ink cursor-pointer">
                 <Upload className="w-3 h-3 text-interactive" />
                 Upload .csv
                 <input aria-label="Upload CSV or text data file" type="file" accept=".csv,.txt" onChange={handleFileUpload} className="hidden" />
@@ -91,18 +92,18 @@ export function CsvIngestor() {
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
               rows={7}
-              className="w-full text-xs readout bg-surface-2 border border-hairline rounded-lg p-3 text-ink focus:border-interactive"
+              className="w-full readout text-[11px] panel-nested p-3 text-ink focus:border-interactive"
               placeholder="Paste CSV engineering data here..."
             />
           </div>
 
-          <div className="mt-4 flex justify-between items-center">
-            <span className="readout text-[10.5px] text-muted">Accepts: klbs, in, °F, kN, m, K</span>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <span className="caption">Accepts: klbs, in, °F, kN, m, K</span>
             <button
               type="button"
               onClick={handleIngest}
               disabled={loading}
-              className="btn bg-interactive text-white hover:bg-interactive/90 px-4 py-2 text-xs"
+              className="btn px-3 py-1.5 bg-interactive/10 border border-interactive/30 text-interactive hover:bg-interactive/20"
             >
               {loading ? 'Processing...' : 'Ingest & Standardize'}
               <ArrowRight className="w-3.5 h-3.5" />
@@ -111,21 +112,27 @@ export function CsvIngestor() {
         </div>
 
         {/* Normalized Output Preview */}
-        <div className="panel p-4 flex flex-col justify-between">
+        <div className="card-nested p-4 flex flex-col justify-between">
           <div>
-            <div className="text-xs font-semibold text-ink mb-2">Standardized SI Normalized Dataset</div>
+            <div className="text-[12px] font-medium text-ink mb-3">Standardized SI normalized dataset</div>
 
             {ingestStatus && (
-              <div role="status" className={`p-2 rounded-md mb-2 text-xs readout flex items-center gap-1.5 border ${
-                ingestStatus.success ? 'bg-safe/10 border-safe/30 text-ink' : 'bg-critical/10 border-critical/30 text-ink'
-              }`}>
-                {ingestStatus.success ? <CheckCircle2 className="w-4 h-4 shrink-0 text-safe" /> : <AlertCircle className="w-4 h-4 shrink-0 text-critical" />}
-                <span>{ingestStatus.message}</span>
+              <div
+                role="status"
+                className={`panel-nested p-3 mb-3 flex flex-col gap-2 border-l-2 ${
+                  ingestStatus.success ? 'border-l-safe' : 'border-l-critical'
+                }`}
+              >
+                <span className={`chip self-start ${ingestStatus.success ? 'text-safe bg-safe/10' : 'text-critical bg-critical/10'}`}>
+                  <span className="chip-dot" />
+                  {ingestStatus.success ? 'SCHEMA CHECKS PASSED' : 'SCHEMA CHECKS FAILED'}
+                </span>
+                <span className="caption">{ingestStatus.message}</span>
               </div>
             )}
 
             {loading ? (
-              <div className="panel-inset p-3 space-y-3">
+              <div className="panel-nested p-3 space-y-3">
                 <Skeleton className="h-3 w-1/2" />
                 <Skeleton className="h-3" />
                 <Skeleton className="h-3 w-5/6" />
@@ -133,43 +140,46 @@ export function CsvIngestor() {
                 <Skeleton className="h-3 w-3/4" />
               </div>
             ) : parsedData ? (
-              <div className="overflow-x-auto max-h-[145px] text-[11px] readout panel-inset">
-                <table className="w-full text-left">
-                  <thead className="bg-surface-2 text-faint text-[10px] font-semibold">
-                    <tr>
-                      {Object.keys(parsedData).map((col) => (
-                        <th key={col} className="p-2 border-b border-hairline whitespace-nowrap">
-                          {col}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parsedData[Object.keys(parsedData)[0]]?.slice(0, 5).map((_, rowIdx) => (
-                      <tr key={rowIdx} className="border-b border-hairline last:border-b-0 hover:bg-surface-2">
+              <div className="panel-nested overflow-hidden">
+                <div className="overflow-x-auto max-h-[145px]">
+                  <table className="w-full text-left text-[11px]">
+                    <caption className="sr-only">Standardized SI preview of the parsed CSV columns</caption>
+                    <thead className="text-tertiary text-[10px]">
+                      <tr>
                         {Object.keys(parsedData).map((col) => (
-                          <td key={`${col}-${rowIdx}`} className="p-2 whitespace-nowrap text-ink">
-                            {typeof parsedData[col][rowIdx] === 'number'
-                              ? parsedData[col][rowIdx].toFixed(2)
-                              : String(parsedData[col][rowIdx])}
-                          </td>
+                          <th key={col} scope="col" className="p-2 border-b border-hairline whitespace-nowrap font-medium">
+                            {col}
+                          </th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {parsedData[Object.keys(parsedData)[0]]?.slice(0, 5).map((_, rowIdx) => (
+                        <tr key={rowIdx} className="border-b border-hairline last:border-b-0 hover:bg-surface-1">
+                          {Object.keys(parsedData).map((col) => (
+                            <td key={`${col}-${rowIdx}`} className="p-2 readout whitespace-nowrap text-ink">
+                              {typeof parsedData[col][rowIdx] === 'number'
+                                ? parsedData[col][rowIdx].toFixed(2)
+                                : String(parsedData[col][rowIdx])}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : (
-              <div className="panel-inset flex items-center justify-center text-center py-10 px-4 text-faint readout text-xs">
-                Click "Ingest & Standardize" to preview mapped engineering data
+              <div className="panel-nested flex items-center justify-center text-center py-8 px-4 caption">
+                Click "Ingest &amp; Standardize" to preview mapped engineering data
               </div>
             )}
           </div>
 
-          <div className="text-[10.5px] text-muted flex items-start gap-2 mt-4 pt-2 border-t border-hairline readout">
-            <span className="font-semibold text-interactive shrink-0">Analysis only:</span>
+          <p className="caption mt-4 pt-4 border-t border-hairline">
+            <span className="text-muted">Analysis only:</span>{' '}
             <span>Parsing and schema flags do not validate sensor provenance or authorize control; this console has no actuator connection.</span>
-          </div>
+          </p>
         </div>
       </div>
     </div>

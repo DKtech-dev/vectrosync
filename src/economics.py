@@ -8,6 +8,11 @@ production uplift and recaptured workover downtime.
 from dataclasses import asdict, dataclass
 from typing import Any
 
+# CEA (Central Electricity Authority, India) grid emission factor, FY2023-24
+# baseline. This is a disclosed assumption, not a measurement; cite it
+# explicitly wherever CO2-avoided figures are shown.
+GRID_EMISSION_FACTOR_KG_CO2_PER_KWH = 0.716
+
 
 @dataclass(frozen=True)
 class EconomicAssumptions:
@@ -59,6 +64,11 @@ def evaluate_case(case: EconomicAssumptions) -> dict[str, Any]:
     gross = workover + energy + deferment
     net = gross - case.annual_platform_cost_inr
 
+    energy_saved_kwh_per_year = case.well_count * case.energy_saved_kwh_well_day * 365.0
+    co2_avoided_tonnes_per_year = (
+        energy_saved_kwh_per_year * GRID_EMISSION_FACTOR_KG_CO2_PER_KWH / 1000.0
+    )
+
     return {
         "case": case.name,
         "currency": "INR",
@@ -72,6 +82,9 @@ def evaluate_case(case: EconomicAssumptions) -> dict[str, Any]:
         "gross_annual_value_cr_inr": round(gross / 1e7, 3),
         "annual_platform_cost_cr_inr": round(case.annual_platform_cost_inr / 1e7, 3),
         "total_annual_value_cr_inr": round(net / 1e7, 3),
+        "energy_saved_kwh_per_year": round(energy_saved_kwh_per_year, 1),
+        "co2_avoided_tonnes_per_year": round(co2_avoided_tonnes_per_year, 2),
+        "grid_emission_factor_kg_co2_per_kwh": GRID_EMISSION_FACTOR_KG_CO2_PER_KWH,
         "assumptions": asdict(case),
     }
 

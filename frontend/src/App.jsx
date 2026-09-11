@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ScadaHeader } from './components/ScadaHeader';
+import { Sidebar } from './components/Sidebar';
+import { GaugePanel } from './components/GaugePanel';
 import { MetricCards } from './components/MetricCards';
 import { WellboreSimulator } from './components/WellboreSimulator';
 import { DynacardStudio } from './components/DynacardStudio';
@@ -11,6 +13,10 @@ import { AuditLedgerView } from './components/AuditLedgerView';
 import { WhyEngineConsole } from './components/WhyEngineConsole';
 import { EconomicsWaterfall } from './components/EconomicsWaterfall';
 import { ParameterDrawer } from './components/ParameterDrawer';
+import { CausalChain } from './components/CausalChain';
+import { ABProof } from './components/ABProof';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { SkeletonPanel } from './components/Skeleton';
 import { Activity, Layers, TrendingUp, Map, UploadCloud, Shield, CheckCircle2, AlertOctagon } from 'lucide-react';
 import { apiFetch } from './utils/api';
 
@@ -108,6 +114,10 @@ export default function App() {
     loadSimulation(simParams);
   }, []);
 
+  useEffect(() => {
+    document.title = 'Console — VectroSync CSS-SRP Advisory Twin';
+  }, []);
+
   const handleChangeParam = (key, value) => {
     setSimParams((prev) => ({ ...prev, [key]: value }));
   };
@@ -124,18 +134,18 @@ export default function App() {
 
   // Technical Tab Navigation
   const tabs = [
-    { id: 'dynacard', label: 'Reduced-Order Dynacard', icon: Activity },
-    { id: 'stress', label: 'Modeled Depth-Stress Map', icon: Layers },
-    { id: 'forecast', label: '12-Hour Model Projection', icon: TrendingUp },
-    { id: 'basin', label: 'Synthetic Sector Layout', icon: Map },
-    { id: 'csv', label: 'CSV Engineering Preview', icon: UploadCloud },
-    { id: 'audit', label: 'Application Hash Ledger', icon: Shield },
+    { id: 'dynacard', label: 'Dynacard', icon: Activity },
+    { id: 'stress', label: 'Depth-stress map', icon: Layers },
+    { id: 'forecast', label: '12-hour projection', icon: TrendingUp },
+    { id: 'basin', label: 'Sector layout', icon: Map },
+    { id: 'csv', label: 'CSV preview', icon: UploadCloud },
+    { id: 'audit', label: 'Hash ledger', icon: Shield },
   ];
 
   const handleTabKeyDown = (event, currentIndex) => {
     let nextIndex = null;
-    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
-    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+    if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
     if (event.key === 'Home') nextIndex = 0;
     if (event.key === 'End') nextIndex = tabs.length - 1;
     if (nextIndex === null) return;
@@ -146,9 +156,24 @@ export default function App() {
   };
 
   return (
-    <div className="theme-transition min-h-screen bg-canvas text-ink flex flex-col font-sans antialiased">
-      {/* Top SCADA Industrial Mission Control Header */}
+    <ErrorBoundary>
+    <div className="min-h-screen bg-canvas text-ink font-sans antialiased p-3 sm:p-5">
+      {/* Floating master container */}
+      <div className="master flex min-h-[calc(100vh-40px)]">
+      {/* Left navigation rail (desktop) */}
+      <Sidebar
+        tabs={tabs}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        onTabKeyDown={handleTabKeyDown}
+      />
+
+      <div className="flex-1 min-w-0 flex flex-col content-bed">
+      {/* Top bar: asset context, live status, actions, scenario dispatch */}
       <ScadaHeader
+        tabs={tabs}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
         scenarioId={simState?.scenario_id}
         failsafeLevel={simState?.failsafe_level}
         isModbusSevered={simState?.is_modbus_severed || simParams.modbus_severed}
@@ -166,26 +191,24 @@ export default function App() {
         onToggleSolverType={handleToggleSolverType}
       />
 
-      {/* Main SCADA Workspace Container */}
-      <main aria-busy={loading} className="flex-1 max-w-[1780px] w-full mx-auto p-4 lg:p-6 space-y-4">
-        <div role="status" className="chip w-full justify-between bg-caution/10 border border-caution/30 text-caution rounded-lg p-3 text-xs flex flex-wrap gap-2">
-          <strong className="section-title text-caution">Research prototype · Synthetic model output · Advisory only</strong>
-          <span className="font-sans font-normal text-muted">No field/HIL validation and no direct PLC/VFD control authority.</span>
-        </div>
-
+      {/* Main Workspace */}
+      <main aria-busy={loading} className="flex-1 w-full p-5 lg:p-6 space-y-5 overflow-x-hidden">
         {error && (
-          <div role="alert" className="bg-critical/10 border border-critical/40 rounded-lg p-3 text-sm text-ink flex items-center justify-between gap-3">
-            <span>{error}</span>
-            <button type="button" onClick={() => loadSimulation(simParams)} className="font-semibold text-critical underline underline-offset-2 rounded">Retry</button>
+          <div role="alert" className="card border-critical/30 p-4 text-[13px] text-ink flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2">
+              <span className="pill bg-critical/10 text-critical"><span className="chip-dot" />Link</span>
+              {error}
+            </span>
+            <button type="button" onClick={() => loadSimulation(simParams)} className="btn btn-primary px-4 py-2">Retry</button>
           </div>
         )}
 
-        {/* Active Scenario Banner */}
+        {/* Active Scenario context line */}
         {simState?.scenario_name && (
-          <div className="panel p-3 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="readout font-bold text-interactive">{simState.scenario_name}:</span>
-              <span className="text-muted font-sans">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 px-1">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <span className="text-[13px] font-bold text-interactive shrink-0">{simState.scenario_name}</span>
+              <span className="caption">
                 {simState.scenario_id === 'SCENARIO_A_BASELINE_FAILURE' &&
                   `Synthetic freeze stress case: reduced-order model returns ${simState.temperature_c.toFixed(1)}°C and ${simState.actual_min_tension_kn.toFixed(2)} kN minimum tension.`}
                 {simState.scenario_id === 'SCENARIO_B_COUPLED_TWIN' &&
@@ -196,15 +219,34 @@ export default function App() {
                   'Synthetic nominal case for exploring the reduced-order thermal, rheology, and rod-load assumptions.'}
               </span>
             </div>
-            <span className="chip text-muted bg-surface-2 border-hairline shrink-0">
-              Illustrative strata/depth assumption: 1,150 m TVD
-            </span>
+            <span className="caption shrink-0">Synthetic reduced-order output · advisory only · not a measurement</span>
           </div>
+        )}
+
+        {/* First load: a visible skeleton instead of a blank page while the
+            initial /api/simulate request is in flight or has not resolved. */}
+        {!simState && !error && (
+          <SkeletonPanel title="Loading VectroSync twin" lines={6} height={360} />
+        )}
+
+        {/* Hero: the animated causal chain, steam through to speed command */}
+        {simState && (
+          <CausalChain
+            elapsedDays={simParams.elapsed_days}
+            temperatureC={simState.temperature_c}
+            viscosityCp={simState.viscosity_cp}
+            dragBeta={simState.drag_beta}
+            minTensionKn={simState.actual_min_tension_kn}
+            effectiveSpm={simState.effective_spm}
+            targetSpm={simState.target_spm}
+            isBuckling={simState.is_buckling_active}
+            propagateKey={simState.scenario_id + simState.effective_spm}
+          />
         )}
 
         {/* 4-KPI Primary Metric Strip */}
         {simState && (
-          <div className="vs-enter" style={{ animationDelay: '0ms' }}>
+          <div>
           <MetricCards
             temperatureC={simState.temperature_c}
             viscosityCp={simState.viscosity_cp}
@@ -218,56 +260,25 @@ export default function App() {
           </div>
         )}
 
-        {/* Center 2-Column Split: Wellbore Simulator (Left) + Multi-Tab Engineering Workspace (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {/* Left Column (5/12): Subsurface Digital Twin Engine */}
-          <div className="lg:col-span-5 h-full vs-enter" style={{ animationDelay: '40ms' }}>
-            {simState && (
-              <WellboreSimulator
-                spm={simState.effective_spm}
-                temperatureC={simState.temperature_c}
-                minTensionKn={simState.actual_min_tension_kn}
-                isBuckling={simState.is_buckling_active}
-                isModbusSevered={simState.is_modbus_severed}
-                failsafeLevel={simState.failsafe_level}
-                isPlaying={isPlaying}
-                simSpeed={simSpeed}
-                stressHeatmap={simState.stress_heatmap}
-                dynacard={simState.dynacard}
-                onWsStatusChange={setIsWsLive}
-              />
-            )}
-          </div>
-
-          {/* Right Column (7/12): Multi-Tab Engineering Console */}
-          <div className="lg:col-span-7 panel p-4 flex flex-col justify-between vs-enter" style={{ animationDelay: '80ms' }}>
-            {/* Underline-Style Active Tab Bar */}
-            <div role="tablist" aria-label="Engineering analysis views" className="flex border-b border-hairline gap-1 mb-3 overflow-x-auto">
-              {tabs.map((tab, tabIndex) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    id={`tab-${tab.id}`}
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-controls={`panel-${tab.id}`}
-                    tabIndex={isActive ? 0 : -1}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    onKeyDown={(event) => handleTabKeyDown(event, tabIndex)}
-                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition whitespace-nowrap rounded-t ${
-                      isActive
-                        ? 'border-interactive text-interactive font-bold bg-interactive/10'
-                        : 'border-transparent text-muted hover:text-ink hover:border-hairline'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
+        {/* Main analytics grid: active view (left) + health gauges & schematic (right) */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+          {/* Active analysis view */}
+          <div className="xl:col-span-8 card p-5 flex flex-col">
+            <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-hairline">
+              <div className="flex items-center gap-3 min-w-0">
+                {(() => {
+                  const ActiveIcon = tabs.find((t) => t.id === activeTab)?.icon;
+                  return ActiveIcon ? (
+                    <span className="icon-badge w-9 h-9 bg-interactive/10 text-interactive">
+                      <ActiveIcon className="w-4 h-4" />
+                    </span>
+                  ) : null;
+                })()}
+                <div className="min-w-0">
+                  <div className="card-title truncate">{tabs.find((t) => t.id === activeTab)?.label}</div>
+                  <div className="caption">Reduced-order model output</div>
+                </div>
+              </div>
             </div>
 
             {/* Active Tab Content */}
@@ -303,30 +314,67 @@ export default function App() {
               {activeTab === 'audit' && <AuditLedgerView />}
             </div>
           </div>
-        </div>
 
-        {/* Bottom Strategic Intelligence: Why Engine & Economics Waterfall */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
-          {/* Causal Reasoning Diagnostic Console */}
-          {simState && (
-            <div className="vs-enter" style={{ animationDelay: '120ms' }}>
-              <WhyEngineConsole
-                diagnostics={simState.diagnostics}
-                isBuckling={simState.is_buckling_active}
+          {/* Right summary column: health gauges + wellbore schematic */}
+          <div className="xl:col-span-4 flex flex-col gap-5">
+            {simState && (
+              <GaugePanel
+                pprlKn={simState.dynacard?.pprl_kn ?? 0}
+                minTensionKn={simState.actual_min_tension_kn}
+                isWsLive={isWsLive}
+                isModbusSevered={simState.is_modbus_severed || simParams.modbus_severed}
+                failsafeLevel={simState.failsafe_level || ''}
               />
-            </div>
-          )}
+            )}
 
-          {/* Unvalidated multi-well planning-case economics */}
-          {simState && (
-            <div className="vs-enter" style={{ animationDelay: '160ms' }}>
-              <EconomicsWaterfall economics={simState.economics} />
-            </div>
-          )}
+            {simState && (
+              <WellboreSimulator
+                spm={simState.effective_spm}
+                temperatureC={simState.temperature_c}
+                minTensionKn={simState.actual_min_tension_kn}
+                isBuckling={simState.is_buckling_active}
+                isModbusSevered={simState.is_modbus_severed}
+                failsafeLevel={simState.failsafe_level}
+                isPlaying={isPlaying}
+                simSpeed={simSpeed}
+                stressHeatmap={simState.stress_heatmap}
+                dynacard={simState.dynacard}
+                onWsStatusChange={setIsWsLive}
+              />
+            )}
+          </div>
         </div>
+
+        {/* Deterministic, re-seedable A/B proof */}
+        <ABProof />
+
+        {/* Commercial summary bar */}
+        {simState && <EconomicsWaterfall economics={simState.economics} />}
+
+        {/* Conversational explanation surface */}
+        {simState && (
+          <WhyEngineConsole
+            diagnostics={simState.diagnostics}
+            isBuckling={simState.is_buckling_active}
+          />
+        )}
       </main>
 
-      {/* Parameter Control Drawer */}
+      {/* Technical Enterprise SCADA Footer */}
+      <footer className="border-t border-hairline py-3 px-6 mt-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <span className="caption">
+            Baghewala-inspired research case study &middot; no operator affiliation or deployment implied
+          </span>
+          <span className="caption">
+            Synthetic &middot; reduced-order &middot; advisory only &middot; FastAPI + React 18
+          </span>
+        </div>
+      </footer>
+      </div>
+      </div>
+
+      {/* Parameter Control Drawer lives at root so it overlays the rail too */}
       <ParameterDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
@@ -336,22 +384,7 @@ export default function App() {
         onReset={handleResetParams}
         loading={loading}
       />
-
-      {/* Technical Enterprise SCADA Footer */}
-      <footer className="theme-transition bg-surface-1 border-t border-hairline py-3 px-6 text-[11px] text-faint readout mt-auto">
-        <div className="max-w-[1780px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <div>
-            <span>Baghewala-inspired research case study &middot; No operator affiliation or deployment implied</span>
-            <span className="mx-2 text-hairline">&middot;</span>
-            <span className="text-interactive font-bold">VectroSync Advisory Research Prototype</span>
-          </div>
-          <div className="flex items-center gap-3 text-[10.5px]">
-            <span className="text-caution font-semibold">Synthetic · Reduced-order · Advisory only</span>
-            <span className="text-hairline">&middot;</span>
-            <span>FastAPI + React 18 + deterministic card surrogate</span>
-          </div>
-        </div>
-      </footer>
     </div>
+    </ErrorBoundary>
   );
 }

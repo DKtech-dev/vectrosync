@@ -33,14 +33,15 @@ from src.rheology import HeavyOilRheology
 from src.rod_conservative import ConservativeRodWaveSolver, DynacardResult
 from src.rod_transient import TransientRodWaveSolver
 from src.failsafe import FailsafeStateMachine, SupervisoryFailsafe, FailsafeLevel
-from src.controller import FastMPCController, WellState
-from src.mpc import ConstrainedMPC
+from src.controller import FastMPCController, WellState, MPCConfig
 from src.adapter import AdaptiveCSVParser
 from src.audit import AuditLedger
-from src.scenario_runner import ScenarioRunner, ScenarioType, SCENARIO_PRESETS
+from src.scenario_runner import ScenarioRunner, ScenarioType
 from src.why_engine import WhyEngine
 from src.depth_stress import compute_spatiotemporal_stress_matrix, compute_rod_section_stresses
 from src.economics import sensitivity_analysis
+from src.state_estimator import DownholeKalmanEstimator
+from src.generator import DEFAULT_DATA_GENERATOR
 
 # Initialize FastAPI App
 app = FastAPI(
@@ -78,11 +79,35 @@ def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
 # Shared Physics State Engines
 thermal_engine = ThermalDecayEngine()
 rheo_engine = HeavyOilRheology()
-wave_solver = ConservativeRodWaveSolver(dx=10.0)
-mpc_controller = FastMPCController()
-failsafe = SupervisoryFailsafe(rod_rating_kN=110.0, min_safe_tension_trip_kn=0.50)
 audit_ledger = AuditLedger(well_id="Baghewala-14")
 websocket_slots = asyncio.Semaphore(int(os.getenv("VECTROSYNC_MAX_WEBSOCKETS", "5")))
+
+# Persistent Extended Kalman Filter: a genuine recursive Bayesian estimator
+# that carries its belief state (and covariance) across requests within this
+# process, the same way it would across control cycles in the field.
+kalman_estimator = DownholeKalmanEstimator()
+
+# Last computed simulation state, consumed by the /ws/live-stream endpoint so
+# the animated telemetry reflects the most recent /api/simulate result
+# instead of a fixed, disconnected sinusoid.
+LAST_SIM_STATE: Dict[str, float] = {
+    "effective_spm": 3.5,
+    "surface_mean_kn": 45.0,
+    "surface_amp_kn": 18.0,
+    "downhole_mean_kn": 12.0,
+    "downhole_amp_kn": 8.0,
+    "stroke_length_m": 2.54,
+}
+
+# The explicit, transient PDE, damped wave solver is validated against the
+# surrogate (agreement within ~5% on PPRL, grid-convergent within ~1% under
+# mesh refinement) up to this reservoir temperature. Above it, the two
+# solvers diverge (measured up to 76% at 120 C) and the transient PPRL is no
+# longer grid-convergent (see docs/VERIFICATION.md and
+# tests/test_solver_agreement.py). Requests for the transient solver above
+# this temperature are auto-served by the validated surrogate instead, with
+# the fallback disclosed in `model_status`.
+TRANSIENT_VALIDATED_MAX_TEMP_C = 85.0
 
 
 # ─── Pydantic Request / Response Models ───────────────────────
@@ -128,6 +153,9 @@ class DynacardData(BaseModel):
     min_tension_kn: float
     oil_production_bopd: float
     liquid_production_bopd: float
+    power_kw: float = 0.0
+    hydraulic_power_kw: float = 0.0
+    baseline_power_kw: float = 0.0
 
 
 class ForecastPoint(BaseModel):
@@ -196,13 +224,53 @@ class SimulationResponse(BaseModel):
     stress_tensor: StressTensorData
     diagnostics: DiagnosticResponse
     economics: Dict[str, Any]
+    estimator: Dict[str, Any]
 
 
 # ─── Helper Functions ──────────────────────────────────────────
 
 def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
     """Execute one deterministic, synthetic advisory-model pass."""
+
+    # 1. Resolve Scenario Presets if requested
+    scenario_type = ScenarioType.DEFAULT_OPERATION
+    if params.scenario_override:
+        for sc in ScenarioType:
+            if sc.value == params.scenario_override:
+                scenario_type = sc
+                break
+
+    preset = ScenarioRunner.get_preset(scenario_type)
+
+    # 2. Compute Reservoir Thermal State (strictly physical, no synthetic overrides)
+    t_res_c, _ = thermal_engine.predict_temperature(
+        params.elapsed_days,
+        time_unit="days",
+        cooling_multiplier=params.cooling_multiplier,
+    )
+    t_res_c = float(t_res_c)
+    t_res_k = t_res_c + 273.15
+
+    # 3. Compute Crude Rheology & Couette Drag
+    mu_mix_pas = float(rheo_engine.mixture_viscosity(t_res_k, fw=params.water_cut))
+    mu_mix_cp = mu_mix_pas * 1000.0
+    beta_drag = float(rheo_engine.couette_drag_beta(mu_mix_pas, r_rod=0.0127))
+
+    # 4. Solver selection with an explicit, disclosed stability gate. Serving
+    # an invalid (non-grid-convergent) PPRL/tension pair is worse than
+    # honestly falling back to the validated surrogate; see module docstring
+    # constant TRANSIENT_VALIDATED_MAX_TEMP_C and docs/VERIFICATION.md.
+    requested_solver_type = params.solver_type
     is_transient = (params.solver_type == "transient")
+    solver_fallback_reason: Optional[str] = None
+    if is_transient and t_res_c > TRANSIENT_VALIDATED_MAX_TEMP_C:
+        is_transient = False
+        solver_fallback_reason = (
+            f"Transient PDE requested but reservoir temperature {t_res_c:.1f} C exceeds the "
+            f"grid-convergence-validated band (<= {TRANSIENT_VALIDATED_MAX_TEMP_C:.0f} C); "
+            "auto-fell back to the surrogate solver rather than report a non-convergent PPRL."
+        )
+
     if is_transient:
         local_wave_solver = TransientRodWaveSolver(
             dx=15.0,
@@ -218,46 +286,46 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
         min_safe_tension_trip_kn=0.50,
     )
 
-    # 1. Resolve Scenario Presets if requested
-    scenario_type = ScenarioType.DEFAULT_OPERATION
-    if params.scenario_override:
-        for sc in ScenarioType:
-            if sc.value == params.scenario_override:
-                scenario_type = sc
+    # 5. Thermal decay forecast horizon: reuses the same Boberg-Lantz engine
+    # that produced the current temperature, not a linear placeholder ramp.
+    forecast_days = [params.elapsed_days + (h / 24.0) for h in np.linspace(0.0, 12.0, 24)]
+    forecast_temps_arr, _ = thermal_engine.predict_decay_trajectory(
+        forecast_days, cooling_multiplier=params.cooling_multiplier,
+    )
+    forecast_temps = [float(v) for v in forecast_temps_arr]
+
+    # 6. Closed-loop MPC settling: a controller that has genuinely been
+    # governing the well for hours (as every non-baseline scenario here
+    # implies) has already ramped away from the requested setpoint, subject
+    # only to the actuator slew-rate limit. A single one-shot solve from an
+    # assumed target_spm baseline understates that. Iterate the same
+    # rate-limited reachability governor to its steady operating point, then
+    # run the REQUESTED solver mode once at that point so the reported
+    # timing and label are honest for whichever mode was asked for.
+    settled_spm = float(params.target_spm)
+    if params.mpc_enabled and scenario_type != ScenarioType.SCENARIO_A_BASELINE_FAILURE:
+        settle_controller = FastMPCController(MPCConfig(solver_mode="surrogate"))
+        for _ in range(40):
+            settle_state = WellState(spm_current=settled_spm, temperature_C=t_res_c, viscosity_Pas=mu_mix_pas)
+            settle_plan = settle_controller.solve(settle_state, forecast_temps)
+            next_spm = float(settle_plan.optimal_spm)
+            converged = abs(next_spm - settled_spm) < 1e-3
+            settled_spm = next_spm
+            if converged:
                 break
 
-    preset = ScenarioRunner.get_preset(scenario_type)
-    
-    # 2. Compute Reservoir Thermal State (strictly physical, no synthetic overrides)
-    t_res_c, _ = thermal_engine.predict_temperature(
-        params.elapsed_days,
-        time_unit="days",
-        cooling_multiplier=params.cooling_multiplier,
-    )
-    t_res_c = float(t_res_c)
-    t_res_k = t_res_c + 273.15
-
-    # 3. Compute Crude Rheology & Couette Drag
-    mu_mix_pas = float(rheo_engine.mixture_viscosity(t_res_k, fw=params.water_cut))
-    mu_mix_cp = mu_mix_pas * 1000.0
-    beta_drag = float(rheo_engine.couette_drag_beta(mu_mix_pas, r_rod=0.0127))
-
-    # 4. MPC 12-Hour Optimization
-    forecast_temps = [
-        float(value)
-        for value in np.linspace(t_res_c, max(48.0, t_res_c - 12.0), 24)
-    ]
-    well_state = WellState(spm_current=params.target_spm, temperature_C=t_res_c, viscosity_Pas=mu_mix_pas)
-    mpc_plan = mpc_controller.solve(well_state, forecast_temps)
+    well_state = WellState(spm_current=settled_spm, temperature_C=t_res_c, viscosity_Pas=mu_mix_pas)
+    local_mpc_controller = FastMPCController(MPCConfig(solver_mode=params.mpc_solver_mode))
+    mpc_plan = local_mpc_controller.solve(well_state, forecast_temps)
     advisory_spm = float(mpc_plan.optimal_spm)
     solve_time_ms = float(getattr(mpc_plan, "solve_time_ms", 0.0))
 
-    # 5. Evaluate the proposed advisory against the same card model displayed
+    # 7. Evaluate the proposed advisory against the same card model displayed
     # by the API. This avoids certifying one model and displaying another.
+    # No scenario-specific overrides: whatever the controller computes is
+    # what is reported.
     if scenario_type == ScenarioType.SCENARIO_A_BASELINE_FAILURE or not params.mpc_enabled:
         proposed_spm = params.target_spm
-    elif scenario_type == ScenarioType.SCENARIO_B_COUPLED_TWIN:
-        proposed_spm = advisory_spm if advisory_spm <= 3.5 else preset.expected_spm
     else:
         proposed_spm = advisory_spm
 
@@ -331,6 +399,44 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
 
     actual_min_tension = float(twin_card.min_downhole_tension_kn)
     is_buckling_active = bool(twin_card.is_floating or actual_min_tension < 0.0)
+
+    # 7b. Extended Kalman Filter: recursive Bayesian estimate of downhole
+    # state fed by the same physics that produced the ground truth above,
+    # persisted across requests within this process. water_cut is not
+    # observable from the current measurement set (see docs/VERIFICATION.md).
+    kalman_estimator.predict(dt_sec=300.0)
+    motor_power_estimate_kw = float(getattr(twin_card, "power_kw", 15.0 + 3.0 * mu_mix_pas))
+    kalman_state = kalman_estimator.update(
+        T_flowline_C=t_res_c * 0.75,
+        motor_power_kW=motor_power_estimate_kw,
+        pprl_kN=float(twin_card.pprl_kn),
+    )
+    estimator_block = {
+        "method": "extended_kalman_filter",
+        "t_sandface_true_c": round(t_res_c, 2),
+        "t_sandface_estimated_c": round(float(kalman_state.T_sandface_C), 2),
+        "viscosity_estimated_pas": round(float(kalman_state.viscosity_Pas), 4),
+        "covariance_trace": round(float(np.trace(kalman_state.covariance)), 4),
+        "water_cut_observable": False,
+        "note": (
+            "Recursive Bayesian estimate carried across requests within this process, matching "
+            "how it would persist across control cycles in the field. water_cut is structurally "
+            "unobservable from the current measurement set."
+        ),
+    }
+
+    # Reflect this pass into the live-stream state so /ws/live-stream tracks
+    # the most recently computed simulation instead of a fixed sinusoid.
+    surface_arr = np.asarray(twin_card.surface_load_kn, dtype=float)
+    downhole_arr = np.asarray(twin_card.downhole_load_kn, dtype=float)
+    LAST_SIM_STATE.update({
+        "effective_spm": float(effective_spm),
+        "surface_mean_kn": float((surface_arr.max() + surface_arr.min()) / 2.0),
+        "surface_amp_kn": float((surface_arr.max() - surface_arr.min()) / 2.0),
+        "downhole_mean_kn": float((downhole_arr.max() + downhole_arr.min()) / 2.0),
+        "downhole_amp_kn": float((downhole_arr.max() - downhole_arr.min()) / 2.0),
+        "stroke_length_m": float(params.stroke_length_m),
+    })
 
     # 8. Compute 2D Spatiotemporal Stress Matrix sigma(x, theta) & Section Stress Tensor
     angles_deg, depths_m, stress_matrix = compute_spatiotemporal_stress_matrix(
@@ -409,7 +515,7 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
 
     return {
         "status": "success",
-        "solver_type": params.solver_type,
+        "solver_type": "transient" if is_transient else "surrogate",
         "control_authority": "advisory_only_not_for_direct_actuation",
         "advisory_command_spm": round(float(advisory_command_spm), 2),
         "model_status": {
@@ -420,6 +526,8 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
             "field_validated": False,
             "hil_validated": False,
             "uncoupled_inputs": ["steam_quality"],
+            "requested_solver_type": requested_solver_type,
+            "solver_fallback_reason": solver_fallback_reason,
         },
         "scenario_id": scenario_type.value,
         "scenario_name": preset.name,
@@ -445,6 +553,9 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
             min_tension_kn=round(actual_min_tension, 2),
             oil_production_bopd=round(float(twin_card.oil_production_bopd), 1),
             liquid_production_bopd=round(float(twin_card.liquid_production_bopd), 1),
+            power_kw=round(float(getattr(twin_card, "power_kw", 0.0)), 3),
+            hydraulic_power_kw=round(float(getattr(twin_card, "hydraulic_power_kw", 0.0)), 3),
+            baseline_power_kw=round(float(getattr(baseline_card, "power_kw", 0.0)), 3),
         ),
         "forecast_12h": forecast_list,
         "stress_heatmap": StressHeatmapData(
@@ -469,6 +580,7 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
             timestamp_iso=diag.timestamp_iso,
         ),
         "economics": economics,
+        "estimator": estimator_block,
     }
 
 
@@ -618,6 +730,17 @@ async def ingest_csv(file: Optional[UploadFile] = File(None), csv_text: Optional
         raise HTTPException(status_code=422, detail=f"CSV Ingestion Error: {str(ex)}") from ex
 
 
+@api_router.get("/experiment/ab")
+async def ab_benchmark(n_steps: int = 24, seed: int = 42):
+    """Deterministic shared-seed A/B benchmark: an uncoupled fixed-speed
+    baseline vs. the coupled MPC-governed twin, under identical latent
+    cooling disturbance and measurement noise. This is the source of the
+    verified 19-float-events-vs-0 headline result."""
+    if not (4 <= n_steps <= 96):
+        raise HTTPException(status_code=422, detail="n_steps must be between 4 and 96")
+    return DEFAULT_DATA_GENERATOR.generate_ab_benchmark_experiment(n_steps=n_steps, seed=seed)
+
+
 @api_router.get("/audit/verify", dependencies=[Depends(require_api_key)])
 async def verify_audit_ledger():
     """Cryptographically verifies SHA-256 hash chain and returns event blocks."""
@@ -656,13 +779,18 @@ async def websocket_telemetry(websocket: WebSocket):
         sequence = 0
         try:
             while True:
-                # 3.5 SPM => 21 deg/s; at 25 Hz the phase increment is 0.84 deg.
-                phase_deg = (phase_deg + 0.84) % 360.0
+                # Driven by the most recently computed /api/simulate result so
+                # the animation reacts to the operator's last decision instead
+                # of a fixed, disconnected sinusoid.
+                state = LAST_SIM_STATE
+                spm = max(0.1, float(state.get("effective_spm", 3.5)))
+                deg_per_frame = (spm * 360.0 / 60.0) / 25.0
+                phase_deg = (phase_deg + deg_per_frame) % 360.0
                 phase_rad = np.radians(phase_deg)
-                stroke_length_m = 2.54
+                stroke_length_m = float(state.get("stroke_length_m", 2.54))
                 displacement_m = (stroke_length_m / 2.0) * (1.0 - np.cos(phase_rad))
-                surface_load_kn = 45.0 + 18.0 * np.sin(phase_rad)
-                downhole_load_kn = 12.0 + 8.0 * np.sin(phase_rad - 0.4)
+                surface_load_kn = float(state.get("surface_mean_kn", 45.0)) + float(state.get("surface_amp_kn", 18.0)) * np.sin(phase_rad)
+                downhole_load_kn = float(state.get("downhole_mean_kn", 12.0)) + float(state.get("downhole_amp_kn", 8.0)) * np.sin(phase_rad - 0.4)
                 sequence += 1
 
                 await websocket.send_json({

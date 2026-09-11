@@ -42,6 +42,31 @@ def test_api_apply_scenario_b_mpc():
     assert data["is_buckling_active"] is False
     assert data["actual_min_tension_kn"] >= 0.5
     assert data["effective_spm"] <= 3.5
+    # The effective speed must be a genuine controller output, never a
+    # scenario-preset constant substituted for the model's answer.
+    assert data["effective_spm"] != 2.8
+
+
+def test_api_mpc_solver_mode_optimization_actually_runs_slsqp():
+    """Regression guard for the bug where mpc_solver_mode only changed a
+    label without invoking the real SLSQP optimizer."""
+    payload = {
+        "cooling_multiplier": 2.20,
+        "elapsed_days": 490.94,
+        "target_spm": 4.7,
+        "water_cut": 0.25,
+        "mpc_enabled": True,
+        "modbus_severed": False,
+        "mpc_solver_mode": "optimization",
+    }
+    res = client.post("/api/simulate", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["model_status"]["controller"] == "nonlinear_constrained_slsqp_mpc"
+    # The real SLSQP solve is two orders of magnitude slower than the
+    # surrogate reachability governor; a fast response here means the label
+    # was swapped without actually invoking the optimizer.
+    assert data["solve_time_ms"] > 20.0
 
 
 def test_api_apply_scenario_c_telemetry():
@@ -97,7 +122,39 @@ def test_api_audit_verify():
 
 
 def test_api_transient_wave_solver():
-    """Verify simulation with high-fidelity transient wave solver via /api/simulate."""
+    """Verify simulation with high-fidelity transient wave solver via /api/simulate,
+    using conditions inside the grid-convergence-validated temperature band
+    (<=120 C; see TRANSIENT_VALIDATED_MAX_TEMP_C in backend/server.py)."""
+    payload = {
+        "target_spm": 4.7,
+        "elapsed_days": 490.94,
+        "cooling_multiplier": 2.20,
+        "water_cut": 0.25,
+        "plunger_sand_wear": 0.0,
+        "stroke_length_m": 2.54,
+        "mpc_enabled": True,
+        "modbus_severed": False,
+        "solver_type": "transient",
+    }
+    res = client.post("/api/simulate", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert data["solver_type"] == "transient"
+    assert data["model_status"]["rod_model"] == "transient_elastodynamic_wave_pde"
+    assert data["model_status"]["solver_fallback_reason"] is None
+    assert len(data["dynacard"]["surface_position_m"]) == 144
+    assert len(data["dynacard"]["surface_load_kn"]) == 144
+    assert data["solve_time_ms"] > 0.0
+    # PPRL must not exceed the rod-string rating in the validated regime.
+    assert data["dynacard"]["pprl_kn"] <= 110.0
+
+
+def test_api_transient_solver_auto_falls_back_outside_validated_band():
+    """Above the validated temperature band the explicit transient solver is
+    grid-non-convergent (PPRL non-monotone in dx, exceeds rating). The API
+    must disclose an honest fallback to the surrogate rather than serve an
+    invalid PPRL/tension pair labeled 'transient'."""
     payload = {
         "target_spm": 3.8,
         "elapsed_days": 10.0,
@@ -112,10 +169,38 @@ def test_api_transient_wave_solver():
     res = client.post("/api/simulate", json=payload)
     assert res.status_code == 200
     data = res.json()
-    assert data["status"] == "success"
-    assert data["solver_type"] == "transient"
-    assert data["model_status"]["rod_model"] == "transient_elastodynamic_wave_pde"
-    assert len(data["dynacard"]["surface_position_m"]) == 144
-    assert len(data["dynacard"]["surface_load_kn"]) == 144
-    assert data["solve_time_ms"] > 0.0
+    assert data["temperature_c"] > 120.0
+    assert data["solver_type"] == "surrogate"
+    assert data["model_status"]["requested_solver_type"] == "transient"
+    assert data["model_status"]["solver_fallback_reason"] is not None
+
+
+def test_api_ab_experiment_endpoint():
+    """The deterministic shared-seed A/B benchmark (README's headline 19-vs-0
+    float-event result) must be reachable live, not only from pytest."""
+    res = client.get("/api/experiment/ab")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["baseline_float_count"] == 19
+    assert data["coupled_float_count"] == 0
+    assert len(data["baseline"]) == 24
+    assert len(data["coupled"]) == 24
+
+    # A different seed must be honored (not cherry-picked/hardcoded).
+    res2 = client.get("/api/experiment/ab", params={"seed": 7})
+    assert res2.status_code == 200
+    assert res2.json()["seed"] == 7
+
+
+def test_api_estimator_and_sustainability_fields_present():
+    """Regression guard for the EKF and CO2/energy fields the plan requires
+    to be wired into the serving path, not just computed in isolation."""
+    res = client.post("/api/simulate", json={})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["estimator"]["method"] == "extended_kalman_filter"
+    assert "t_sandface_estimated_c" in data["estimator"]
+    assert data["dynacard"]["power_kw"] >= 0.0
+    assert "co2_avoided_tonnes_per_year" in data["economics"]
+    assert "co2_avoided_tonnes_per_year" in data["economics"]["sensitivity"]["base"]
 

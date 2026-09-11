@@ -212,50 +212,56 @@ export function WellboreSimulator({
   const insp = getInspectedTelemetry(inspectedDepth);
 
   return (
-    <div className="panel-hero theme-transition p-4 flex flex-col h-full">
-      {/* Viewport Header — the single hero panel gets one title + one live chip. */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-hairline mb-3 gap-2">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-interactive" />
-          <span className="section-title">Animated Wellbore Schematic — Reduced-Order Model</span>
-        </div>
+    <div className="card p-5 flex flex-col gap-4">
+      {/* Header — one title plus the single real-state live pill. */}
+      <div className="flex items-center justify-between gap-3">
+        <span className="card-title truncate">Wellbore schematic</span>
+        {isWsConnected ? (
+          <span className="pill bg-safe/10 text-safe shrink-0">
+            <span className="chip-dot vs-live-dot" />
+            Live
+          </span>
+        ) : (
+          <span className="pill bg-surface-2 text-muted shrink-0">
+            <span className="chip-dot" />
+            Local
+          </span>
+        )}
+      </div>
 
-        <div className="flex items-center gap-2 readout text-[11px] text-muted">
-          {isWsConnected ? (
-            <span className="chip text-safe bg-safe/10 border-safe/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-safe vs-live-dot" />
-              WS STREAM (25Hz)
-            </span>
-          ) : (
-            <span className="chip text-muted bg-surface-2 border-hairline">LOCAL KINEMATICS</span>
-          )}
+      {/* Compact control + kinematics readout row */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="segmented">
           <button
             type="button"
             aria-pressed={showStrata}
             onClick={() => setShowStrata(!showStrata)}
-            className={`btn px-2 py-0.5 rounded text-[10.5px] border ${
-              showStrata ? 'bg-surface-2 border-hairline text-interactive' : 'bg-surface-1 border-hairline text-faint'
-            }`}
+            className="segmented-item"
           >
-            CASE STRATA
+            Strata
           </button>
-          <span>θ = {phaseDeg.toFixed(1)}°</span>
-          <span>·</span>
-          <span className="text-interactive font-bold">
+        </div>
+
+        <div className="flex items-baseline gap-2 text-[12px]">
+          <span className="readout text-muted">θ {phaseDeg.toFixed(1)}°</span>
+          <span className="text-faint">·</span>
+          <span className="readout font-semibold text-interactive">
             <AnimatedNumber value={spm} format={(v) => v.toFixed(1)} /> SPM
           </span>
         </div>
       </div>
 
-      {/* Main SCADA Schematic Viewport */}
-      <div className="relative flex-1 min-h-[580px] panel-inset overflow-hidden flex flex-col justify-between">
-        {/* SVG Wellbore Drafting Canvas */}
-        <div className="relative w-full h-[520px] flex justify-center">
+      {/* Schematic bed */}
+      <div className="card-nested p-4">
+        {/* aspect-ratio-locked to the viewBox instead of a fixed pixel height,
+            so the schematic never letterboxes or squashes regardless of the
+            column width it renders in. */}
+        <div className="relative w-full flex justify-center" style={{ aspectRatio: '480 / 620' }}>
           <svg
             viewBox="0 0 480 620"
             role="img"
             aria-labelledby="wellbore-model-title wellbore-model-desc"
-            className="w-full h-full max-w-[480px]"
+            className="w-full h-full"
             xmlns="http://www.w3.org/2000/svg"
           >
             <title id="wellbore-model-title">Animated synthetic wellbore model</title>
@@ -273,103 +279,103 @@ export function WellboreSimulator({
 
               {/* Heavy Oil Column Gradient */}
               <linearGradient id="fluidColumnGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" style={{ stopColor: 'rgb(var(--bg-surface-2))' }} />
-                <stop offset="50%" style={{ stopColor: 'rgb(var(--border-hairline))' }} />
-                <stop offset="100%" style={{ stopColor: 'rgb(var(--bg-surface-2))' }} />
+                <stop offset="0%" style={{ stopColor: 'rgb(var(--bg-surface-1))' }} />
+                <stop offset="50%" style={{ stopColor: 'rgb(var(--text-tertiary))', stopOpacity: 0.16 }} />
+                <stop offset="100%" style={{ stopColor: 'rgb(var(--bg-surface-1))' }} />
               </linearGradient>
             </defs>
 
             {/* GEOLOGICAL STRATIGRAPHY */}
             {showStrata && (
-              <g id="geology-layers" opacity="0.6">
-                <rect x="0" y="140" width="480" height="110" className="fill-surface-1" />
-                <text x="415" y="195" className="text-[8.5px] fill-faint font-mono">Overburden</text>
+              <g id="geology-layers">
+                <rect x="0" y="140" width="480" height="110" style={{ fill: 'rgb(var(--bg-surface-1))' }} />
+                <text x="415" y="195" className="text-[8.5px] fill-faint">Overburden</text>
 
-                <rect x="0" y="250" width="480" height="130" className="fill-surface-2" />
-                <text x="395" y="315" className="text-[8.5px] fill-faint font-mono">Nagaur Shale</text>
+                <rect x="0" y="250" width="480" height="130" style={{ fill: 'rgb(var(--text-tertiary) / 0.07)' }} />
+                <text x="395" y="315" className="text-[8.5px] fill-faint">Nagaur Shale</text>
 
-                <rect x="0" y="380" width="480" height="130" className="fill-surface-1" />
-                <text x="385" y="445" className="text-[8.5px] fill-faint font-mono">Bilara Carbonate</text>
+                <rect x="0" y="380" width="480" height="130" style={{ fill: 'rgb(var(--bg-surface-1))' }} />
+                <text x="385" y="445" className="text-[8.5px] fill-faint">Bilara Carbonate</text>
 
                 {/* Jodhpur Sandstone Target Reservoir (950 - 1,150 m) */}
-                <rect x="0" y="510" width="480" height="100" style={{ fill: 'rgb(var(--accent-caution) / 0.16)' }} />
-                <text x="330" y="555" className="text-[9px] fill-caution font-mono font-bold">
+                <rect x="0" y="510" width="480" height="100" style={{ fill: 'rgb(var(--accent-caution) / 0.1)' }} />
+                <text x="330" y="555" className="text-[9px] fill-caution font-semibold">
                   Jodhpur Sandstone (1,150 m)
                 </text>
               </g>
             )}
 
             {/* Surface Ground Level Line */}
-            <line x1="0" y1="140" x2="480" y2="140" className="stroke-muted" strokeWidth="1.5" />
-            <rect x="185" y="132" width="110" height="8" className="fill-surface-2 stroke-muted" strokeWidth="1" />
-            <text x="420" y="136" className="text-[9px] fill-muted font-mono font-semibold">GL (0 m)</text>
+            <line x1="0" y1="140" x2="480" y2="140" className="stroke-faint" strokeWidth="1.25" />
+            <rect x="185" y="132" width="110" height="8" className="fill-surface-2 stroke-faint" strokeWidth="1" />
+            <text x="420" y="136" className="text-[9px] fill-faint font-mono">GL (0 m)</text>
 
             {/* Technical Depth Ruler Grid (Left Rail) */}
             <g className="text-[9px] fill-faint font-mono">
-              <line x1="55" y1="140" x2="55" y2="580" className="stroke-hairline" strokeWidth="1" strokeDasharray="3 3" />
+              <line x1="55" y1="140" x2="55" y2="580" className="stroke-grid" strokeWidth="1" strokeDasharray="3 3" />
 
-              <line x1="50" y1="140" x2="60" y2="140" className="stroke-muted" strokeWidth="1" />
+              <line x1="50" y1="140" x2="60" y2="140" className="stroke-faint" strokeWidth="1" />
               <text x="22" y="143">0 m</text>
 
-              <line x1="50" y1="260" x2="60" y2="260" className="stroke-muted" strokeWidth="1" />
+              <line x1="50" y1="260" x2="60" y2="260" className="stroke-faint" strokeWidth="1" />
               <text x="14" y="263">350 m</text>
 
-              <line x1="50" y1="390" x2="60" y2="390" className="stroke-muted" strokeWidth="1" />
+              <line x1="50" y1="390" x2="60" y2="390" className="stroke-faint" strokeWidth="1" />
               <text x="14" y="393">750 m</text>
 
-              <line x1="50" y1="580" x2="60" y2="580" className="stroke-muted" strokeWidth="1" />
+              <line x1="50" y1="580" x2="60" y2="580" className="stroke-faint" strokeWidth="1" />
               <text x="8" y="583">1,150 m</text>
             </g>
 
             {/* SURFACE PUMPING UNIT */}
             <g id="surface-unit">
               {/* Samson Post (A-Frame) */}
-              <polygon points="130,140 155,55 180,140" className="fill-surface-2 stroke-muted" strokeWidth="1.5" />
-              <line x1="142" y1="98" x2="168" y2="98" className="stroke-muted" strokeWidth="1" />
+              <polygon points="130,140 155,55 180,140" className="fill-surface-1 stroke-faint" strokeWidth="1.25" />
+              <line x1="142" y1="98" x2="168" y2="98" className="stroke-faint" strokeWidth="1" />
 
               {/* Walking Beam Pivot Assembly */}
               <g transform={`rotate(${beamAngle}, 155, 55)`}>
-                <rect x="75" y="50" width="160" height="10" rx="1" className="fill-surface-2 stroke-interactive" strokeWidth="1.5" />
+                <rect x="75" y="50" width="160" height="10" rx="1" className="fill-surface-1 stroke-interactive" strokeWidth="1.5" />
 
                 {/* Horsehead Arc */}
                 <path d="M 235,55 Q 248,70 240,105 L 230,105 Q 238,70 225,55 Z" className="fill-interactive stroke-interactive" />
 
                 {/* Counterweight */}
-                <rect x="80" y="42" width="28" height="26" rx="1" className="fill-muted stroke-muted" strokeWidth="1" />
-                <text x="86" y="58" className="text-[7.5px] fill-surface-1 font-mono font-bold">CW</text>
+                <rect x="80" y="42" width="28" height="26" rx="1" className="fill-interactive stroke-interactive" strokeWidth="1" />
+                <text x="86" y="58" className="text-[7.5px] fill-surface-1 font-semibold">CW</text>
 
                 {/* Pitman Pin */}
-                <circle cx="95" cy="55" r="3" className="fill-muted stroke-muted" strokeWidth="1" />
+                <circle cx="95" cy="55" r="3" className="fill-surface-1 stroke-interactive" strokeWidth="1" />
               </g>
 
               {/* Center Pivot Bearing */}
               <circle cx="155" cy="55" r="4.5" className="fill-interactive stroke-surface-1" strokeWidth="1.5" />
 
               {/* Carrier Bar & Bridle Wireline */}
-              <line x1="240" y1="100" x2="240" y2="135" className="stroke-muted" strokeWidth="1.5" />
-              <rect x="232" y="135" width="16" height="5" rx="0.5" className="fill-muted" />
+              <line x1="240" y1="100" x2="240" y2="135" className="stroke-faint" strokeWidth="1.25" />
+              <rect x="232" y="135" width="16" height="5" rx="0.5" className="fill-faint" />
             </g>
 
             {/* SUBSURFACE WELLBORE & CASING */}
-            <rect x="210" y="140" width="60" height="445" className="fill-surface-1 stroke-muted" strokeWidth="1.5" />
+            <rect x="210" y="140" width="60" height="445" className="fill-surface-1 stroke-interactive/50" strokeWidth="1.5" />
 
             {/* Annular Heavy Crude Fluid Column */}
-            <rect x="215" y="140" width="50" height="445" fill="url(#fluidColumnGrad)" opacity="0.9" />
+            <rect x="215" y="140" width="50" height="445" fill="url(#fluidColumnGrad)" opacity="0.8" />
 
             {/* Thermal Steam Plume (Jodhpur Sandface 1,100 to 1,150 m) */}
             <ellipse cx="240" cy="570" rx="95" ry="35" fill="url(#scadaThermalPlume)" />
 
             {/* TAPER SECTION INTERFACE MARKERS */}
-            <line x1="210" y1="260" x2="270" y2="260" className="stroke-muted" strokeWidth="1.5" strokeDasharray="3 2" />
+            <line x1="210" y1="260" x2="270" y2="260" className="stroke-faint" strokeWidth="1.25" strokeDasharray="3 2" />
             <text x="278" y="263" className="text-[9px] fill-faint font-mono">Taper 1: 1.0" → 7/8" (350 m)</text>
 
-            <line x1="210" y1="390" x2="270" y2="390" className="stroke-muted" strokeWidth="1.5" strokeDasharray="3 2" />
+            <line x1="210" y1="390" x2="270" y2="390" className="stroke-faint" strokeWidth="1.25" strokeDasharray="3 2" />
             <text x="278" y="393" className="text-[9px] fill-faint font-mono">Taper 2: 7/8" → 3/4" (750 m)</text>
 
             {/* SUCKER ROD STRING (Kinematic Stroke Driven with Tensor Stress Colors) */}
             <g transform={`translate(0, ${rodOffset})`}>
               {/* Polished Rod */}
-              <rect x="238" y="130" width="4" height="20" className="fill-muted" />
+              <rect x="238" y="130" width="4" height="20" className="fill-faint" />
 
               {/* Section 1: 1.0" Rod (0 to 350 m -> y=140 to 260) */}
               <rect x="237" y="140" width="6" height="120" style={{ fill: sec1.fill, stroke: sec1.stroke }} strokeWidth="1" />
@@ -399,7 +405,7 @@ export function WellboreSimulator({
               {/* DOWNHOLE PLUNGER PUMP (1,150 m TVD) */}
               <g id="pump-assembly">
                 <rect x="231" y="545" width="18" height="35" className="fill-surface-1 stroke-interactive" strokeWidth="1.5" />
-                <rect x="233" y="550" width="14" height="24" className="fill-surface-2 stroke-muted" />
+                <rect x="233" y="550" width="14" height="24" className="fill-surface-2 stroke-faint" />
 
                 {/* Traveling Valve (TV) */}
                 <circle
@@ -410,7 +416,7 @@ export function WellboreSimulator({
                   className="stroke-surface-1"
                   strokeWidth="1"
                 />
-                <text x="252" y="559" className="text-[7.5px] fill-muted font-mono">TV</text>
+                <text x="252" y="559" className="text-[7.5px] fill-faint font-semibold">TV</text>
 
                 {/* Standing Valve (SV) */}
                 <circle
@@ -421,7 +427,7 @@ export function WellboreSimulator({
                   className="stroke-surface-1"
                   strokeWidth="1"
                 />
-                <text x="252" y="575" className="text-[7.5px] fill-muted font-mono">SV</text>
+                <text x="252" y="575" className="text-[7.5px] fill-faint font-semibold">SV</text>
               </g>
             </g>
 
@@ -436,64 +442,84 @@ export function WellboreSimulator({
             {/* Reduced-order compression-screen callout */}
             {(sec3.compressionAlert || isBuckling) && (
               <g transform="translate(65, 430)">
-                <rect x="0" y="0" width="145" height="52" rx="4" style={{ fill: 'rgb(var(--accent-critical) / 0.12)', stroke: 'rgb(var(--accent-critical))' }} strokeWidth="1.5" />
-                <text x="8" y="16" className="text-[9.5px] fill-critical font-mono font-bold">MODELED COMPRESSION SCREEN</text>
+                <rect
+                  x="0"
+                  y="0"
+                  width="145"
+                  height="52"
+                  rx="6"
+                  style={{ fill: 'rgb(var(--bg-surface-1))', stroke: 'rgb(var(--accent-critical) / 0.45)' }}
+                  strokeWidth="1"
+                />
+                <text x="8" y="16" className="text-[9.5px] fill-critical font-semibold">Modeled compression screen</text>
                 <text x="8" y="30" className="text-[8.5px] fill-critical font-mono">
                   F_down = {minTensionKn.toFixed(2)} kN (&lt; 0.0 kN)
                 </text>
-                <text x="8" y="42" className="text-[8px] fill-faint font-mono">Investigate section 3 assumption</text>
+                <text x="8" y="42" className="text-[8px] fill-faint">Investigate section 3 assumption</text>
               </g>
             )}
           </svg>
         </div>
+      </div>
 
-        {/* Technical Depth Inspector Tool (Bottom Rail) */}
-        <div className="bg-surface-1 border-t border-hairline p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-3">
-            <label htmlFor="modeled-depth-node" className="text-muted font-medium text-[11px]">
-              Modeled depth node:
-            </label>
-            <select
-              id="modeled-depth-node"
-              value={inspectedDepth}
-              onChange={(e) => setInspectedDepth(parseInt(e.target.value))}
-              className="readout text-xs bg-surface-2 border border-hairline rounded px-2 py-1 text-ink focus:border-interactive"
+      {/* Depth inspector — stacked for the narrow column */}
+      <div className="card-nested p-4 flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="modeled-depth-node" className="unit-label">
+            Modeled depth node
+          </label>
+          <select
+            id="modeled-depth-node"
+            value={inspectedDepth}
+            onChange={(e) => setInspectedDepth(parseInt(e.target.value))}
+            className="readout text-[12.5px] w-full bg-surface-1 border border-hairline rounded-[10px] px-3 py-2 text-ink focus:border-interactive"
+          >
+            <option value="200">200 m (Sec 1 - 1.000")</option>
+            <option value="550">550 m (Sec 2 - 0.875")</option>
+            <option value="950">950 m (Sec 3 - 0.750")</option>
+            <option value="1150">1,150 m (Plunger Sandface)</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-hairline">
+          <div className="flex flex-col gap-1">
+            <span className="unit-label">Stress &middot; MPa</span>
+            <span className={`readout text-[17px] font-bold ${insp.stressMpa < 0 ? 'text-critical' : 'text-ink'}`}>
+              {insp.stressMpa.toFixed(1)}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="unit-label">Axial force &middot; kN</span>
+            <span
+              className={`readout text-[17px] font-bold ${
+                insp.forceKn < 0.5 ? 'text-critical' : insp.forceKn <= 2.0 ? 'text-caution' : 'text-safe'
+              }`}
             >
-              <option value="200">200 m (Sec 1 - 1.000")</option>
-              <option value="550">550 m (Sec 2 - 0.875")</option>
-              <option value="950">950 m (Sec 3 - 0.750")</option>
-              <option value="1150">1,150 m (Plunger Sandface)</option>
-            </select>
+              {insp.forceKn >= 0 ? `+${insp.forceKn.toFixed(2)}` : insp.forceKn.toFixed(2)}
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 readout text-[11px]">
-            <div>
-              <span className="text-muted">Stress: </span>
-              <span className={`font-bold ${insp.stressMpa < 0 ? 'text-critical' : 'text-ink'}`}>
-                {insp.stressMpa.toFixed(1)} MPa
-              </span>
-            </div>
-            <div>
-              <span className="text-muted">Axial Force: </span>
-              <span
-                className={`font-semibold ${
-                  insp.forceKn < 0.5 ? 'text-critical' : insp.forceKn <= 2.0 ? 'text-caution' : 'text-safe'
-                }`}
-              >
-                {insp.forceKn >= 0 ? `+${insp.forceKn.toFixed(2)}` : insp.forceKn.toFixed(2)} kN
-              </span>
-            </div>
-            <div>
-              <span className="text-muted">Tension screen: </span>
-              <span className={`font-bold ${insp.forceKn < 0.5 ? 'text-critical' : 'text-safe'}`}>{insp.tensionScreen}</span>
-            </div>
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <span className="unit-label">Tension screen</span>
+            <span
+              className={`pill self-start ${
+                insp.forceKn < 0.5 ? 'bg-critical/10 text-critical' : 'bg-safe/10 text-safe'
+              }`}
+            >
+              <span className="chip-dot" />
+              {insp.tensionScreen}
+            </span>
           </div>
+
+          <div className="col-span-2 caption border-t border-hairline pt-3">{insp.section}</div>
         </div>
       </div>
-      <div className="mt-3 readout text-[10.5px] text-caution bg-caution/10 border border-caution/30 rounded px-3 py-1.5">
-        Synthetic animated schematic; geometry, strata, stress, and force are model assumptions/outputs, not live downhole
+
+      <p className="caption">
+        Synthetic animated schematic. Geometry, strata, stress, and force are model assumptions, not live downhole
         observations. Buckling, contact, fatigue, and safety factor are not evaluated.
-      </div>
+      </p>
     </div>
   );
 }

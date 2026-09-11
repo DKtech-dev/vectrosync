@@ -1,6 +1,84 @@
 import React from 'react';
-import { Flame, Droplet, Gauge, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { AnimatedNumber } from './AnimatedNumber';
+import { DotNumber } from './DotNumber';
+
+/**
+ * Miniature radial gauge: a quarter-to-full arc sweep sized entirely in `cqw`
+ * (percent of the card's own width, via CSS container queries) so it can
+ * never overlap a sibling regardless of how the grid reflows.
+ */
+function MiniGauge({ pct, toneVar }) {
+  const clamped = Math.max(0, Math.min(100, pct));
+  const size = 100;
+  const stroke = 7;
+  const r = (size - stroke) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const circumference = 2 * Math.PI * r;
+  const arcFraction = 0.72; // 260deg sweep, gauge-style (not a full circle)
+  const dash = circumference * arcFraction;
+  const rotate = 90 + (360 * (1 - arcFraction)) / 2;
+
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} className="glass-card__gauge w-full h-full" style={{ overflow: 'visible' }} aria-hidden="true">
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill="none"
+        stroke="rgba(255,255,255,0.22)"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={`${dash} ${circumference}`}
+        transform={`rotate(${rotate} ${cx} ${cy})`}
+      />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill="none"
+        stroke={toneVar}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={`${dash * (clamped / 100)} ${circumference}`}
+        transform={`rotate(${rotate} ${cx} ${cy})`}
+        style={{ transition: 'stroke-dasharray 0.6s cubic-bezier(0.16,1,0.3,1)' }}
+      />
+    </svg>
+  );
+}
+
+const TONES = {
+  safe: { cls: 'glass-card--safe', var: '#5eead4' },
+  caution: { cls: 'glass-card--caution', var: '#fde68a' },
+  critical: { cls: 'glass-card--critical', var: '#fda4af' },
+  neutral: { cls: 'glass-card--neutral', var: '#c7d2fe' },
+};
+
+function CapabilityCard({ tone = 'neutral', title, caption, value, unit, gaugePct, delay = 0 }) {
+  const t = TONES[tone];
+  return (
+    <div
+      className={`glass-card ${t.cls} p-5 flex flex-col items-center text-center gap-3`}
+      style={{ '--entrance-delay': `${delay}s` }}
+    >
+      <div className="glass-card__grain" />
+      <h3 className="relative z-[2] text-[15px] font-semibold leading-snug" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: '20px' }}>
+        {title}
+      </h3>
+
+      <div className="relative z-[2] w-[34%] aspect-square my-1">
+        <MiniGauge pct={gaugePct} toneVar={t.var} />
+      </div>
+
+      <div className="glass-card__metric relative z-[2] flex items-baseline gap-1.5 justify-center">
+        <DotNumber value={value} dotRadius={2.3} style={{ height: '0.9em', color: '#fff' }} />
+        <span className="text-[15px] font-semibold opacity-90">{unit}</span>
+      </div>
+
+      <p className="relative z-[2] text-[12.5px] leading-snug opacity-80">{caption}</p>
+    </div>
+  );
+}
 
 export function MetricCards({
   temperatureC,
@@ -12,124 +90,58 @@ export function MetricCards({
   isBuckling,
   elapsedDays = 12.0,
 }) {
-  const meetsModeledTensionFloor = minTensionKn >= 0.5;
-  const speedConstrained = effectiveSpm < targetSpm;
+  const meetsFloor = minTensionKn >= 0.5;
+  const constrained = effectiveSpm < targetSpm;
 
   return (
-    <div className="space-y-2">
-      <div className="readout text-[10.5px] text-caution bg-caution/10 border border-caution/30 rounded-md px-3 py-1.5">
-        Synthetic reduced-order outputs · screening/advisory use only · not measurements or certified safety determinations
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <CapabilityCard
+        tone="neutral"
+        title={'Formation Temp'}
+        value={temperatureC.toFixed(1)}
+        unit="\u00b0C"
+        gaugePct={Math.min(100, (temperatureC / 260) * 100)}
+        caption={`Boberg-Lantz model \u00b7 CSS day ${elapsedDays.toFixed(0)}`}
+        delay={0}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Formation Temperature — informational (no alarm state) */}
-        <div className="panel p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold flex items-center gap-2 text-muted">
-              <Flame className="w-3.5 h-3.5 text-faint" />
-              Modeled Formation Temp
-            </span>
-            <span className="readout text-[11px] text-faint">CSS Day {elapsedDays.toFixed(1)}</span>
-          </div>
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <AnimatedNumber value={temperatureC} format={(v) => v.toFixed(1)} className="text-3xl font-bold text-ink tracking-tight" />
-              <span className="text-sm font-medium text-muted">°C</span>
-            </div>
-            <div className="flex items-center justify-between mt-2 text-[11px] text-muted">
-              <span className="readout">{temperatureC - 48.0 >= 0 ? `+${(temperatureC - 48.0).toFixed(1)}` : (temperatureC - 48.0).toFixed(1)}°C vs native</span>
-              <span className="chip text-muted bg-surface-2 border-hairline">Boberg-Lantz</span>
-            </div>
-          </div>
-        </div>
+      <CapabilityCard
+        tone="caution"
+        title={'Crude Viscosity'}
+        value={viscosityCp > 1000 ? (viscosityCp / 1000).toFixed(1) : viscosityCp.toFixed(0)}
+        unit={viscosityCp > 1000 ? 'k cP' : 'cP'}
+        gaugePct={Math.min(100, (viscosityCp / 15000) * 100)}
+        caption={`Arrhenius model \u00b7 \u03b2 ${dragBeta.toFixed(2)} N\u00b7s/m\u00b2`}
+        delay={0.08}
+      />
 
-        {/* 2. Heavy Crude Viscosity & Drag — informational */}
-        <div className="panel p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold flex items-center gap-2 text-muted">
-              <Droplet className="w-3.5 h-3.5 text-faint" />
-              Crude Viscosity
-            </span>
-            <span className="readout text-[11px] text-faint">Arrhenius</span>
-          </div>
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <AnimatedNumber
-                value={viscosityCp}
-                format={(v) => (v > 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0))}
-                className="text-3xl font-bold text-ink tracking-tight"
-              />
-              <span className="text-sm font-medium text-muted">cP</span>
-            </div>
-            <div className="flex items-center justify-between mt-2 text-[11px] text-muted">
-              <span className="readout">{(viscosityCp / 1000).toFixed(3)} Pa·s</span>
-              <span className="chip text-muted bg-surface-2 border-hairline">β = {dragBeta.toFixed(2)} N·s/m²</span>
-            </div>
-          </div>
-        </div>
+      <CapabilityCard
+        tone={meetsFloor ? 'safe' : 'critical'}
+        title={'Min Rod Tension'}
+        value={minTensionKn >= 0 ? `+${minTensionKn.toFixed(2)}` : minTensionKn.toFixed(2)}
+        unit="kN"
+        gaugePct={Math.max(0, Math.min(100, ((minTensionKn + 2) / 4) * 100))}
+        caption={
+          meetsFloor
+            ? `+${(minTensionKn - 0.5).toFixed(2)} kN above the +0.50 floor`
+            : `${(minTensionKn - 0.5).toFixed(2)} kN below the +0.50 floor`
+        }
+        delay={0.16}
+      />
 
-        {/* 3. Minimum Rod Tension — the reactive tile (safe / critical) */}
-        <div
-          className={`panel p-4 flex flex-col gap-3 border-l-2 ${
-            meetsModeledTensionFloor ? 'border-l-safe' : 'border-l-critical'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold flex items-center gap-2 text-muted">
-              {meetsModeledTensionFloor ? (
-                <ShieldCheck className="w-3.5 h-3.5 text-safe" />
-              ) : (
-                <AlertTriangle className="w-3.5 h-3.5 text-critical animate-pulse" />
-              )}
-              Modeled Min Tension
-            </span>
-            <span className="readout text-[11px] text-faint">Floor: +0.50 kN</span>
-          </div>
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <AnimatedNumber
-                value={minTensionKn}
-                format={(v) => (v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2))}
-                className={`text-3xl font-bold tracking-tight ${meetsModeledTensionFloor ? 'text-safe' : 'text-critical'}`}
-              />
-              <span className="text-sm font-medium text-muted">kN</span>
-            </div>
-            <div className="flex items-center justify-between mt-2 text-[11px]">
-              {meetsModeledTensionFloor ? (
-                <span className="chip text-safe bg-safe/10 border-safe/30">Above floor (+{(minTensionKn - 0.5).toFixed(2)} kN)</span>
-              ) : (
-                <span className="chip text-critical bg-critical/10 border-critical/40 animate-pulse">Modeled compression screen</span>
-              )}
-              <span className="readout text-faint">Depth 1,150 m</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 4. Operating Speed — caution only when a constraint advisory is applied */}
-        <div className="panel p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold flex items-center gap-2 text-muted">
-              <Gauge className="w-3.5 h-3.5 text-faint" />
-              Advisory Speed
-            </span>
-            <span className="readout text-[11px] text-faint">Target: {targetSpm.toFixed(1)} SPM</span>
-          </div>
-          <div>
-            <div className="flex items-baseline gap-1.5">
-              <AnimatedNumber value={effectiveSpm} format={(v) => v.toFixed(1)} className="text-3xl font-bold text-ink tracking-tight" />
-              <span className="text-sm font-medium text-muted">SPM</span>
-            </div>
-            <div className="flex items-center justify-between mt-2 text-[11px] text-muted">
-              <span className="readout">Period: {(60 / (effectiveSpm || 1)).toFixed(1)}s / cycle</span>
-              {speedConstrained ? (
-                <span className="chip text-caution bg-caution/10 border-caution/30">Constraint advisory applied</span>
-              ) : (
-                <span className="readout text-faint">Requested setpoint retained</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <CapabilityCard
+        tone={constrained ? 'caution' : 'safe'}
+        title={'Advisory Speed'}
+        value={effectiveSpm.toFixed(1)}
+        unit="SPM"
+        gaugePct={(effectiveSpm / (targetSpm || 1)) * 100}
+        caption={
+          constrained
+            ? `Throttled from requested ${targetSpm.toFixed(1)} SPM`
+            : `At requested ${targetSpm.toFixed(1)} SPM setpoint`
+        }
+        delay={0.24}
+      />
     </div>
   );
 }

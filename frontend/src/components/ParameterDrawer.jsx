@@ -25,36 +25,39 @@ export function ParameterDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-[rgb(0_0_0/0.45)] backdrop-blur-sm flex justify-end vs-overlay-in">
-      <div role="dialog" aria-modal="true" aria-labelledby="parameter-drawer-title" className="w-full max-w-md bg-surface-1 text-ink h-full shadow-2xl flex flex-col justify-between border-l border-hairline vs-slide-in-right">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[rgb(15_23_42/0.35)] backdrop-blur-sm flex justify-end p-3 sm:p-5 vs-overlay-in">
+      <div role="dialog" aria-modal="true" aria-labelledby="parameter-drawer-title" className="w-full max-w-md bg-surface-1 text-ink h-full flex flex-col justify-between rounded-[24px] border border-hairline shadow-float overflow-hidden vs-slide-in-right">
         {/* Drawer Header */}
-        <div className="p-4 border-b border-hairline flex items-center justify-between bg-surface-2">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-interactive" />
-            <h3 id="parameter-drawer-title" className="section-title">
-              Synthetic Case Inputs &mdash; Model Assumptions
-            </h3>
+        <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="icon-badge w-9 h-9 bg-interactive/10 text-interactive">
+              <SlidersHorizontal className="w-4 h-4" />
+            </span>
+            <div>
+              <h3 id="parameter-drawer-title" className="card-title">Case inputs</h3>
+              <p className="caption">Model assumptions</p>
+            </div>
           </div>
           <button
             ref={closeButtonRef}
             type="button"
             aria-label="Close parameter drawer"
             onClick={onClose}
-            className="btn bg-surface-2 border border-hairline text-muted hover:text-ink p-1.5"
+            className="btn-icon"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Drawer Body */}
-        <div className="p-4 overflow-y-auto flex-1 space-y-4 text-xs bg-surface-1">
-          <p className="text-[11px] readout leading-relaxed text-ink bg-caution/10 border border-caution/30 rounded-lg p-3">
+        <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4 text-[13px]">
+          <p className="caption">
             Changes rerun an unvalidated reduced-order model only. They do not command equipment or alter a live control system.
           </p>
           {/* Thermal & Steam */}
-          <div className="space-y-3 panel-inset p-4">
-            <div className="section-title text-muted pb-2 border-b border-hairline">
-              Thermal &amp; Steam Dynamics
+          <div className="space-y-3 card-nested p-4">
+            <div className="text-[13px] font-semibold text-ink pb-2 border-b border-hairline">
+              Thermal &amp; steam
             </div>
 
             <div>
@@ -112,9 +115,9 @@ export function ParameterDrawer({
           </div>
 
           {/* Fluid & Sand Wear */}
-          <div className="space-y-3 panel-inset p-4">
-            <div className="section-title text-muted pb-2 border-b border-hairline">
-              Fluid Rheology &amp; Plunger Erosion
+          <div className="space-y-3 card-nested p-4">
+            <div className="text-[13px] font-semibold text-ink pb-2 border-b border-hairline">
+              Fluid rheology &amp; erosion
             </div>
 
             <div>
@@ -153,9 +156,9 @@ export function ParameterDrawer({
           </div>
 
           {/* Kinematics */}
-          <div className="space-y-3 panel-inset p-4">
-            <div className="section-title text-muted pb-2 border-b border-hairline">
-              Surface Pumping Kinematics
+          <div className="space-y-3 card-nested p-4">
+            <div className="text-[13px] font-semibold text-ink pb-2 border-b border-hairline">
+              Surface kinematics
             </div>
 
             <div>
@@ -194,42 +197,32 @@ export function ParameterDrawer({
           </div>
 
           {/* Modbus Disconnect Simulator */}
-          <div className="p-4 bg-critical/10 rounded-lg border border-critical/30">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+          <div className="p-4 bg-critical/10 rounded-[14px] border border-critical/25">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={params.modbus_severed}
                 onChange={(e) => onChangeParam('modbus_severed', e.target.checked)}
                 className="rounded border-hairline accent-critical"
               />
-              <span className="font-bold text-critical text-xs">Simulate Modbus Cable Severance</span>
+              <span className="font-semibold text-critical text-[13px]">Simulate Modbus cable severance</span>
             </label>
-            <p className="text-[11px] text-critical mt-1 pl-6 leading-relaxed">
+            <p className="text-[12px] text-critical/80 mt-1.5 pl-7 leading-relaxed">
               Configures a synthetic stale-data case (&gt;60 s) and reports the model's Level 2 fallback recommendation of 2.0 SPM; no bus is connected.
             </p>
           </div>
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-4 border-t border-hairline bg-surface-2 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onReset}
-            disabled={loading}
-            className="btn bg-surface-2 border border-hairline text-muted hover:text-ink px-4 py-2 text-xs"
-          >
+        <div className="px-5 py-4 border-t border-hairline flex items-center justify-between gap-3">
+          <button type="button" onClick={onReset} disabled={loading} className="btn btn-ghost px-4 py-2">
             <RotateCcw className="w-3.5 h-3.5" />
             Reset
           </button>
 
-          <button
-            type="button"
-            onClick={onApply}
-            disabled={loading}
-            className="btn bg-interactive text-white hover:bg-interactive/90 px-4 py-2 text-xs"
-          >
+          <button type="button" onClick={onApply} disabled={loading} className="btn btn-primary px-4 py-2">
             <Check className="w-3.5 h-3.5" />
-            {loading ? 'Running Reduced-Order Model...' : 'Apply Model Inputs'}
+            {loading ? 'Running model…' : 'Apply model inputs'}
           </button>
         </div>
       </div>

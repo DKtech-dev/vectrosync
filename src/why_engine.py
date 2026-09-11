@@ -6,6 +6,7 @@ physics check, or evidence that an advisory action will prevent a failure.
 
 import math
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -135,4 +136,5 @@ class WhyEngine:
             dispatched_action=action,
             structural_outcome=outcome,
             provenance_tag=provenance,
+            timestamp_iso=datetime.now(timezone.utc).isoformat(),
         )
