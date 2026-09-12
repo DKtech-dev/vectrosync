@@ -1,7 +1,9 @@
-"""In-memory SHA-256 event chain for application-level tamper evidence.
+"""In-memory SHA-256 tamper-evident provenance log demonstration (src/audit.py).
 
-The chain is thread-safe but not durable, signed, externally anchored, or proof
-that user-supplied provenance labels are authentic.
+The chain provides an application-level in-process tamper-evidence demonstration.
+It is thread-safe within the active process, but not durable across application restarts,
+not cryptographically signed by private PKI hardware tokens, not externally anchored to
+an independent ledger, and not proof that user-supplied provenance labels are authentic.
 Provenance layering: data objects (see src/adapter.py) may carry the broader
 data-level tag set, including the '[unverified]' default assigned to raw inputs
 before validation. This ledger, however, only certifies events under the strict

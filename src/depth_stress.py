@@ -1,8 +1,8 @@
-"""Depth/phase axial-load visualization.
+"""Spatiotemporal axial stress screening surrogate (src/depth_stress.py).
 
 The current heatmap linearly interpolates between estimated surface and
-bottom loads and divides by local section area. It is not a recovered nodal
-stress field or a lateral buckling/contact solution.
+bottom loads and divides by local section area. It is an illustrative
+screening surrogate, not a recovered dynamic nodal stress field or a lateral buckling/contact solution.
 """
 
 from typing import Any

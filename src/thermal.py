@@ -151,6 +151,12 @@ class ThermalDecayEngine:
         return float(np.clip(2.0 * val, 0.0, 1.0))
 
     def radial_factor(self, b2: Union[float, np.ndarray], use_fast_spline: bool = True) -> Union[float, np.ndarray]:
+        """
+        Dimensionless radial conduction decay factor V_r(b^2).
+        For small b^2 <= 1e-10, V_r -> 1.0 (isothermal core).
+        For large b^2 >= 100.0, V_r(b^2) asymptotes to 1.0 / (4.0 * b^2) based on the
+        governing radial conduction integral (correcting preliminary literature draft typo of 1/(2*b^2)).
+        """
         is_scalar = np.isscalar(b2)
         b2_arr = np.asarray(b2, dtype=np.float64)
 
@@ -226,10 +232,25 @@ class ThermalDecayEngine:
         w = 4.0 * self.params.alpha * tau_arr
         return self.radial_factor(b2), self.vertical_factor(w)
 
+    def compute_df(self, t_days: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        """
+        Empirical convective heat removal accumulator.
+        Guarantees D_f(0) = 0 so that T_avg(0) identically equals initial steam temperature T_s,
+        saturating at delta = 0.05 over production time.
+        """
+        t_d = np.maximum(np.asarray(t_days, dtype=np.float64), 0.0)
+        df = self.params.delta * (t_d / (t_d + 5.0))
+        return float(df) if np.isscalar(t_days) else df
+
     def temperature_avg(self, tau_seconds: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        """
+        Computes the uncalibrated average heated-zone temperature T_avg (Kelvin).
+        Note: T_avg represents the volumetrically averaged reservoir heated volume;
+        downhole sandface temperature is derived via radial thermal gradient.
+        """
         tau_arr = np.asarray(tau_seconds, dtype=np.float64)
         t_days = np.maximum(tau_arr / 86400.0, 0.0)
-        d_f = self.params.delta * (t_days / (t_days + 5.0))
+        d_f = self.compute_df(t_days)
         vr, vz = self.decay_factors(tau_seconds)
         heat_fraction = np.maximum(vr * vz * (1.0 - d_f), 0.0)
         t_avg = self.params.TR + (self.params.Ts - self.params.TR) * heat_fraction
@@ -296,7 +317,7 @@ class ThermalDecayEngine:
         vr = self.radial_factor(b2)
         vz = self.vertical_factor(w)
 
-        d_f = self.params.delta * (t_days / (t_days + 5.0))
+        d_f = self.compute_df(t_days)
         heat_fraction = np.maximum(vr * vz * (1.0 - d_f), 0.0)
 
         t_avg_k = self.params.TR + (self.params.Ts - self.params.TR) * heat_fraction
@@ -318,10 +339,17 @@ class ThermalDecayEngine:
         t_days_or_hours: Union[float, np.ndarray],
         time_unit: str = "hours",
         cooling_multiplier: float = 1.0,
+        tau_unc: float = 180.0,
     ) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]]:
         """
         Returns calibrated temperature, average temperature, and propagated standard deviation sigma_T (°C).
         sigma_T models the epistemic uncertainty in subsurface heat conduction and convective loss.
+
+        Parameters
+        ----------
+        tau_unc : float, default 180.0
+            Uncertainty expansion time constant in days (matching code implementation,
+            reconciling with the 30-day preliminary literature draft).
         """
         t_cal_c, t_avg_c = self.predict_temperature(
             t_days_or_hours, time_unit=time_unit, cooling_multiplier=cooling_multiplier
@@ -333,7 +361,7 @@ class ThermalDecayEngine:
         # Epistemic standard deviation: 2.0°C initial sensor noise expanding up to 5.0°C under cooling
         sigma_base = 2.0
         sigma_max = 5.0
-        tau_uncertainty = 180.0  # days
+        tau_uncertainty = float(tau_unc)  # days (default 180.0)
         sigma_t = sigma_base + (sigma_max - sigma_base) * (1.0 - np.exp(-t_days / tau_uncertainty))
 
         if is_scalar:

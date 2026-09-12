@@ -93,8 +93,8 @@ $$\rho A(x) \frac{\partial^2 u}{\partial t^2} + \beta(x, t) \frac{\partial u}{\p
 - **Tapered Rod Discretization:** The string (e.g., $1.0^{\prime\prime} \to 7/8^{\prime\prime} \to 3/4^{\prime\prime}$) is discretized into $N$ spatial nodes. Harmonic interface area averaging guarantees rigorous normal force and displacement continuity across cross-section transitions:
   $$A_{i+1/2} = \frac{2 A_i A_{i+1}}{A_i + A_{i+1}}$$
 - **Explicit CFL Subcycling:** Step size is dynamically constrained by the acoustic Courant-Friedrichs-Lewy criterion:
-  $$\Delta t \le C_{\text{cfl}} \frac{\Delta x}{c} \approx 1.56\text{ ms} \quad (C_{\text{cfl}} = 0.8, \, c = 5180\text{ m/s})$$
-  yielding $\approx 8,500$ explicit numerical subcycles per stroke.
+  $$\Delta t \le C_{\text{cfl}} \frac{\Delta x}{c} \approx 1.558\text{ ms} \quad (C_{\text{cfl}} = 0.8, \, c = 5134.6\text{ m/s})$$
+  yielding $\approx 8,194$ explicit numerical subcycles per stroke at 4.7 SPM ($116\text{ nodes}$, $\Delta x = 10.0\text{ m}$).
 - **Dynamic Plunger Boundary Condition:** Coupled at downhole node $x = L$ with non-linear standing/traveling valve logic and hydrostatic lift forces.
 
 ---
@@ -128,7 +128,7 @@ To prove anti-float efficacy defensibly, VectroSync includes an automated shared
 | Metric | Branch A: Uncoupled Baseline | Branch B: Coupled MPC Twin | Physical Impact |
 |---|---|---|---|
 | **Pump Speed Policy** | Fixed 4.70 SPM | Dynamically Governed (2.80–4.70 SPM) | Throttles as viscosity spikes |
-| **Rod Buckling / Float Events** | **19 of 24 steps (79.2%)** | **0 of 24 steps (0.0%)** | **100% elimination of rod float** |
+| **Rod Buckling / Float Events** | **19 of 24 steps (79.2%)** | **0 of 24 steps (0.0%)** | **Model-predicted mitigation of rod-float risk** |
 | **Minimum Downhole Tension** | **-16.45 kN (Severe Compression)** | **+1.58 kN (Continuous Tension)** | Preserves rod string integrity |
 | **Maximum PPRL** | 56.42 kN | 53.11 kN | Stays well below 99.0 kN rating |
 | **Disturbance Trajectory** | Identical ($80^\circ\text{C} \to 55^\circ\text{C}$) | Identical ($80^\circ\text{C} \to 55^\circ\text{C}$) | Controlled, reproducible test |
@@ -154,14 +154,14 @@ The frontend (`frontend/`) is engineered as a high-density industrial mission co
   - **Rigorous Typography:** Inter font for structural UI chrome; JetBrains Mono for all numeric readouts (kN, °C, SPM, cP, β, ₹) and machine hashes to prevent layout jitter during count-up.
   - **State-Driven Motion:** Smooth 350ms `easeOutCubic` numeric rAF tweens, 500ms P-V dynacard draw-in on scenario switch, 2s breathing live indicator, and supervisory state badge transitions—with instant fallbacks under `prefers-reduced-motion`.
 - **Live Diagnostic Header:** Displays active Edge solve latency (`EDGE: 120ms` / `2ms`), Bus communication health (`MODBUS-TCP // PORT 502`), Theme toggle, Multi-Fidelity Solver toggle button, and Supervisory State badge.
-- **Wellbore Simulator (2D Kinematic & Stress Tensor):** Binds rod section rendering directly to the backend axial stress tensor:
+- **Wellbore Simulator (2D Kinematic & Stress Screening):** Binds rod section rendering directly to the backend axial stress screening levels:
   - $\sigma > +2.0\text{ kN}$: Safe Teal (Optimal tension)
   - $+0.5 \le \sigma \le +2.0\text{ kN}$: Caution Amber (Marginal safe tension)
   - $\sigma < +0.5\text{ kN}$: Critical Red (Buckling risk / Rod float)
 - **High-Precision Dynacard Studio:** Surface ($0–3.5\text{ m}$ vs $0–150\text{ kN}$) and Downhole ($0–3.5\text{ m}$ vs $-20\text{ to }+50\text{ kN}$) dynamometer cards with permissible operational envelopes and draw-in animation.
-- **Spatio-Temporal Stress Heatmap:** Theme-aware canvas rendering interpolated depth-versus-crank-phase stress distribution across string tapers.
+- **Spatio-Temporal Stress Heatmap [VISUALIZATION SURROGATE]:** Theme-aware canvas rendering interpolated depth-versus-crank-phase stress screening distribution across string tapers.
 - **Why Engine Console:** Real-time explainability feed detailing physical causal paths and MPC reasoning.
-- **Audit Ledger Explorer:** Cryptographic SHA-256 verification of operational decisions and setpoint changes.
+- **Audit Ledger Explorer:** In-memory SHA-256 tamper-evident provenance log demonstration.
 
 ---
 

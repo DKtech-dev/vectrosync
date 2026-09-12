@@ -9,8 +9,13 @@ Where:
 - x in [0, L] is depth downward from polished rod (m).
 - Strain is epsilon = -du/dx = (u_i - u_{i+1}) / dx (positive in tension).
 - Axial force flux is N_{i+1/2} = E * A_{i+1/2} * (u_i - u_{i+1}) / dx (N).
-- Harmonic interface area A_{i+1/2} = 2*A_i*A_{i+1} / (A_i + A_{i+1}) guarantees
-  displacement and normal force continuity across rod taper section boundaries.
+- Harmonic interface area A_{i+1/2} = 2*A_i*A_{i+1} / (A_i + A_{i+1}) provides
+  discrete numerical interface flux balance and force continuity across rod taper section boundaries.
+  (Physical elastodynamic impedance reflection remains governed by cross-sectional area ratios).
+- Dual-Mesh Policy:
+  * Class Default Mesh: dx = 10.0 m yields N = 116 nodes (round(1150/10) + 1 = 116) with ~8,194
+    CFL-safe subcycles per stroke at 4.7 SPM for high-resolution offline simulation.
+  * Live Web API Mesh: dx = 15.0 m yields N = 78 nodes in backend/server.py for sub-50ms HTTP response.
 - Explicit CFL-safe subcycling: dt <= 0.8 * dx / c (c = sqrt(E/rho) ~ 5,135 m/s).
 - Kinematic surface crank Dirichlet boundary at x = 0: u(0, t) = s(t).
 - Coupled downhole pump force boundary at x = L coupled to PlungerBoundary.

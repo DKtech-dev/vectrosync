@@ -191,6 +191,18 @@ def get_default_baghewala_taper_sections() -> List[TaperSection]:
 class HeavyOilRheology:
     """
     Two-Point Kelvin Arrhenius heavy crude rheology engine and annular drag calculator.
+
+    Calibrated Arrhenius relationship: ln(mu [Pa.s]) = A + B / T_K
+    Where A = -15.15 and B = 5,698.8 K derived from reference states:
+      - T1 = 50°C (323.15 K) -> mu1 = 12.0 Pa.s (12,000.0 cP)
+      - T2 = 200°C (473.15 K) -> mu2 = 0.045 Pa.s (45.0 cP)
+
+    Evaluated two-point temperature-viscosity table:
+      - 260°C (533.15 K): ~12.4 cP (0.0124 Pa.s) (reconciles preliminary draft's 40-50 cP)
+      - 200°C (473.15 K): 45.0 cP (0.0450 Pa.s)
+      - 100°C (373.15 K): ~1,180.0 cP (1.18 Pa.s) (reconciles preliminary draft's 850 cP)
+      - 66°C (339.15 K): ~4,920.0 cP (4.92 Pa.s) (reconciles preliminary draft's 4,820 cP)
+      - 50°C (323.15 K): 12,000.0 cP (12.0 Pa.s)
     """
 
     def __init__(self, params: Optional[RheologyParameters] = None, taper_sections: Optional[List[TaperSection]] = None):
@@ -253,6 +265,8 @@ class HeavyOilRheology:
         """
         Non-linear Brinkman-Vand heavy crude emulsion viscosity model with phase inversion at fw = 0.60.
         For fw <= 0.60: droplet crowding surge mu_emul = mu_oil * [1.0 + 2.5*fw + 10.05*fw^2].
+          Peak multiplier at inversion threshold fw = 0.60 reaches 1 + 2.5(0.60) + 10.05(0.36) = 6.1180x
+          dry oil viscosity (reconciles preliminary text claiming 'up to 2.5 times').
         For fw > 0.60: rapid continuous inversion decay to oil-in-water rheology reaching mu_water at fw = 1.0.
         """
         is_scalar = np.isscalar(temp_k) and np.isscalar(fw)
@@ -314,6 +328,15 @@ class HeavyOilRheology:
         return (2.0 * math.pi * self.params.f_eccentric) / math.log(self.params.r_tubing / r_r)
 
     def couette_drag_beta(self, mu_pas: Union[float, np.ndarray], rod_radius_m: Optional[Union[float, np.ndarray]] = None, r_rod: Optional[Union[float, np.ndarray]] = None) -> Union[float, np.ndarray]:
+        """
+        Computes Couette annular shear drag coefficient beta per unit rod length.
+
+        Units:
+        - beta has units of N*s/m (drag force per unit rod length per unit velocity:
+          F_drag = beta * L * v in N).
+        - When normalized by sheared rod circumference (2*pi*r_rod), the corresponding
+          area shear factor beta_area = beta / (2*pi*r_rod) has units of N*s/m^2 (or Pa*s/m).
+        """
         r_val = rod_radius_m if rod_radius_m is not None else r_rod
         if r_val is None:
             raise ValueError("Rod radius must be provided.")

@@ -9,9 +9,14 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 # CEA (Central Electricity Authority, India) grid emission factor, FY2023-24
-# baseline. This is a disclosed assumption, not a measurement; cite it
-# explicitly wherever CO2-avoided figures are shown.
+# baseline (0.716 kg CO2/kWh). CEA Version 21 (Nov 2025) weighted grid factor is
+# 0.710 tCO2/MWh (0.710 kg CO2/kWh). These are disclosed assumptions, not field measurements.
 GRID_EMISSION_FACTOR_KG_CO2_PER_KWH = 0.716
+GRID_EMISSION_FACTOR_V21_KG_CO2_PER_KWH = 0.710
+
+# Initial Platform Commissioning CAPEX: INR 1.000 Crore (INR 10,000,000) across 23 wells
+# (edge gateways, load/position sensors, instrumentation, integration, calibration, training).
+INITIAL_COMMISSIONING_CAPEX_INR = 10_000_000.0
 
 
 @dataclass(frozen=True)
@@ -28,6 +33,7 @@ class EconomicAssumptions:
     oil_price_usd_bbl: float
     fx_inr_usd: float
     annual_platform_cost_inr: float = 0.0
+    initial_commissioning_capex_inr: float = INITIAL_COMMISSIONING_CAPEX_INR
 
     def validate(self) -> None:
         values = asdict(self)
@@ -68,6 +74,15 @@ def evaluate_case(case: EconomicAssumptions) -> dict[str, Any]:
     co2_avoided_tonnes_per_year = (
         energy_saved_kwh_per_year * GRID_EMISSION_FACTOR_KG_CO2_PER_KWH / 1000.0
     )
+    co2_avoided_v21_tonnes_per_year = (
+        energy_saved_kwh_per_year * GRID_EMISSION_FACTOR_V21_KG_CO2_PER_KWH / 1000.0
+    )
+
+    payback_period_days = (
+        round((case.initial_commissioning_capex_inr / net) * 365.0, 1)
+        if net > 0
+        else None
+    )
 
     return {
         "case": case.name,
@@ -82,9 +97,13 @@ def evaluate_case(case: EconomicAssumptions) -> dict[str, Any]:
         "gross_annual_value_cr_inr": round(gross / 1e7, 3),
         "annual_platform_cost_cr_inr": round(case.annual_platform_cost_inr / 1e7, 3),
         "total_annual_value_cr_inr": round(net / 1e7, 3),
+        "initial_commissioning_capex_cr_inr": round(case.initial_commissioning_capex_inr / 1e7, 3),
+        "payback_period_days": payback_period_days,
         "energy_saved_kwh_per_year": round(energy_saved_kwh_per_year, 1),
         "co2_avoided_tonnes_per_year": round(co2_avoided_tonnes_per_year, 2),
+        "co2_avoided_v21_tonnes_per_year": round(co2_avoided_v21_tonnes_per_year, 2),
         "grid_emission_factor_kg_co2_per_kwh": GRID_EMISSION_FACTOR_KG_CO2_PER_KWH,
+        "grid_emission_factor_v21_kg_co2_per_kwh": GRID_EMISSION_FACTOR_V21_KG_CO2_PER_KWH,
         "assumptions": asdict(case),
     }
 

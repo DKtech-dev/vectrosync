@@ -1,15 +1,17 @@
 """
 Constrained Model Predictive Controller (src/mpc.py).
 
-Implements real numerical constrained optimization using scipy.optimize.minimize (SLSQP).
+Implements real numerical constrained optimization using scipy.optimize.minimize (SLSQP)
+over an algebraic surrogate representation of downhole minimum tension and surface PPRL.
 Optimizes production and energy efficiency over a predictive horizon while enforcing:
-1. Hard Anti-Float Tension Floor: E[F_min] - z*sigma_F + s_tens >= F_min_safe (0.50 kN)
-2. Peak Polished Rod Load (PPRL): E[F_peak] + z*sigma_F - s_pprl <= 0.90 * F_rating (99.0 kN)
-3. Kinematic actuator bounds: 1.0 <= SPM <= 5.5
-4. Actuator slew-rate limits: |SPM_{k} - SPM_{k-1}| <= max_delta_spm
-
-Warm-started with an analytical reachability surrogate, falling back to INFEASIBLE_SAFE_FALLBACK
-if environmental disturbances or actuator limits prevent unslackened feasible operation.
+1. Anti-Float Tension Floor with soft slacks:
+   E[F_min] - z*sigma_F + s_tens >= F_min_safe (0.50 kN), where s_tens in [0, 50.0] kN
+2. Peak Polished Rod Load (PPRL) with soft slacks:
+   E[F_peak] + z*sigma_F - s_pprl <= 0.90 * F_rating (99.0 kN), where s_pprl in [0, 50.0] kN
+3. Kinematic actuator bounds: min_spm <= SPM <= max_spm (default 1.0 to 5.5 SPM; configurable to 2.0-6.0 SPM)
+4. Actuator slew-rate limits: |SPM_{k} - SPM_{k-1}| <= max_delta_spm (0.25 SPM per 0.5h step)
+5. Soft constraints penalized quadratically at w_slack = 5000.0.
+   Transitions to INFEASIBLE_SAFE_FALLBACK if max slack >= 0.05 kN or solver diverges.
 """
 
 from dataclasses import dataclass, field

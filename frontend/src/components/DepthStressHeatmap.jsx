@@ -89,8 +89,13 @@ export function DepthStressHeatmap({ stressHeatmap, isBuckling }) {
               <Layers className="w-4 h-4" />
             </span>
             <div className="min-w-0">
-              <div className="card-title">Modeled axial stress σ(x, θ)</div>
-              <div className="caption">Reduced-order screen across depth and crank angle</div>
+              <div className="card-title flex items-center gap-2">
+                <span>Modeled axial stress σ(x, θ)</span>
+                <span className="text-[10px] font-mono tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 font-semibold">
+                  [VISUALIZATION SURROGATE]
+                </span>
+              </div>
+              <div className="caption">Reduced-order screen across depth and crank angle (Illustrative Interpolation)</div>
             </div>
           </div>
 
