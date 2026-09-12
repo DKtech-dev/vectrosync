@@ -2,7 +2,7 @@
 
 ## Positioning
 
-VectroSync's defensible novelty is not a claim that predictive rod-pump control, thermal EOR modeling, or digital twins are individually new. The differentiated thesis is:
+Catenary's defensible novelty is not a claim that predictive rod-pump control, thermal EOR modeling, or digital twins are individually new. The differentiated thesis is:
 
 > An auditable operator workflow that connects CSS thermal-state hypotheses to viscosity-sensitive SRP load surveillance, constraint-aware speed advice, explainable scenario comparison, and explicit evidence provenance.
 

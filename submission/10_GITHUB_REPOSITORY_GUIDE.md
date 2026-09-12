@@ -3,8 +3,8 @@
 ## Clone and verify
 
 ```bash
-git clone https://github.com/DKtech-dev/vectrosync.git
-cd vectrosync
+git clone https://github.com/DKtech-dev/vectrosync.git catenary
+cd catenary
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
@@ -27,7 +27,7 @@ src/adapter.py            telemetry normalization and safety gate
 src/audit.py              in-memory hash chain
 src/economics.py          commercial sensitivity
 src/state_estimator.py    experimental estimator
-tests/                    271-test suite
+tests/                    326-test suite
 docs/                     model card, assurance case, commercial plan
 configs/                  synthetic assumptions
 ```

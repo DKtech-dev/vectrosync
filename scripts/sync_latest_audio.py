@@ -32,7 +32,7 @@ def main():
         "/home/dk/Documents/main/.venv/bin/python3",
         "/home/dk/Documents/main/scripts/record_and_sync.py",
         "--audio", audio_file,
-        "--name", "VectroSync_Winning_Demo"
+        "--name", "Catenary_Winning_Demo"
     ]
     subprocess.run(cmd, check=True)
 

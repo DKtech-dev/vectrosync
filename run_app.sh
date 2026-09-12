@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Master Launcher: VectroSync Enterprise Industrial Twin Web Application
+# Master Launcher: Catenary Enterprise Industrial Twin Web Application
 # Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
 # Model: OIL-BAGHEWALA-EOR-V2
 # ==============================================================================
@@ -8,7 +8,7 @@
 set -e
 
 echo "=============================================================================="
-echo "  OIL INDIA LIMITED | VectroSync Enterprise Industrial Twin Application"
+echo "  OIL INDIA LIMITED | Catenary Enterprise Industrial Twin Application"
 echo "  Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited"
 echo "  Baghewala Field CSS + SRP Optimization Engine (OIL-BAGHEWALA-EOR-V2)"
 echo "=============================================================================="

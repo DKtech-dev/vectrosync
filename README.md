@@ -1,20 +1,20 @@
-# VectroSync
+# Catenary
 ## Evidence-Aware CSS–SRP Advisory Digital Twin Architecture
 
-[![Live synthetic demo](https://img.shields.io/badge/Live-synthetic_demo-0ea5e9?style=for-the-badge)](https://vectrosync.vercel.app)
-[![Mirror](https://img.shields.io/badge/Live-mirror-64748b?style=for-the-badge)](https://vectrosync-digital-twin.vercel.app)
-[![Verification](https://img.shields.io/badge/tests-325_passing-16a34a?style=for-the-badge)](#verification)
+[![Live synthetic demo](https://img.shields.io/badge/Live-synthetic_demo-0ea5e9?style=for-the-badge)](https://catenary-ai.vercel.app)
+[![Mirror](https://img.shields.io/badge/Live-mirror-64748b?style=for-the-badge)](https://vectrosync.vercel.app)
+[![Verification](https://img.shields.io/badge/tests-326_passing-16a34a?style=for-the-badge)](#verification)
 [![Control authority](https://img.shields.io/badge/control-advisory_only-f59e0b?style=for-the-badge)](#safety-and-evidence-boundary)
 [![Python](https://img.shields.io/badge/Python-3.11_%7C_3.14-3776ab?style=for-the-badge&logo=python&logoColor=white)](#local-setup)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react&logoColor=black)](#operator-console)
 
-VectroSync is an enterprise-grade industrial cybernetics digital twin and advisory control architecture designed for **Cyclic Steam Stimulation (CSS)** and **Sucker Rod Pumping (SRP)** heavy-oil assets. Operating at the intersection of first-principles multiphysics and numerical optimization, VectroSync unifies reservoir thermal decline, non-Newtonian emulsion rheology, variable-area elastodynamic wave propagation, constrained model predictive control (MPC), and supervisory safety logic into a coherent, verifiable decision framework.
+Catenary is an enterprise-grade industrial cybernetics digital twin and advisory control architecture designed for **Cyclic Steam Stimulation (CSS)** and **Sucker Rod Pumping (SRP)** heavy-oil assets. Operating at the intersection of first-principles multiphysics and numerical optimization, Catenary unifies reservoir thermal decline, non-Newtonian emulsion rheology, variable-area elastodynamic wave propagation, constrained model predictive control (MPC), and supervisory safety logic into a coherent, verifiable decision framework.
 
 The project bridges the classical divide between reservoir surveillance and artificial-lift automation, preventing downhole rod compression, float, and premature mechanical failure under dynamic fluid-drag regimes.
 
 > [!IMPORTANT]
 > **Research Prototype — Synthetic Model Output — Advisory Only.**  
-> VectroSync operates in advisory-only mode. All telemetry, downhole states, and dynacards generated within this repository represent physics-informed synthetic data. It includes no proprietary operator datasets, unverified black-box neural networks in the safety loop, direct field PLC actuation privileges, or formal IEC 61511 / SIL certification. Field deployment requires certified independent Safety Instrumented Systems (SIS), physical hardware-in-the-loop (HIL) testing, and operator-supervised shadow-mode pilot trials. Oil India Limited and Baghewala Well #14 references describe a canonical engineering case study.
+> Catenary operates in advisory-only mode. All telemetry, downhole states, and dynacards generated within this repository represent physics-informed synthetic data. It includes no proprietary operator datasets, unverified black-box neural networks in the safety loop, direct field PLC actuation privileges, or formal IEC 61511 / SIL certification. Field deployment requires certified independent Safety Instrumented Systems (SIS), physical hardware-in-the-loop (HIL) testing, and operator-supervised shadow-mode pilot trials. Oil India Limited and Baghewala Well #14 references describe a canonical engineering case study.
 
 ---
 
@@ -54,7 +54,7 @@ flowchart LR
 
 ## 2. Multi-Fidelity Physics Engine
 
-VectroSync provides runtime selectable solver fidelity via `/api/simulate` (`solver_type: "surrogate" | "transient"`) and the SCADA console header toggle:
+Catenary provides runtime selectable solver fidelity via `/api/simulate` (`solver_type: "surrogate" | "transient"`) and the SCADA console header toggle:
 
 ```
 [SOLVER: TRANSIENT PDE (120ms)] <---> [SOLVER: FAST SURROGATE (2ms)]
@@ -86,7 +86,7 @@ Hydrodynamic Couette shear drag per unit length acting on the reciprocating rod 
 $$\beta = \frac{2 \pi \epsilon_f \mu_m}{\ln(r_t / r_r)}, \qquad F_{\text{drag}} = \beta \cdot L \cdot v_{\text{rod}}$$
 
 ### 2.3 Transient Elastodynamic Tapered-Rod Wave Solver
-For high-fidelity acoustic wave tracking and phase-resolved stress analysis, VectroSync solves the 1D damped variable-area wave equation:
+For high-fidelity acoustic wave tracking and phase-resolved stress analysis, Catenary solves the 1D damped variable-area wave equation:
 
 $$\rho A(x) \frac{\partial^2 u}{\partial t^2} + \beta(x, t) \frac{\partial u}{\partial t} - \frac{\partial}{\partial x} \left[ E A(x) \frac{\partial u}{\partial x} \right] = -\rho A(x) g_{\text{eff}} + f_{\text{ext}}(x, t)$$
 
@@ -123,7 +123,7 @@ If external cooling disturbances make physical operation without slack infeasibl
 
 ## 4. Deterministic Shared-Seed A/B Benchmark
 
-To prove anti-float efficacy defensibly, VectroSync includes an automated shared-seed benchmark generator (`src/generator.py`):
+To prove anti-float efficacy defensibly, Catenary includes an automated shared-seed benchmark generator (`src/generator.py`):
 
 | Metric | Branch A: Uncoupled Baseline | Branch B: Coupled MPC Twin | Physical Impact |
 |---|---|---|---|
@@ -221,10 +221,10 @@ pytest tests/
    - REST API and high-frequency WebSocket stress testing.
    - End-to-end multi-fidelity simulation passes.
    - Cross-solver PPRL agreement (surrogate vs. transient PDE) and grid-convergence checks; see [docs/VERIFICATION.md](docs/VERIFICATION.md).
-5. **Tier 5: Multi-Model AI Diagnostics & Surrogates (Tests 316–325):**
+5. **Tier 5: Multi-Model AI Diagnostics & Surrogates (Tests 316–326):**
    - 16-dimensional geometric and Fourier feature extraction for dynacards.
    - Multiclass classification across 5 operating regimes with SPE interpretability.
-   - Physics-Trained Neural Wave Surrogate load bounds and microsecond edge speed.
+   - Physics-Trained Neural Operating-Point Surrogate load extrema bounds and microsecond edge speed.
    - Unsupervised Telemetry Autoencoder reconstruction residual scoring on thermo-mechanical decoupling.
 
 ---
@@ -267,8 +267,8 @@ curl -X POST "http://127.0.0.1:8000/api/simulate" \
 ### Native Development Setup:
 ```bash
 # 1. Clone repository
-git clone https://github.com/DKtech-dev/vectrosync.git
-cd vectrosync
+git clone https://github.com/DKtech-dev/vectrosync.git catenary
+cd catenary
 
 # 2. Setup Python environment
 python3 -m venv .venv

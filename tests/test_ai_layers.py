@@ -1,5 +1,5 @@
 """
-Unit Test Suite for VectroSync AI Layer (tests/test_ai_layers.py)
+Unit Test Suite for Catenary AI Layer (tests/test_ai_layers.py)
 ================================================================
 Tests:
 - Layer 2: DynacardFeatureClassifier (feature extraction, multiclass inference, edge cases)
@@ -11,7 +11,7 @@ import pytest
 import numpy as np
 
 from src.dynacard_classifier import DynacardFeatureClassifier, CLASS_NAMES
-from src.wave_surrogate import NeuralWaveSurrogate, WavePrediction
+from src.wave_surrogate import NeuralOperatingPointSurrogate, NeuralWaveSurrogate, WavePrediction
 from src.anomaly_detector import TelemetryAnomalyDetector, AnomalyReport
 from src.rod_conservative import DEFAULT_WAVE_SOLVER
 
@@ -73,9 +73,10 @@ class TestDynacardFeatureClassifier:
 class TestNeuralWaveSurrogate:
     @pytest.fixture
     def surrogate(self):
-        return NeuralWaveSurrogate()
+        return NeuralOperatingPointSurrogate()
 
     def test_prediction_schema_and_types(self, surrogate):
+        assert isinstance(surrogate, NeuralWaveSurrogate)
         pred = surrogate.predict(spm=3.5, temp_c=80.0, water_cut=0.35, pump_fillage=0.95)
 
         assert isinstance(pred, WavePrediction)

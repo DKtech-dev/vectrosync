@@ -4,7 +4,7 @@ This document uses a lightweight Goal Structuring Notation style to distinguish 
 
 ## Top claim
 
-> **G0:** VectroSync 2.0.0 is a reproducible synthetic advisory prototype suitable for software evaluation and planning a shadow-mode validation campaign.
+> **G0:** Catenary 2.0.0 is a reproducible synthetic advisory prototype suitable for software evaluation and planning a shadow-mode validation campaign.
 
 It does **not** claim fitness for direct well control, functional-safety credit, field accuracy, or realized commercial savings.
 

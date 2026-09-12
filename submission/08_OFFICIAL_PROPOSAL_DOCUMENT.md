@@ -1,12 +1,12 @@
-# VectroSync Pilot Proposal
+# Catenary Pilot Proposal
 
 ## Proposal
 
-Evaluate VectroSync as an evidence-aware CSS–SRP advisory research prototype through a governed retrospective study and read-only shadow pilot.
+Evaluate Catenary as an evidence-aware CSS–SRP advisory research prototype through a governed retrospective study and read-only shadow pilot.
 
 ## Current deliverable
 
-A working React/FastAPI/Streamlit demonstrator integrating thermal and rheology assumptions, reduced-order rod-load cards, explicit governor feasibility, supervisory logic, telemetry quality gates, provenance, and transparent commercial sensitivity. The repository passes 271 tests and a production frontend build.
+A working React/FastAPI/Streamlit demonstrator integrating thermal and rheology assumptions, reduced-order rod-load cards, explicit governor feasibility, supervisory logic, telemetry quality gates, provenance, and transparent commercial sensitivity. The repository passes 326 tests and a production frontend build.
 
 ## Explicit exclusions
 

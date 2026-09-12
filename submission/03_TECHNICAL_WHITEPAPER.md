@@ -1,8 +1,8 @@
-# VectroSync Technical Whitepaper
+# Catenary Technical Whitepaper
 
 ## Abstract
 
-VectroSync is a synthetic CSS–SRP advisory twin integrating a heated-zone thermal model, temperature/water-cut viscosity assumptions, annular Couette drag, reduced-order phase cards, a constraint-aware speed governor, supervisory logic, data-quality gates, and provenance. This paper defines the executed implementation and the evidence required to progress from software demonstrator to field shadow pilot.
+Catenary is a synthetic CSS–SRP advisory twin integrating a heated-zone thermal model, temperature/water-cut viscosity assumptions, annular Couette drag, reduced-order phase cards, a constraint-aware speed governor, supervisory logic, data-quality gates, and provenance. This paper defines the executed implementation and the evidence required to progress from software demonstrator to field shadow pilot.
 
 ## 1. Model chain
 

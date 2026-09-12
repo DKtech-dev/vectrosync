@@ -15,7 +15,7 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('VectroSync UI crashed:', error, info);
+    console.error('Catenary UI crashed:', error, info);
   }
 
   render() {

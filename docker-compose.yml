@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: vectrosync:2.0.0
+    image: catenary:2.0.0
     restart: unless-stopped
     init: true
     ports:
@@ -11,10 +11,10 @@ services:
     environment:
       ENVIRONMENT: production
       WELL_ID: Baghewala-14
-      VECTROSYNC_API_KEY: "${VECTROSYNC_API_KEY:-}"
-      VECTROSYNC_CORS_ORIGINS: "${VECTROSYNC_CORS_ORIGINS:-http://localhost:8000}"
-      VECTROSYNC_MAX_CSV_BYTES: "2097152"
-      VECTROSYNC_MAX_WEBSOCKETS: "5"
+      CATENARY_API_KEY: "${CATENARY_API_KEY:-${VECTROSYNC_API_KEY:-}}"
+      CATENARY_CORS_ORIGINS: "${CATENARY_CORS_ORIGINS:-${VECTROSYNC_CORS_ORIGINS:-http://localhost:8000}}"
+      CATENARY_MAX_CSV_BYTES: "2097152"
+      CATENARY_MAX_WEBSOCKETS: "5"
     volumes:
       - ./configs:/app/configs:ro
     security_opt:
@@ -28,7 +28,7 @@ services:
     cpus: 1.5
 
   cockpit:
-    image: vectrosync:2.0.0
+    image: catenary:2.0.0
     depends_on:
       - api
     restart: unless-stopped

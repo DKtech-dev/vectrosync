@@ -1,4 +1,4 @@
-"""Transparent, scenario-based commercial hypothesis model for VectroSync.
+"""Transparent, scenario-based commercial hypothesis model for Catenary.
 
 Values produced here are planning hypotheses, not realized savings. The model
 keeps each driver dimensionally explicit and avoids double-counting continuous

@@ -1,4 +1,4 @@
-# VectroSync — Winning Implementation Plan
+# Catenary (formerly VectroSync) — Winning Implementation Plan
 ### Target: TSM TECHNOVA 2026 · National AI Innovation Challenge
 **Document status:** Executable specification. Written so any competent AI agent or developer can implement it without further context.
 **Last updated:** 2026-09-11

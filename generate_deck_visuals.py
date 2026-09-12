@@ -1,5 +1,5 @@
 """
-Deck Visuals Generator for VectroSync Enterprise Industrial Twin
+Deck Visuals Generator for Catenary Enterprise Industrial Twin
 Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
 Model: OIL-BAGHEWALA-EOR-V2
 """
@@ -93,7 +93,7 @@ def generate_slide2_console():
                            left=0.06, right=0.94, top=0.88, bottom=0.10, wspace=0.28, hspace=0.38)
     
     # Top banner text on figure
-    fig.text(0.06, 0.94, "VECTROSYNC ENTERPRISE INDUSTRIAL TWIN | OIL-BAGHEWALA-EOR-V2", color="#F8FAFC", fontsize=8.5, fontweight='bold')
+    fig.text(0.06, 0.94, "CATENARY ENTERPRISE INDUSTRIAL TWIN | OIL-BAGHEWALA-EOR-V2", color="#F8FAFC", fontsize=8.5, fontweight='bold')
     fig.text(0.72, 0.94, "● LIVE EDGE-LOCAL", color="#10B981", fontsize=7.5, fontweight='bold')
     fig.text(0.88, 0.94, "[calibrated]", color="#38BDF8", fontsize=7.5)
 

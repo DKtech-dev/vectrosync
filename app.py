@@ -1,4 +1,4 @@
-"""Streamlit cockpit for the synthetic, advisory-only VectroSync prototype.
+"""Streamlit cockpit for the synthetic, advisory-only Catenary prototype.
 
 Baghewala and operator references are contextual case-study labels only; this
 repository contains no operator affiliation, field data, or deployment evidence.
@@ -29,7 +29,7 @@ from src.why_engine import WhyEngine
 # ─── Page Config ───────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="VectroSync Advisory Research Prototype",
+    page_title="Catenary Advisory Research Prototype",
     page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -333,7 +333,7 @@ st.markdown(f"""
 <div class="app-header">
     <div>
         <div class="title">
-            VECTROSYNC ADVISORY RESEARCH PROTOTYPE
+            CATENARY ADVISORY RESEARCH PROTOTYPE
             <span class="tag">SYNTHETIC CASE</span>
             <span class="tag">NO ACTUATION</span>
         </div>
@@ -849,7 +849,7 @@ with col_econ:
 st.divider()
 st.markdown("""
 <div style="display:flex;justify-content:space-between;color:#9ca3af;font-size:10px;padding:2px 0;">
-    <span>VectroSync Enterprise Industrial Twin &middot; Oil India Limited &middot; Baghewala Well #14</span>
+    <span>Catenary Enterprise Industrial Twin &middot; Oil India Limited &middot; Baghewala Well #14</span>
     <span>100% Offline Localhost &middot; Clean-Room Scientific Python</span>
 </div>
 """, unsafe_allow_html=True)

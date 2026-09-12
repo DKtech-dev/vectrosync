@@ -1,4 +1,4 @@
-# VectroSync Verification Ledger
+# Catenary Verification Ledger
 
 This document states, in one place, what is verified, what is validated, what
 is authoritative, and what is explicitly out of scope. It exists so that no
@@ -20,7 +20,7 @@ or "synthetic validated." Nothing here is field-validated.
 
 ## 2. Which solver is authoritative, and why
 
-VectroSync ships two independent rod-load estimators:
+Catenary ships two independent rod-load estimators:
 
 - **Surrogate** (`ConservativeRodWaveSolver`): a 144-point algebraic
   force-balance card estimator, ~2 ms per call. **This is the solver used by

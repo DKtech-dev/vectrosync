@@ -115,7 +115,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.title = 'Console — VectroSync CSS-SRP Advisory Twin';
+    document.title = 'Console — Catenary CSS-SRP Advisory Twin';
   }, []);
 
   const handleChangeParam = (key, value) => {
@@ -226,7 +226,7 @@ export default function App() {
         {/* First load: a visible skeleton instead of a blank page while the
             initial /api/simulate request is in flight or has not resolved. */}
         {!simState && !error && (
-          <SkeletonPanel title="Loading VectroSync twin" lines={6} height={360} />
+          <SkeletonPanel title="Loading Catenary twin" lines={6} height={360} />
         )}
 
         {/* Hero: the animated causal chain, steam through to speed command */}

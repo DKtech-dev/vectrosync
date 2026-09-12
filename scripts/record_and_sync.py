@@ -16,7 +16,7 @@ os.makedirs(ARTIFACT_DIR, exist_ok=True)
 PHASES_SPEC = [
     {
         "id": "01_intro",
-        "tag": "1. VECTROSYNC ENTERPRISE TWIN",
+        "tag": "1. CATENARY ENTERPRISE TWIN",
         "subtitle": "Real-time closed-loop physics-informed digital twin engineered for Oil India Limited's Baghewala Well #14 CSS + SRP asset in Rajasthan.",
         "keywords": ["welcome", "vectro", "bhagewala", "baghewala"]
     },
@@ -130,7 +130,7 @@ INJECT_OVERLAY_SCRIPT = """
 
     container.innerHTML = `
       <div id="demo-subtitle-tag" style="background: #0284c7; color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 14px; border-radius: 9999px; margin-bottom: 6px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); border: 1px solid rgba(255,255,255,0.25);">
-        VECTROSYNC ENTERPRISE TWIN
+        CATENARY ENTERPRISE TWIN
       </div>
       <div id="demo-subtitle-text" style="background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(12px); color: #f8fafc; padding: 12px 26px; border-radius: 12px; font-size: 14.5px; font-weight: 500; line-height: 1.45; box-shadow: 0 12px 30px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.18);">
         Initializing digital twin mission control console...
@@ -269,7 +269,7 @@ def extract_phase_durations(audio_path):
     print(f"Total audio duration: {total_audio_sec:.2f}s")
     return computed_phases, total_audio_sec
 
-def record_and_sync(audio_path, output_name="VectroSync_Enterprise_Demonstration"):
+def record_and_sync(audio_path, output_name="Catenary_Enterprise_Demonstration"):
     phases, total_duration = extract_phase_durations(audio_path)
 
     print("Launching synchronized Playwright browser session...")
@@ -308,7 +308,7 @@ def record_and_sync(audio_path, output_name="VectroSync_Enterprise_Demonstration
         # Phase 0: Intro
         def phase_0(dur):
             sub_d = dur / 4.0
-            driver.hover_locator(page.locator("text=VectroSync Enterprise Industrial Twin").first, duration=0.5, hover_after=sub_d*0.6)
+            driver.hover_locator(page.locator("text=Catenary Enterprise Industrial Twin").first, duration=0.5, hover_after=sub_d*0.6)
             driver.hover_locator(page.locator("text=OIL-BAGHEWALA-EOR-V2").first, duration=0.4, hover_after=sub_d*0.6)
             driver.hover_locator(page.locator("text=CSS+SRP OPTIMIZER").first, duration=0.4, hover_after=sub_d*0.6)
             driver.move_to(600, 80, duration=0.5, hover_after=sub_d*0.6)
@@ -426,7 +426,7 @@ def record_and_sync(audio_path, output_name="VectroSync_Enterprise_Demonstration
 
         # Target WebM
         dest_webm = os.path.join(ARTIFACT_DIR, f"{output_name}.webm")
-        dest_artifact_webm = os.path.join(ARTIFACT_DIR, "vectrosync_scada_demonstration.webm")
+        dest_artifact_webm = os.path.join(ARTIFACT_DIR, "catenary_scada_demonstration.webm")
         dest_mp4 = os.path.join("/home/dk/Documents/main", f"{output_name}.mp4")
 
         print(f"Multiplexing into WebM: {dest_webm}...")
@@ -467,6 +467,6 @@ def record_and_sync(audio_path, output_name="VectroSync_Enterprise_Demonstration
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--audio", default="/home/dk/Documents/main/clean_audio_prabhat.mp3")
-    parser.add_argument("--name", default="VectroSync_Enterprise_Demonstration")
+    parser.add_argument("--name", default="Catenary_Enterprise_Demonstration")
     args = parser.parse_args()
     record_and_sync(args.audio, args.name)

@@ -48,19 +48,22 @@ from src.anomaly_detector import TelemetryAnomalyDetector
 
 # Initialize FastAPI App
 app = FastAPI(
-    title="VectroSync Enterprise Industrial Twin Engine API",
+    title="Catenary Enterprise Industrial Twin Engine API",
     description="Synthetic advisory research prototype for CSS-SRP what-if analysis; not an operational control system.",
     version="2.0.0",
 )
 
 logger = logging.getLogger(__name__)
-API_KEY = os.getenv("VECTROSYNC_API_KEY")
-MAX_CSV_BYTES = int(os.getenv("VECTROSYNC_MAX_CSV_BYTES", str(2 * 1024 * 1024)))
+API_KEY = os.getenv("CATENARY_API_KEY") or os.getenv("VECTROSYNC_API_KEY")
+MAX_CSV_BYTES = int(os.getenv("CATENARY_MAX_CSV_BYTES", os.getenv("VECTROSYNC_MAX_CSV_BYTES", str(2 * 1024 * 1024))))
 CORS_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
-        "VECTROSYNC_CORS_ORIGINS",
-        "http://localhost:5173,http://localhost:8000",
+        "CATENARY_CORS_ORIGINS",
+        os.getenv(
+            "VECTROSYNC_CORS_ORIGINS",
+            "http://localhost:5173,http://localhost:8000",
+        ),
     ).split(",")
     if origin.strip()
 ]
@@ -75,7 +78,7 @@ app.add_middleware(
 
 
 def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
-    """Enable a deployment API key when VECTROSYNC_API_KEY is configured."""
+    """Enable a deployment API key when CATENARY_API_KEY or VECTROSYNC_API_KEY is configured."""
     if API_KEY and (x_api_key is None or not hmac.compare_digest(x_api_key, API_KEY)):
         raise HTTPException(status_code=401, detail="Valid X-API-Key required")
 
@@ -83,7 +86,7 @@ def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
 thermal_engine = ThermalDecayEngine()
 rheo_engine = HeavyOilRheology()
 audit_ledger = AuditLedger(well_id="Baghewala-14")
-websocket_slots = asyncio.Semaphore(int(os.getenv("VECTROSYNC_MAX_WEBSOCKETS", "5")))
+websocket_slots = asyncio.Semaphore(int(os.getenv("CATENARY_MAX_WEBSOCKETS", os.getenv("VECTROSYNC_MAX_WEBSOCKETS", "5"))))
 
 # Persistent Extended Kalman Filter: a genuine recursive Bayesian estimator
 # that carries its belief state (and covariance) across requests within this
@@ -645,7 +648,7 @@ async def health_check():
     """Health check endpoint confirming engine readiness."""
     return {
         "status": "healthy",
-        "service": "VectroSync CSS-SRP Advisory Research API",
+        "service": "Catenary CSS-SRP Advisory Research API",
         "well_id": "Baghewala-14",
         "deployment_class": "synthetic_research_prototype",
         "control_authority": "none",

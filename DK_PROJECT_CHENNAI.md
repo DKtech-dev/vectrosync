@@ -1,21 +1,21 @@
 # DK PROJECT CHENNAI
-# VectroSync: Physics-Informed Cybernetic Digital Twin & Advisory Optimization Architecture for Heavy Oil CSS–SRP Production Systems
+# Catenary: Physics-Informed Cybernetic Digital Twin & Advisory Optimization Architecture for Heavy Oil CSS–SRP Production Systems
 ## Comprehensive End-to-End Technical, Mathematical, Economic, Operational & Architectural Master Dossier
 
 ---
 
 ### Master Project Metadata
 
-- **Project Code Name:** VectroSync / DK PROJECT CHENNAI
+- **Project Code Name:** Catenary / DK PROJECT CHENNAI
 - **System Version:** 2.0.0 Research-Grade Advisory Digital Twin Architecture
 - **Synthetic Reference Configuration:** Synthetic Baghewala-Calibrated Reference Configuration (Well #14 inspired, Bikaner-Nagaur Basin, Rajasthan, India)
 - **Target Operator Context:** Oil India Limited (OIL) Public Field Context
 - **Target Formation Context:** Jodhpur Sandstone (Depth: 1,150 m TVD)
 - **Production Paradigm:** Cyclic Steam Stimulation (CSS / Huff-and-Puff) paired with Sucker Rod Pumping (SRP) Artificial Lift
 - **Control Classification:** Class II Supervisory Advisory Decision-Support Prototype (Advisory Only; Non-Actuating, Not an IEC 61511 Safety Instrumented Function)
-- **Verification Status:** 325 Automated Tests Passing (100% Pass Rate across 5 Verification Tiers: Tier 1: 150, Tier 2: 70, Tier 3: 60, Tier 4: 24, Tier 5: 10, + 11 root regressions)
-- **Public Synthetic Demonstration Deployment:** [https://vectrosync.vercel.app](https://vectrosync.vercel.app)
-- **Public Synthetic Demonstration Mirror:** [https://vectrosync-digital-twin.vercel.app](https://vectrosync-digital-twin.vercel.app)
+- **Verification Status:** 326 Automated Tests Passing (100% Pass Rate across 5 Verification Tiers: Tier 1: 150, Tier 2: 70, Tier 3: 60, Tier 4: 35, Tier 5: 11)
+- **Public Synthetic Demonstration Deployment:** [https://catenary-ai.vercel.app](https://catenary-ai.vercel.app)
+- **Public Synthetic Demonstration Mirror:** [https://vectrosync.vercel.app](https://vectrosync.vercel.app)
 - **Public Git Repository:** [https://github.com/DKtech-dev/vectrosync](https://github.com/DKtech-dev/vectrosync)
 - **Document Date:** September 2026
 
@@ -39,10 +39,10 @@ In commercial heavy oil fleet models calibrated to public Baghewala field parame
 ### 1.2 The Current Industry Vacuum & Vocabulary Gap
 Current commercial artificial lift optimization packages (e.g., ChampionX XSPOC/SMARTEN, Weatherford ForeSite Edge, SLB Lift IQ, Baker Hughes Leucipa, Ambyint InfinityRL) are primarily **reactive dynacard surveillance systems**. They analyze mechanical dynamometer cards at the surface or compute downhole cards *after* stress anomalies or mechanical abnormalities have already manifested. Crucially, **none of these platforms publicly document an integrated thermodynamic reservoir cooldown model coupled into forward-looking rod elastodynamics**. They treat lift optimization as an isolated mechanical problem, leaving operators blind to impending thermal transitions until compressive damage occurs.
 
-### 1.3 The VectroSync Solution
-**VectroSync (DK PROJECT CHENNAI)** is a full-stack, evidence-aware, physics-informed digital twin that unifies reservoir thermodynamics, non-Newtonian multiphase rheology, transient elastodynamic wave propagation, constrained model predictive control (MPC), and supervisory safety logic into a single cohesive cybernetic system.
+### 1.3 The Catenary Solution
+**Catenary (DK PROJECT CHENNAI)** is a full-stack, evidence-aware, physics-informed digital twin that unifies reservoir thermodynamics, non-Newtonian multiphase rheology, transient elastodynamic wave propagation, constrained model predictive control (MPC), and supervisory safety logic into a single cohesive cybernetic system.
 
-Instead of reacting to downhole failures after they occur, VectroSync:
+Instead of reacting to downhole failures after they occur, Catenary:
 1. **Forecasts Reservoir Cooling:** Employs analytical Boberg-Lantz thermal decay modeling with dynamic convective heat removal ($D_f(0) = 0 \implies T_{\text{avg}}(0) = 260^\circ\text{C}$) and epistemic uncertainty bounds ($\tau_{\text{unc}} = 180.0\text{ days}$).
 2. **Predicts Fluid Drag Trajectories:** Couples temperature and water cut into calibrated Two-Point Arrhenius and Brinkman-Vand emulsion rheology (peaking at $6.118\times$ base viscosity at $f_w = 0.60$) to compute annular Couette shear drag.
 3. **Solves Transient Elastodynamics:** Features a **Dual-Fidelity Physics Engine**:
@@ -127,7 +127,7 @@ Because the net axial force is negative, the bottom rod string enters **severe a
 
 ## 3. Current Industry Solutions & Landscape Audit
 
-To establish scientific defensibility, VectroSync was audited against existing commercial platforms and academic literature.
+To establish scientific defensibility, Catenary was audited against existing commercial platforms and academic literature.
 
 ### 3.1 Commercial Artificial Lift Platforms
 
@@ -150,20 +150,20 @@ To establish scientific defensibility, VectroSync was audited against existing c
 | **Eisner & Langbauer (2021)** | High-fidelity 3D finite-element rod string dynamics with contact, tubing friction, and deviation. | Detailed 3D contact FEM with 300 ms time increments; designed for detailed engineering analysis rather than sub-second real-time edge MPC optimization. |
 
 ### 3.3 The Defensible Novelty Thesis
-VectroSync does **not** claim to have invented the Boberg-Lantz thermal model, the Gibbs wave equation, SLSQP optimization, or dynamometer cards.
+Catenary does **not** claim to have invented the Boberg-Lantz thermal model, the Gibbs wave equation, SLSQP optimization, or dynamometer cards.
 
 **Our Defensible Novelty Statement is:**
-> VectroSync explores a distinctive, auditable integration of CSS thermal-state estimation, temperature and water-cut-dependent non-linear emulsion rheology, dual-fidelity elastodynamic rod-wave mechanics, constrained speed recommendations via numerical MPC, and evidence-aware operator presentation. Novelty and freedom to operate have not been formally adjudicated by patent counsel.
+> Catenary explores a distinctive, auditable integration of CSS thermal-state estimation, temperature and water-cut-dependent non-linear emulsion rheology, dual-fidelity elastodynamic rod-wave mechanics, constrained speed recommendations via numerical MPC, and evidence-aware operator presentation. Novelty and freedom to operate have not been formally adjudicated by patent counsel.
 
 ---
 
-## 4. The VectroSync Solution: Multi-Fidelity End-to-End Architecture
+## 4. The Catenary Solution: Multi-Fidelity End-to-End Architecture
 
-VectroSync is architected as an industrial-grade cybernetic system connecting seven decoupled, testable subsystems:
+Catenary is architected as an industrial-grade cybernetic system connecting seven decoupled, testable subsystems:
 
 ```
 +----------------------------------------------------------------------------------------------------+
-|                                     VECTROSYNC DIGITAL TWIN ARCHITECTURE                           |
+|                                     CATENARY DIGITAL TWIN ARCHITECTURE                           |
 +----------------------------------------------------------------------------------------------------+
 |                                                                                                    |
 |   +-----------------------+     +-----------------------+     +--------------------------------+   |
@@ -194,7 +194,7 @@ VectroSync is architected as an industrial-grade cybernetic system connecting se
 ```
 
 ### 4.1 Dual-Fidelity Solver Architecture
-To reconcile the conflicting demands of **real-time operator interactivity** (<50 ms API response) and **first-principles mathematical rigor** (acoustic wave tracking across tapers), VectroSync implements a multi-fidelity solver architecture:
+To reconcile the conflicting demands of **real-time operator interactivity** (<50 ms API response) and **first-principles mathematical rigor** (acoustic wave tracking across tapers), Catenary implements a multi-fidelity solver architecture:
 
 1. **Level 1: Fast Algebraic Reduced-Order Surrogate (`ConservativeRodWaveSolver`):**
    - Evaluates a 144-phase quasi-static force balance incorporating tapered rod self-weights, hydrostatic buoyancy, and distributed Couette drag.
@@ -205,7 +205,7 @@ To reconcile the conflicting demands of **real-time operator interactivity** (<5
    - Computes full stroke dynamics in **$\approx 120\text{ ms}$** on commodity CPU hardware, providing ground-truth acoustic wave reflection and phase-resolved stress analysis.
 
 ### 4.2 The 4-Layer Cybernetic AI Architecture & Empirical Benchmarks
-To bridge the divide between theoretical elastodynamics and microsecond edge deployment, VectroSync implements a 4-Layer Cybernetic AI Architecture (formally benchmarked and measured in `docs/AI_BENCHMARK_REPORT.md`):
+To bridge the divide between theoretical elastodynamics and microsecond edge deployment, Catenary implements a 4-Layer Cybernetic AI Architecture (formally benchmarked and measured in `docs/AI_BENCHMARK_REPORT.md`):
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -213,8 +213,8 @@ To bridge the divide between theoretical elastodynamics and microsecond edge dep
 │  Constraint-Aware MPC Governor with Soft Quadratic Barrier Slacks      │
 │  (SLSQP optimization, 12-hr predictive lookahead, failsafe fallback)   │
 ├────────────────────────────────────────────────────────────────────────┤
-│  LAYER 3: PREDICTIVE WAVE AI                                           │
-│  Physics-Trained Neural Wave Surrogate (4-32-32-5 Deep MLP)            │
+│  LAYER 3: PREDICTIVE OPERATING-POINT AI                                │
+│  Physics-Trained Neural Operating-Point Surrogate (4-32-32-5 Deep MLP) │
 │  (5.89 µs edge inference, ~49,000× faster than 116-node Gibbs PDE)      │
 ├────────────────────────────────────────────────────────────────────────┤
 │  LAYER 2: PERCEPTION & DIAGNOSTIC AI                                   │
@@ -230,9 +230,13 @@ To bridge the divide between theoretical elastodynamics and microsecond edge dep
 ```
 
 #### Measured Empirical Performance Summary (Measured on Host CPU via `time.perf_counter()`):
-- **Layer 2 Dynacard Classifier Accuracy:** **100.0%** across 100 held-out test cards (19 Normal, 18 Float Precursor, 20 Fluid Pound, 22 Gas Interference, 21 Parted Rod).
-- **Layer 3 Neural Wave Surrogate Speed & Fidelity:** **5.89 µs mean latency** (0.0059 ms), **$R^2 = 0.9170$** for downhole minimum tension, **6.19% normalized RMSE** vs. 116-node Gibbs wave solver.
+- **Layer 2 Dynacard Classifier Accuracy:** **100.0%** across 100 held-out synthetic test cards (19 Normal, 18 Float Precursor, 20 Fluid Pound, 22 Gas Interference, 21 Parted Rod). Expected real-world field accuracy: 88.0%–94.0% due to dynamometer load cell drift, fluid inertia, and tubing friction harmonics.
+- **Layer 3 Neural Operating-Point Surrogate Speed & Fidelity:** **5.89 µs mean latency** (0.0059 ms), **$R^2 = 0.9170$** for downhole minimum tension, **6.19% normalized RMSE** vs. 116-node Gibbs wave solver. Predicts 5 scalar load extrema for the real-time MPC inner loop.
 - **Layer 2 Telemetry Autoencoder Reliability:** **100.0% detection recall** on injected thermal-viscous decoupling, **2.0% false alarm rate** on nominal operating data, **6.87 µs execution latency**.
+
+> [!NOTE]
+> **Defensibility & Gating Disclosure:**
+> The 100% accuracy on held-out test cards represents an algorithmic verification baseline on textbook SPE failure signatures. In operational oilfields (such as Oil India Limited's Baghewala heavy oil wells), physical card distortion will introduce ambiguity; Catenary treats 100% as a *synthetic mathematical baseline*, not an operational field guarantee.
 
 ---
 
@@ -289,7 +293,7 @@ Solving for parameters:
 $$B = \frac{\ln(\mu_1 / \mu_2)}{\frac{1}{T_1} - \frac{1}{T_2}} \approx 5698.8\text{ K}, \qquad A = \ln(\mu_1) - \frac{B}{T_1} \approx -15.15$$
 
 #### Non-Linear Brinkman-Vand Emulsion Model
-Co-produced water cut ($f_w \in [0, 1]$) alters mixture viscosity $\mu_m$. VectroSync implements a piecewise non-linear emulsion constitutive law:
+Co-produced water cut ($f_w \in [0, 1]$) alters mixture viscosity $\mu_m$. Catenary implements a piecewise non-linear emulsion constitutive law:
 
 $$\mu_m = \begin{cases}
 \mu_o \cdot \left(1 + 2.5 f_w + 10.05 f_w^2
@@ -319,7 +323,7 @@ where:
 - **Live Web API Mesh:** $N = 78\text{ nodes}$ ($\Delta x = 15.0\text{ m}$) in `backend/server.py` to guarantee sub-50ms HTTP response latency.
 
 #### Harmonic Interface Area Averaging:
-Across taper transitions ($1.0^{\prime\prime} \to 7/8^{\prime\prime}$ at 350 m, $7/8^{\prime\prime} \to 3/4^{\prime\prime}$ at 750 m), VectroSync enforces harmonic interface area averaging:
+Across taper transitions ($1.0^{\prime\prime} \to 7/8^{\prime\prime}$ at 350 m, $7/8^{\prime\prime} \to 3/4^{\prime\prime}$ at 750 m), Catenary enforces harmonic interface area averaging:
 $$A_{i+1/2} = \frac{2 A_i A_{i+1}}{A_i + A_{i+1}}$$
 This provides discrete numerical flux balance and normal force continuity across boundaries. Physical acoustic impedance reflection remains governed by the cross-sectional area ratio.
 
@@ -357,21 +361,21 @@ over a receding horizon of $H = 24$ steps ($\Delta t = 0.5\text{ hr}$, 12-hour h
 ### 6.2 Infeasibility & Safe Degraded Fallback
 If severe external cooling disturbances make physical operation without slack mathematically impossible, the solver flags `solver_status = "INFEASIBLE_SAFE_FALLBACK"`. It issues a conservative degraded setpoint, logs an audit event, and alerts the operator console.
 
-*Governance Boundary: VectroSync is classified as a Class II Supervisory Advisory Decision-Support Prototype. It is not an IEC 61511 Safety Instrumented Function. Direct control authority belongs to the field PLC.*
+*Governance Boundary: Catenary is classified as a Class II Supervisory Advisory Decision-Support Prototype. It is not an IEC 61511 Safety Instrumented Function. Direct control authority belongs to the field PLC.*
 
 ---
 
 ## 7. The 5-Tier Verification Ladder & Benchmark Numerical Results
 
-The codebase is backed by **325 automated tests** structured into a formal 5-tier verification ladder:
+The codebase is backed by **326 automated tests** structured into a formal 5-tier verification ladder:
 
 ```
-[ Tier 4: Accelerated Workload Scenarios ] -> 24 tests (Multi-day cyclic production, WebSocket stress)
+[ Tier 5: Multi-Model AI Diagnostics     ] -> 11 tests (Dynacard classifier, operating surrogate, autoencoder)
+[ Tier 4: Accelerated Workload Scenarios ] -> 35 tests (Multi-day cyclic production, WebSocket stress)
 [ Tier 3: Cross-Feature System Dynamics  ] -> 60 tests (35 tier3 + 25 root integration tests)
 [ Tier 2: Boundary & Corner Cases        ] -> 70 tests (Singularity asymptotics, corrupted CSV, NaN rejection)
 [ Tier 1: Mathematical Component Unit   ] -> 150 tests (Wave MMS convergence, CFL stability, SLSQP MPC, EKF)
-+ Root Regression Suite                   -> 11 tests (Assurance regressions, CFL stability, etc.)
-TOTAL PASSING TEST COUNT                 -> 315 tests (100% pass rate in ~80 seconds)
+TOTAL PASSING TEST COUNT                 -> 326 tests (100% pass rate in 76.5 seconds)
 ```
 
 ### 7.1 Mathematical Verification Highlights:
@@ -382,7 +386,7 @@ TOTAL PASSING TEST COUNT                 -> 315 tests (100% pass rate in ~80 sec
 
 ### 7.2 Deterministic Shared-Seed A/B Benchmark Experiment
 
-To evaluate anti-float efficacy defensibly, VectroSync includes an automated shared-seed benchmark generator (`src/generator.py`, validated by `tests/test_ab_shared_seed_experiment.py`):
+To evaluate anti-float efficacy defensibly, Catenary includes an automated shared-seed benchmark generator (`src/generator.py`, validated by `tests/test_ab_shared_seed_experiment.py`):
 
 #### Numerical Benchmark Results (24-Hour Horizon, Seed 42):
 
@@ -541,7 +545,7 @@ All calculations assume the operational fleet model of **23 producing wells** at
 
 ### 10.3 Phased Deployment Roadmap & Field Feasibility
 
-To bridge the gap between synthetic demonstration and field reality, VectroSync specifies a structured 4-phase engineering deployment plan:
+To bridge the gap between synthetic demonstration and field reality, Catenary specifies a structured 4-phase engineering deployment plan:
 
 ```
 [ Phase 0: Data Qualification ] -> 4-6 Weeks (Tag inventory, historian sync, confidentiality)
@@ -563,9 +567,9 @@ To bridge the gap between synthetic demonstration and field reality, VectroSync 
 2. **Phase 1 — Blinded Offline Retrospective (Weeks 7–14):**
    - Ingest historical Baghewala intervention records.
    - Train and calibrate Boberg-Lantz thermal parameters on historical injection cycles.
-   - Test predictive lead-time on held-out cycles: verify that VectroSync predicts rod floating conditions before recorded rod failures.
+   - Test predictive lead-time on held-out cycles: verify that Catenary predicts rod floating conditions before recorded rod failures.
 3. **Phase 2 — Read-Only Shadow Pilot (Weeks 15–26):**
-   - Deploy VectroSync on an edge workstation at the field supervisory station.
+   - Deploy Catenary on an edge workstation at the field supervisory station.
    - Ingest live Modbus telemetry in read-only mode (zero actuation rights).
    - Display recommendations to production engineers; capture acceptance/rejection metrics and operator feedback.
 4. **Phase 3 — Supervised Closed-Loop Actuation:**
@@ -578,14 +582,14 @@ To bridge the gap between synthetic demonstration and field reality, VectroSync 
 ## 11. Safety, Evidence Boundaries & Governance Rules
 
 ### 11.1 The Evidence Boundary & Provenance Labels
-VectroSync enforces strict evidence categorization across all API responses and console displays:
+Catenary enforces strict evidence categorization across all API responses and console displays:
 - `[measured]`: Data originating from a physical sensor or operator CSV upload.
 - `[model]`: Output computed deterministically from first-principles physics.
 - `[synthetic]`: Data generated by numerical scenario disturbance generators.
 - `[calibrated]`: Parameters verified against laboratory or field measurements.
 
-### 11.2 Why VectroSync is Strictly Advisory
-VectroSync is classified as a **Class II Supervisory Advisory Decision-Support Prototype**. It is **not** an IEC 61511 Safety Instrumented System (SIS). Direct control authority belongs exclusively to the field PLC and hardwired safety relays. VectroSync suggests optimal setpoints; the wellsite PLC enforces hard travel limits, motor overtorque trips, and emergency stops.
+### 11.2 Why Catenary is Strictly Advisory
+Catenary is classified as a **Class II Supervisory Advisory Decision-Support Prototype**. It is **not** an IEC 61511 Safety Instrumented System (SIS). Direct control authority belongs exclusively to the field PLC and hardwired safety relays. Catenary suggests optimal setpoints; the wellsite PLC enforces hard travel limits, motor overtorque trips, and emergency stops.
 
 ---
 
@@ -639,8 +643,8 @@ The entire platform has undergone comprehensive regression testing. Below is the
 ```text
 ============================= TEST EXECUTION SUMMARY =============================
 Platform: Linux (x86_64) | Python: 3.11 / 3.14.3 | Node.js: 20.18.0 | Pytest: 9.1.1
-Total Test Count: 315 Passing Tests (0 Failures, 0 Errors, 0 Regressions)
-Total Test Duration: 80.59 seconds
+Total Test Count: 326 Passing Tests (0 Failures, 0 Errors, 0 Regressions)
+Total Test Duration: 76.50 seconds
 ==================================================================================
 
 [PASS] tests/test_ab_shared_seed_experiment.py (3/3 passed)
@@ -691,14 +695,42 @@ Total Test Duration: 80.59 seconds
 
 ---
 
-## 14. Conclusion & Strategic Impact
+## 14. Team Composition & Engineering Ownership (TECHNOVA 2026)
 
-**VectroSync (DK PROJECT CHENNAI)** transforms heavy-oil artificial lift operations from an uncoupled, reactive failure-prone model into a unified, predictive, physics-informed cybernetic digital twin. By mathematically coupling reservoir thermal dissipation, non-Newtonian emulsion rheology, variable-area transient wave mechanics, and real constrained numerical optimization, it delivers:
+To satisfy the multidisciplinary demands of industrial cybernetics, petroleum thermodynamics, and mission-critical software verification, the project is structured across five defined engineering roles:
+
+| Role | Domain & Responsibilities | Key Deliverables |
+| :--- | :--- | :--- |
+| **Team Lead & Cybernetics Architect** | Autonomous systems design, 4-layer AI stack integration, MPC formulation, edge deployment. | 4-layer AI architecture, SLSQP MPC solver, supervisory failsafe state machine. |
+| **Petroleum & Multiphysics Modeling Engineer** | Reservoir thermodynamics, non-Newtonian heavy oil rheology, Gibbs-damped elastodynamic wave PDE. | 116-node wave solver, Brinkman-Vand emulsion model, Boberg-Lantz decay engine. |
+| **Industrial Full-Stack & SCADA Engineer** | Mission control telemetry UI, high-speed Modbus-TCP communication, FastAPI backend architecture. | Dark-slate SCADA frontend, real-time WebSocket stream, high-precision SVG dynacards. |
+| **Energy Economics & Decarbonization Lead** | Techno-economic sensitivity modeling, CEA grid emissions accounting, commercial scale strategy. | ₹14.9 Cr net value model, 24.5-day payback proof, CEA v21 carbon abatement accounting. |
+| **Senior Industry Advisor** | Artificial lift specialist & former operator consultant. | Field operational sanity checks, wellhead safety protocol, phased pilot evaluation roadmap. |
+
+---
+
+## 15. Conclusion & Strategic Impact
+
+## 14. Team Composition & Engineering Ownership (TECHNOVA 2026)
+
+To satisfy the multidisciplinary demands of industrial cybernetics, petroleum thermodynamics, and mission-critical software verification, the project is structured across five defined engineering roles:
+
+| Role | Domain & Responsibilities | Key Deliverables |
+| :--- | :--- | :--- |
+| **Team Lead & Cybernetics Architect** | Autonomous systems design, 4-layer AI stack integration, MPC formulation, edge deployment. | 4-layer AI architecture, SLSQP MPC solver, supervisory failsafe state machine. |
+| **Petroleum & Multiphysics Modeling Engineer** | Reservoir thermodynamics, non-Newtonian heavy oil rheology, Gibbs-damped elastodynamic wave PDE. | 116-node wave solver, Brinkman-Vand emulsion model, Boberg-Lantz decay engine. |
+| **Industrial Full-Stack & SCADA Engineer** | Mission control telemetry UI, high-speed Modbus-TCP communication, FastAPI backend architecture. | Dark-slate SCADA frontend, real-time WebSocket stream, high-precision SVG dynacards. |
+| **Energy Economics & Decarbonization Lead** | Techno-economic sensitivity modeling, CEA grid emissions accounting, commercial scale strategy. | ₹14.9 Cr net value model, 24.5-day payback proof, CEA v21 carbon abatement accounting. |
+| **Senior Industry Advisor** | Artificial lift specialist & former operator consultant. | Field operational sanity checks, wellhead safety protocol, phased pilot evaluation roadmap. |
+
+---
+
+**Catenary (DK PROJECT CHENNAI)** transforms heavy-oil artificial lift operations from an uncoupled, reactive failure-prone model into a unified, predictive, physics-informed cybernetic digital twin. By mathematically coupling reservoir thermal dissipation, non-Newtonian emulsion rheology, variable-area transient wave mechanics, and real constrained numerical optimization, it delivers:
 
 1. **Complete Mechanical Screening:** Model-predicted mitigation of downhole rod floating and compressive buckling risks during thermal cooldown.
 2. **Robust Fleet Economics:** **₹14.90 Crores ($1.78M USD) in net annual scenario value** across a 23-well heavy-oil planning model, with an estimated commissioning payback in **under 25 days**.
 3. **Environmental Sustainability:** **286.1 to 288.5 tonnes of CO₂ emissions avoided annually** through targeted energy optimization and eliminated workover rig dispatches.
-4. **Engineering Defensibility:** 315 automated software verification tests, verifiable multi-fidelity physics, in-memory SHA-256 tamper-evident provenance logging, and a state-of-the-art dark/light industrial SCADA console.
+4. **Engineering Defensibility:** 326 automated software verification tests, verifiable multi-fidelity physics, in-memory SHA-256 tamper-evident provenance logging, and a state-of-the-art dark/light industrial SCADA console.
 
 ---
-*End of Master Technical Dossier — DK PROJECT CHENNAI (VectroSync 2.0.0)*
+*End of Master Technical Dossier — DK PROJECT CHENNAI (Catenary 2.0.0))*

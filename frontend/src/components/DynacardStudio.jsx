@@ -309,10 +309,10 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn, aiDiagnosti
                 </p>
               </div>
 
-              {/* Model 2: Neural Wave Surrogate */}
+              {/* Model 2: Neural Operating-Point Surrogate */}
               <div className="p-2.5 rounded bg-surface-1 border border-hairline flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="unit-label text-[10px]">Layer 3: Wave Surrogate</span>
+                  <span className="unit-label text-[10px]">Layer 3: Operating-Point Surrogate</span>
                   <span className="pill text-[10px] text-interactive bg-interactive/10">R² = 0.917</span>
                 </div>
                 <div className="font-mono text-[12px] text-ink flex items-baseline gap-2">
@@ -324,7 +324,7 @@ export function DynacardStudio({ dynacard, isBuckling, minTensionKn, aiDiagnosti
                   </span>
                 </div>
                 <p className="caption text-[11px] text-muted">
-                  Trained on 116-node Gibbs elastodynamic wave PDE solver solutions.
+                  Predicts 5 scalar load extrema for real-time MPC inner loop screening.
                 </p>
               </div>
 

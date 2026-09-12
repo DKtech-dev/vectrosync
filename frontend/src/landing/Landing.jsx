@@ -13,7 +13,7 @@ const NAV_LINKS = [
 ];
 
 const PROOF = [
-  { value: '315', label: 'Tests passing' },
+  { value: '326', label: 'Tests passing' },
   { value: '19\u21920', label: 'Float events, A/B' },
   { value: '289t', label: 'CO\u2082e avoided / yr' },
   { value: '90%', label: 'Robust confidence' },
@@ -130,7 +130,7 @@ export function Landing({ onLaunchConsole }) {
   const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
-    document.title = 'Intelligence Built To Foresee Failure \u2014 VectroSync';
+    document.title = 'Intelligence Built To Foresee Failure \u2014 Catenary';
   }, []);
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export function Landing({ onLaunchConsole }) {
       <div className="page">
         <header className="nav">
           <a href="#home" className="nav-logo" onClick={(e) => e.preventDefault()}>
-            VectroSync
+            Catenary
           </a>
 
           <nav className="nav-links" aria-label="Primary">

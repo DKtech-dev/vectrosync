@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-markdown_content = """# VectroSync: Autonomous Cyber-Physical Digital Twin and Edge-Native Predictive MPC for Cyclic Steam Stimulation (CSS) Artificial Lift Automation
+markdown_content = """# Catenary: Autonomous Cyber-Physical Digital Twin and Edge-Native Predictive MPC for Cyclic Steam Stimulation (CSS) Artificial Lift Automation
 
 **Competition:** TSM TECHNOVA 2026 — National AI Innovation & Entrepreneurship Challenge  
 **Host Institution:** Thiagarajar School of Management (TSM), Madurai  
@@ -25,7 +25,7 @@ Under conventional fixed-speed sucker rod pumping (4.5–4.7 SPM), this thermal 
 
 In the 23 producing wells of the Baghewala field, this failure mechanism forces an average of **2.40 workover pullings per well annually** (55 total rig interventions per year), imposing over **₹14.82 Crores in direct workover costs, lost production, and electrical inefficiency**.
 
-**VectroSync** resolves this critical upstream challenge through an edge-native, first-principles Cyber-Physical Digital Twin coupled with a real-time Receding Horizon Model Predictive Controller (MPC). Operating with sub-millisecond execution (0.35 ms) on ruggedized wellhead industrial hardware, VectroSync continuously predicts thermal dissipation, emulsion rheology, and 1D hyperbolic elastodynamics, actively governing pump speed to enforce a hard anti-float constraint ($F_{\\min}(t) \\ge +0.50\\text{ kN}$).
+**Catenary** resolves this critical upstream challenge through an edge-native, first-principles Cyber-Physical Digital Twin coupled with a real-time Receding Horizon Model Predictive Controller (MPC). Operating with sub-millisecond execution (0.35 ms) on ruggedized wellhead industrial hardware, Catenary continuously predicts thermal dissipation, emulsion rheology, and 1D hyperbolic elastodynamics, actively governing pump speed to enforce a hard anti-float constraint ($F_{\\min}(t) \\ge +0.50\\text{ kN}$).
 
 ### Core Achievements & Validation Metrics
 * **100% Automated Test Coverage:** Fully verified across 255 passing tests under `pytest` with zero warnings, zero skips, and unconstrained wave mechanics.
@@ -88,7 +88,7 @@ However, as thermal dissipation progresses past Day 12:
 
 ## 3. Cyber-Physical Digital Twin Architecture
 
-VectroSync decouples artificial lift optimization from reactive surface sensing by constructing an edge-native, forward-predictive digital twin that models the complete thermal, rheological, and elastodynamic causal continuum.
+Catenary decouples artificial lift optimization from reactive surface sensing by constructing an edge-native, forward-predictive digital twin that models the complete thermal, rheological, and elastodynamic causal continuum.
 
 ```
 +---------------------------------------------------------------------------------------+
@@ -99,7 +99,7 @@ VectroSync decouples artificial lift optimization from reactive surface sensing 
                                            |  Telemetry via Modbus-TCP (Port 502)
                                            v
 +---------------------------------------------------------------------------------------+
-|                          VECTROSYNC CYBER-PHYSICAL ENGINE                             |
+|                          CATENARY CYBER-PHYSICAL ENGINE                             |
 |                                                                                       |
 |  [ LAYER 1: RESERVOIR THERMODYNAMICS ]                                                |
 |  * Analytical Boberg-Lantz Formulation with Bessel Integral Quadrature                |
@@ -153,7 +153,7 @@ where:
 * $\\Delta T_0 = T_{\\text{steam}} - T_{\\text{initial}} = 533.15\\text{ K} - 321.15\\text{ K} = 212.0\\text{ K}$.
 * $\\bar{v}_r(t)$ is the dimensionless radial heat conduction function evaluated via Weber-Schafheitlin Bessel integral quadrature:
   $$\\bar{v}_r(t) = \\int_0^\\infty \\frac{2 J_1(\\lambda)}{\\lambda} \\cdot \\exp\\left( - \\frac{\\alpha_{\\text{th}} t}{r_h^2} \\lambda^2 \\right) \\, d\\lambda$$
-  VectroSync implements exact $C^0$ numerical continuity at the boundary:
+  Catenary implements exact $C^0$ numerical continuity at the boundary:
   $$\\lim_{b^2 \\to 0} \\bar{v}_r(t) = 1.0$$
 * $\\bar{v}_z(t)$ accounts for vertical conductive heat losses into the underburden and overburden caprocks:
   $$\\bar{v}_z(t) = \\text{erf}\\left( \\frac{h_n}{2 \\sqrt{\\alpha_{\\text{th}} t}} \\right) + \\frac{2 \\sqrt{\\alpha_{\\text{th}} t}}{h_n \\sqrt{\\pi}} \\left[ \\exp\\left( - \\frac{h_n^2}{4 \\alpha_{\\text{th}} t} \\right) - 1 \\right]$$
@@ -217,7 +217,7 @@ Internal subcycling runs 10 numerical steps per control epoch, preventing artifi
 ## 5. Real-Time Model Predictive Control & Anti-Float Formulation
 
 ### 5.1 Receding Horizon Formulation
-At each control step $k$, VectroSync solves an optimal control problem across an $H = 24$-step receding horizon (representing 12.0 hours into the future):
+At each control step $k$, Catenary solves an optimal control problem across an $H = 24$-step receding horizon (representing 12.0 hours into the future):
 
 $$\\min_{\\mathbf{u}} J = \\sum_{j=1}^H \\left[ - w_{\\text{prod}} \\cdot Q_{\\text{oil}}(k+j) + w_{\\text{pwr}} \\cdot P_{\\text{mech}}(k+j) + w_{\\text{slew}} \\cdot \\left( \\text{SPM}(k+j) - \\text{SPM}(k+j-1) \\right)^2 \\right]$$
 
@@ -239,7 +239,7 @@ By exploiting the mathematical structure of the 1D wave equations through analyt
 ## 6. Industrial Edge Skid & SCADA Modbus-TCP Specification
 
 ### 6.1 Hardware Bill of Materials (BOM)
-VectroSync is housed within an API/IECEx Class 1 Division 2 explosion-proof wellsite skid:
+Catenary is housed within an API/IECEx Class 1 Division 2 explosion-proof wellsite skid:
 
 | Item | Component Description | Manufacturer / Model | Unit Cost (₹) |
 | :---: | :--- | :--- | :---: |
@@ -251,10 +251,10 @@ VectroSync is housed within an API/IECEx Class 1 Division 2 explosion-proof well
 | 6 | Terminal Blocks, Safety Fusing, Wiring Harness & Rig Mounting Kit | Weidmüller Industrial Rail | 12,000 |
 | **TOTAL** | **Full Wellhead Edge Appliance Skid (Turnkey Hardware BOM)** | **Commercial Off-The-Shelf** | **₹1,65,000** |
 
-*Note: For modern wellheads equipped with smart RTUs/PLCs (e.g., Schneider SCADAPack, Emerson ROC800), VectroSync can be deployed as an OCI-compliant containerized microservice, requiring **₹0 in new hardware CAPEX**.*
+*Note: For modern wellheads equipped with smart RTUs/PLCs (e.g., Schneider SCADAPack, Emerson ROC800), Catenary can be deployed as an OCI-compliant containerized microservice, requiring **₹0 in new hardware CAPEX**.*
 
 ### 6.2 Industrial Modbus-TCP Register Interface (Port 502)
-VectroSync communicates directly with the wellsite PLC/RTU over standard Modbus-TCP:
+Catenary communicates directly with the wellsite PLC/RTU over standard Modbus-TCP:
 
 | Register Address | Parameter Description | Engineering Units | Data Type | Access Type |
 | :---: | :--- | :---: | :---: | :---: |
@@ -263,13 +263,13 @@ VectroSync communicates directly with the wellsite PLC/RTU over standard Modbus-
 | **30003** | Instantaneous Pumping Unit Speed | $\\text{SPM} \\times 100$ | 16-bit Int | Read-Only |
 | **30004** | Wellhead Fluid Flowline Temperature | $^\\circ\\text{C} \\times 10$ | 16-bit Int | Read-Only |
 | **30005** | Real-Time Telemetry Heartbeat Counter | Monotonic Seconds | 16-bit Unsigned | Read-Only |
-| **40101** | VectroSync Recommended VFD Speed Target | $\\text{SPM} \\times 100$ | 16-bit Int | Read/Write |
+| **40101** | Catenary Recommended VFD Speed Target | $\\text{SPM} \\times 100$ | 16-bit Int | Read/Write |
 | **40102** | Supervisory Watchdog Heartbeat Echo | Monotonic Seconds | 16-bit Unsigned | Read/Write |
 | **40103** | Operational Failsafe Safety State | $0=\\text{Norm}, 1=\\text{Deg}, 2=\\text{Fall}, 3=\\text{Trip}$ | 16-bit Enum | Read/Write |
 | **40104** | Predicted Downhole Rod Minimum Tension | $\\text{kN} \\times 100$ | 16-bit Signed | Read/Write |
 
 ### 6.3 4-Tier Supervisory Safety State Machine
-To guarantee uncompromised operational safety in the event of communication failures or extreme process disturbances, VectroSync embeds a deterministic supervisory state machine:
+To guarantee uncompromised operational safety in the event of communication failures or extreme process disturbances, Catenary embeds a deterministic supervisory state machine:
 
 * **Level 0 (Normal):** Telemetry age $\\tau < 10\\text{s}$. Real-time MPC optimizes speed setpoint over Modbus-TCP.
 * **Level 1 (Degraded Telemetry):** $10\\text{s} \\le \\tau < 60\\text{s}$. Speed setpoint is frozen at the last confirmed safe setpoint; diagnostics are broadcast to SCADA.
@@ -280,7 +280,7 @@ To guarantee uncompromised operational safety in the event of communication fail
 
 ## 7. Verification, Testing & Mission-Critical Hardening
 
-VectroSync's software engineering complies with aerospace and mission-critical cyber-physical testing standards. The entire test suite executes automatically under `pytest` with **255/255 passing tests (100% Green)** with zero test skips and zero warnings.
+Catenary's software engineering complies with aerospace and mission-critical cyber-physical testing standards. The entire test suite executes automatically under `pytest` with **255/255 passing tests (100% Green)** with zero test skips and zero warnings.
 
 ```
 ============================== 255 passed in 61.11s ==============================
@@ -291,7 +291,7 @@ VectroSync's software engineering complies with aerospace and mission-critical c
 2. **Singularity & Numerical Stability Sweeps:** Tests radial and vertical Bessel integral routines across extreme limiting conditions ($\\tau \\to 0$, $b^2 \\to 0$, $w \\to 0$), verifying seamless $C^0$ numerical continuity and zero division errors.
 3. **CFL Condition & Acoustic Wave Reflection:** Confirms that across 1,000 randomized Monte Carlo simulations, stress wave energy conservation across taper junctions satisfies $\\Delta E / E < 10^{-6}$.
 4. **Modbus-TCP Protocol Severance:** Simulates network packet loss, telemetry corruption, and hardware disconnections, verifying deterministic fallback transitions within $0.05\\text{ ms}$.
-5. **24-Hour Continuous Disturbance Simulation:** Simulates an unmitigated 24-day CSS cooldown cycle, verifying that VectroSync dynamically throttles pump speed from $4.7\\text{ SPM}$ down to $2.8\\text{ SPM}$, successfully holding downhole tension strictly above $+0.50\\text{ kN}$ at all times.
+5. **24-Hour Continuous Disturbance Simulation:** Simulates an unmitigated 24-day CSS cooldown cycle, verifying that Catenary dynamically throttles pump speed from $4.7\\text{ SPM}$ down to $2.8\\text{ SPM}$, successfully holding downhole tension strictly above $+0.50\\text{ kN}$ at all times.
 
 ---
 
@@ -304,8 +304,8 @@ An unmanaged well at Baghewala Well #14 incurs severe recurring operational loss
 * **Frictional Drive Losses:** $48\\text{ kWh/day} \\times 365\\text{ days} \\times \\text{₹}7.50/\\text{kWh} = \\text{₹}3.90\\text{ Lakhs/year}$.
 * **Total Annual Single-Well OPEX Burden:** **₹43.10 Lakhs/well/year** (~₹4.31 Crores over a 10-year well lifecycle).
 
-### 8.2 VectroSync Performance & Savings
-VectroSync reduces rod failure frequency from $2.40$ to $0.35\\text{ failures/year}$ (an **85.4% reduction**):
+### 8.2 Catenary Performance & Savings
+Catenary reduces rod failure frequency from $2.40$ to $0.35\\text{ failures/year}$ (an **85.4% reduction**):
 * **Net Annual Workover Savings:** ₹17.42 Lakhs/well.
 * **Net Annual Production Recapture:** ₹16.05 Lakhs/well.
 * **Net Annual Power Optimization:** ₹3.33 Lakhs/well.
@@ -332,15 +332,15 @@ $$\\mathbf{\\text{Net Present Value (NPV @ 12\\%): } ₹51.68\\text{ Crores}} \\
 
 ## 9. Environmental, Social & Governance (ESG) Impact
 
-1. **Direct Decarbonization:** Eliminating hydrodynamic frictional churning and optimizing motor stroke kinematics saves 48 kWh/day/well, totaling 402,960 kWh/year across the 23-well fleet. Applying the Central Electricity Authority (CEA) Western Regional Grid emission factor of 0.82 kg CO2/kWh, VectroSync directly abates **293.2 to 330.4 Metric Tons of CO2 equivalent** annually.
-2. **Worker Health, Safety & Environment (HSE):** Heavy oil workover operations in the Thar Desert involve heavy rod tongs, high-pressure wellhead tripping, and extreme summer temperatures (>48°C). By eliminating **47.15 well service rig mobilizations annually**, VectroSync directly removes **11,300 high-hazard wellsite exposure man-hours**, dramatically reducing pinch-point and high-pressure blow-out risks.
+1. **Direct Decarbonization:** Eliminating hydrodynamic frictional churning and optimizing motor stroke kinematics saves 48 kWh/day/well, totaling 402,960 kWh/year across the 23-well fleet. Applying the Central Electricity Authority (CEA) Western Regional Grid emission factor of 0.82 kg CO2/kWh, Catenary directly abates **293.2 to 330.4 Metric Tons of CO2 equivalent** annually.
+2. **Worker Health, Safety & Environment (HSE):** Heavy oil workover operations in the Thar Desert involve heavy rod tongs, high-pressure wellhead tripping, and extreme summer temperatures (>48°C). By eliminating **47.15 well service rig mobilizations annually**, Catenary directly removes **11,300 high-hazard wellsite exposure man-hours**, dramatically reducing pinch-point and high-pressure blow-out risks.
 3. **National Energy Security:** Heavy crude produced in Rajasthan offsets imported heavy oil feedstock for Indian coastal refineries, directly supporting the *Atmanirbhar Bharat* vision in domestic energy extraction.
 
 ---
 
 ## 10. Commercialization & Field Trial Implementation Roadmap
 
-VectroSync's industrial deployment roadmap is structured into four disciplined operational phases:
+Catenary's industrial deployment roadmap is structured into four disciplined operational phases:
 
 * **Phase 1: Q1 2026 — Bench HIL Simulation & SCADA Interface Certification (Complete)**
   * Verified 255/255 passing tests; Modbus-TCP latency < 0.35 ms.
@@ -355,11 +355,11 @@ VectroSync's industrial deployment roadmap is structured into four disciplined o
   * Full ₹14.82 Cr annual OPEX savings realization.
 
 ### Incubation & Alignment with TSOM Innovation & Incubation Centre
-VectroSync is designed for rapid spin-out commercialization. The underlying IP is 100% founder-owned and free from third-party licensing encumbrances. Through the support and mentorship of the **Thiagarajar School of Management (TSM) Innovation & Incubation Centre**, the team will establish pilot commercial contracts with public and private upstream operators (Oil India Limited, ONGC, and Cairn Oil & Gas), positioning VectroSync as India's premier deep-tech industrial cybernetics provider.
+Catenary is designed for rapid spin-out commercialization. The underlying IP is 100% founder-owned and free from third-party licensing encumbrances. Through the support and mentorship of the **Thiagarajar School of Management (TSM) Innovation & Incubation Centre**, the team will establish pilot commercial contracts with public and private upstream operators (Oil India Limited, ONGC, and Cairn Oil & Gas), positioning Catenary as India's premier deep-tech industrial cybernetics provider.
 
 ---
 
-*Verified and submitted by the VectroSync Engineering Team for TSM TECHNOVA 2026.*
+*Verified and submitted by the Catenary Engineering Team for TSM TECHNOVA 2026.*
 """
 
 with open("submission/08_OFFICIAL_PROPOSAL_DOCUMENT.md", "w", encoding="utf-8") as f:

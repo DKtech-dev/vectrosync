@@ -7,9 +7,9 @@ This repository is a research prototype. Public deployments should expose synthe
 ## Implemented safeguards
 
 - same-origin/local CORS allowlist by default;
-- optional `VECTROSYNC_API_KEY` enforcement on simulation, scenario, ingestion, and audit endpoints;
-- 2 MiB default CSV request limit (`VECTROSYNC_MAX_CSV_BYTES`);
-- bounded WebSocket fan-out (`VECTROSYNC_MAX_WEBSOCKETS`);
+- optional `CATENARY_API_KEY` (or legacy `VECTROSYNC_API_KEY`) enforcement on simulation, scenario, ingestion, and audit endpoints;
+- 2 MiB default CSV request limit (`CATENARY_MAX_CSV_BYTES`);
+- bounded WebSocket fan-out (`CATENARY_MAX_WEBSOCKETS`);
 - fail-closed telemetry quality checks;
 - non-root, capability-dropped, read-only container defaults;
 - localhost-only Docker Compose port bindings;
@@ -35,10 +35,10 @@ Before a private shadow pilot:
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `VECTROSYNC_API_KEY` | Enables `X-API-Key` checks when non-empty | disabled for local demo |
-| `VECTROSYNC_CORS_ORIGINS` | Comma-separated allowed browser origins | localhost only |
-| `VECTROSYNC_MAX_CSV_BYTES` | Maximum upload/text payload | 2 MiB |
-| `VECTROSYNC_MAX_WEBSOCKETS` | Concurrent synthetic streams/process | 5 |
+| `CATENARY_API_KEY` | Enables `X-API-Key` checks when non-empty (fallback: `VECTROSYNC_API_KEY`) | disabled for local demo |
+| `CATENARY_CORS_ORIGINS` | Comma-separated allowed browser origins | localhost only |
+| `CATENARY_MAX_CSV_BYTES` | Maximum upload/text payload | 2 MiB |
+| `CATENARY_MAX_WEBSOCKETS` | Concurrent synthetic streams/process | 5 |
 
 ## Audit limitation
 

@@ -81,7 +81,7 @@ export function WhyEngineConsole({ diagnostics, isBuckling }) {
             <Sparkles className="w-4 h-4" />
           </span>
           <div>
-            <h2 className="card-title">Ask VectroSync Twin</h2>
+            <h2 className="card-title">Ask Catenary Twin</h2>
             <p className="caption">Grounded in this pass's diagnostics -- every answer cites its source field</p>
           </div>
         </div>
@@ -101,7 +101,7 @@ export function WhyEngineConsole({ diagnostics, isBuckling }) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          aria-label="Ask the VectroSync twin about this model output"
+          aria-label="Ask the Catenary twin about this model output"
           placeholder="Ask about this model pass..."
           className="flex-1 bg-transparent text-[13px] text-ink placeholder:text-faint outline-none min-w-0"
         />

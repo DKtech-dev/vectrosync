@@ -16,16 +16,16 @@ WORKDIR /app
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --requirement requirements.txt \
-    && addgroup --system vectrosync \
-    && adduser --system --ingroup vectrosync --home /nonexistent vectrosync
+    && addgroup --system catenary \
+    && adduser --system --ingroup catenary --home /nonexistent catenary
 
-COPY --chown=vectrosync:vectrosync src ./src
-COPY --chown=vectrosync:vectrosync backend ./backend
-COPY --chown=vectrosync:vectrosync configs ./configs
-COPY --chown=vectrosync:vectrosync app.py ./app.py
-COPY --chown=vectrosync:vectrosync --from=frontend-builder /build/frontend/dist ./frontend/dist
+COPY --chown=catenary:catenary src ./src
+COPY --chown=catenary:catenary backend ./backend
+COPY --chown=catenary:catenary configs ./configs
+COPY --chown=catenary:catenary app.py ./app.py
+COPY --chown=catenary:catenary --from=frontend-builder /build/frontend/dist ./frontend/dist
 
-USER vectrosync
+USER catenary
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]

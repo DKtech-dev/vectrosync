@@ -279,8 +279,8 @@ def run():
         print(f"Raw video recorded: {raw_video_path} ({os.path.getsize(raw_video_path)} bytes)")
 
         # Multiplex raw video with audio + burn REAL-TIME LOW NON-DISTURBING SUBTITLES
-        dest_webm = os.path.join(ARTIFACT_DIR, "vectrosync_scada_demonstration.webm")
-        dest_mp4 = "/home/dk/Documents/main/VectroSync_Winning_Demo.mp4"
+        dest_webm = os.path.join(ARTIFACT_DIR, "catenary_scada_demonstration.webm")
+        dest_mp4 = "/home/dk/Documents/main/Catenary_Winning_Demo.mp4"
 
         # Style: Bottom-aligned (MarginV=16), clean white text, crisp black outline (Outline=2.2, Shadow=1.0),
         # NO opaque box (BorderStyle=1), compact 18pt font. Completely non-disturbing, true YouTube-style captions!

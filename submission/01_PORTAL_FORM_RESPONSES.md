@@ -2,19 +2,19 @@
 
 ## Project
 
-- **Name:** VectroSync
+- **Name:** Catenary
 - **Category:** Industrial analytics / digital-twin research prototype
 - **Stage:** TRL 3–4 software demonstrator; no field or HIL validation
-- **Repository validation:** 271 automated tests passing; React production build passing
+- **Repository validation:** 326 automated tests passing; React production build passing
 - **Control authority:** Advisory only; no actuator write path
 
 ## Problem statement (≤200 words)
 
-Thermal recovery and sucker-rod pumping are often analyzed in separate workflows. As a CSS well cools, fluid mobility and apparent viscosity can change significantly, altering annular drag and dynamometer-card behavior. Operators need earlier, explainable indications of changing load risk, but a credible solution must also distinguish model output from measurements, reject poor telemetry, report uncertainty and infeasibility, and preserve independent safety authority. VectroSync addresses this workflow gap through an integrated research prototype. It does not assert a measured failure rate or operator loss for Baghewala; those quantities require intervention history, allocated production, energy meters, and approved cost data.
+Thermal recovery and sucker-rod pumping are often analyzed in separate workflows. As a CSS well cools, fluid mobility and apparent viscosity can change significantly, altering annular drag and dynamometer-card behavior. Operators need earlier, explainable indications of changing load risk, but a credible solution must also distinguish model output from measurements, reject poor telemetry, report uncertainty and infeasibility, and preserve independent safety authority. Catenary addresses this workflow gap through an integrated research prototype. It does not assert a measured failure rate or operator loss for Baghewala; those quantities require intervention history, allocated production, energy meters, and approved cost data.
 
 ## Proposed solution (≤250 words)
 
-VectroSync is a full-stack synthetic advisory twin. A thermal research model estimates average heated-zone cooldown. Two-point Arrhenius and empirical water-cut relations estimate viscosity, which feeds a Couette drag assumption and a reduced-order phase-resolved rod-load card. A 12-hour speed governor applies operating bounds, per-hour slew limits, and reduced-order tension/PPRL constraints. Unlike the previous prototype, it explicitly reports infeasible trajectories and constraint residuals rather than labeling every result optimal. The proposed speed is checked against the same card model displayed in the console before a four-level supervisory software state is assigned.
+Catenary is a full-stack synthetic advisory twin. A thermal research model estimates average heated-zone cooldown. Two-point Arrhenius and empirical water-cut relations estimate viscosity, which feeds a Couette drag assumption and a reduced-order phase-resolved rod-load card. A 12-hour speed governor applies operating bounds, per-hour slew limits, and reduced-order tension/PPRL constraints. Unlike the previous prototype, it explicitly reports infeasible trajectories and constraint residuals rather than labeling every result optimal. The proposed speed is checked against the same card model displayed in the console before a four-level supervisory software state is assigned.
 
 The React and Streamlit interfaces expose scenario comparison, cards, depth/phase visualization, forecast, telemetry ingestion, provenance, and low/base/high commercial assumptions. Every API simulation identifies itself as synthetic, unvalidated, and advisory only. CSV ingestion fails closed for missing channels, bad timestamps, non-finite values, excessive gaps, ambiguous mappings, and physical-range violations. A thread-safe SHA-256 chain demonstrates in-process tamper evidence.
 

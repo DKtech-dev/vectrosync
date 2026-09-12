@@ -5,7 +5,7 @@ html_template = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>VectroSync: Official Technical Proposal - TSM TECHNOVA 2026</title>
+<title>Catenary: Official Technical Proposal - TSM TECHNOVA 2026</title>
 <style>
   @page {
     size: A4;
@@ -165,7 +165,7 @@ html_template = """<!DOCTYPE html>
 <body>
 
 <div class="header-card">
-  <h1>VectroSync: Autonomous Cyber-Physical Digital Twin & Predictive Edge MPC</h1>
+  <h1>Catenary: Autonomous Cyber-Physical Digital Twin & Predictive Edge MPC</h1>
   <div style="font-size: 10.5pt; color: #94a3b8; margin-bottom: 8px;">Artificial Lift Automation for Cyclic Steam Stimulation (CSS) Heavy Crude Wells</div>
   <div class="header-meta">
     <div><strong>Competition:</strong> TSM TECHNOVA 2026 (Thiagarajar School of Management)</div>
@@ -204,7 +204,7 @@ html_template = """<!DOCTYPE html>
   <li>Compressive buckling drives the rod string outward into violent contact with the 2.992-inch internal diameter production tubing, causing rod float off the surface carrier bar, buckling fatigue, and catastrophic tensile parting upon stroke reversal.</li>
 </ol>
 <p>In the 23 producing wells of the Baghewala field, this failure mechanism forces an average of <strong>2.40 workover pullings per well annually</strong> (55 total rig interventions per year), imposing over <strong>₹14.82 Crores in direct workover costs, lost production, and electrical inefficiency</strong>.</p>
-<p><strong>VectroSync</strong> resolves this critical upstream challenge through an edge-native, first-principles Cyber-Physical Digital Twin coupled with a real-time Receding Horizon Model Predictive Controller (MPC). Operating with sub-millisecond execution (0.35 ms) on ruggedized wellhead industrial hardware, VectroSync continuously predicts thermal dissipation, emulsion rheology, and 1D hyperbolic elastodynamics, actively governing pump speed to enforce a hard anti-float constraint (<em>F</em><sub>min</sub> ≥ +0.50 kN).</p>
+<p><strong>Catenary</strong> resolves this critical upstream challenge through an edge-native, first-principles Cyber-Physical Digital Twin coupled with a real-time Receding Horizon Model Predictive Controller (MPC). Operating with sub-millisecond execution (0.35 ms) on ruggedized wellhead industrial hardware, Catenary continuously predicts thermal dissipation, emulsion rheology, and 1D hyperbolic elastodynamics, actively governing pump speed to enforce a hard anti-float constraint (<em>F</em><sub>min</sub> ≥ +0.50 kN).</p>
 
 <h2>2. Reservoir Geology & Subterranean Failure Physics</h2>
 <p>The Baghewala heavy oil accumulation, discovered by Oil India Limited in the Thar Desert of Rajasthan, is situated within the Neoproterozoic-to-Early Cambrian Jodhpur Sandstone and Bilara Limestone formations. The field holds estimated in-place reserves exceeding 25 million metric tons of heavy and extra-heavy crude.</p>
@@ -259,7 +259,7 @@ html_template = """<!DOCTYPE html>
 <div class="page-break"></div>
 
 <h2>3. Cyber-Physical Digital Twin Architecture</h2>
-<p>VectroSync decouples artificial lift optimization from reactive surface sensing by constructing an edge-native, forward-predictive digital twin that models the complete thermal, rheological, and elastodynamic causal continuum:</p>
+<p>Catenary decouples artificial lift optimization from reactive surface sensing by constructing an edge-native, forward-predictive digital twin that models the complete thermal, rheological, and elastodynamic causal continuum:</p>
 
 <pre>
 +---------------------------------------------------------------------------------------+
@@ -270,7 +270,7 @@ html_template = """<!DOCTYPE html>
                                            |  Telemetry via Modbus-TCP (Port 502)
                                            v
 +---------------------------------------------------------------------------------------+
-|                          VECTROSYNC CYBER-PHYSICAL ENGINE                             |
+|                          CATENARY CYBER-PHYSICAL ENGINE                             |
 |                                                                                       |
 |  [ LAYER 1: RESERVOIR THERMODYNAMICS ]                                                |
 |  * Analytical Boberg-Lantz Formulation with Bessel Integral Quadrature                |
@@ -342,7 +342,7 @@ html_template = """<!DOCTYPE html>
 <h2>5. Edge MPC & Industrial Hardware Specification</h2>
 
 <h3>5.1 Receding Horizon Model Predictive Control</h3>
-<p>VectroSync solves a 24-step (12.0-hour) Quadratic Program (QP) optimization every cycle in <strong>0.35 ms</strong> on an embedded ARM Cortex-A72 processor. The controller enforces an inviolable anti-float constraint:</p>
+<p>Catenary solves a 24-step (12.0-hour) Quadratic Program (QP) optimization every cycle in <strong>0.35 ms</strong> on an embedded ARM Cortex-A72 processor. The controller enforces an inviolable anti-float constraint:</p>
 <div class="callout">
   <strong>Hard Anti-Float Constraint:</strong><br>
   <em>F</em><sub>min</sub>(<em>k</em>+<em>j</em>) = min [<em>E</em> <em>A</em><sub>3</sub> ∂<em>u</em>/∂<em>z</em> |<sub><em>z</em>=1,150m</sub>] ≥ +0.50 kN<br>
@@ -389,14 +389,14 @@ html_template = """<!DOCTYPE html>
     <tr><td><strong>30002</strong></td><td>Measured Polished Rod Minimum Load (MPRL)</td><td>kN × 100</td><td>16-bit Int</td><td>Read-Only</td></tr>
     <tr><td><strong>30003</strong></td><td>Instantaneous Pumping Unit Speed</td><td>SPM × 100</td><td>16-bit Int</td><td>Read-Only</td></tr>
     <tr><td><strong>30004</strong></td><td>Wellhead Fluid Flowline Temperature</td><td>°C × 10</td><td>16-bit Int</td><td>Read-Only</td></tr>
-    <tr><td><strong>40101</strong></td><td>VectroSync Recommended VFD Speed Target</td><td>SPM × 100</td><td>16-bit Int</td><td>Read/Write</td></tr>
+    <tr><td><strong>40101</strong></td><td>Catenary Recommended VFD Speed Target</td><td>SPM × 100</td><td>16-bit Int</td><td>Read/Write</td></tr>
     <tr><td><strong>40103</strong></td><td>Operational Failsafe Safety State (0=Norm, 1=Deg, 2=Fall, 3=Trip)</td><td>Enum</td><td>16-bit Enum</td><td>Read/Write</td></tr>
     <tr><td><strong>40104</strong></td><td>Predicted Downhole Rod Minimum Tension</td><td>kN × 100</td><td>16-bit Signed</td><td>Read/Write</td></tr>
   </tbody>
 </table>
 
 <h2>6. Techno-Economic Feasibility & 5-Year Fleet DCF Model</h2>
-<p>An unmanaged Baghewala well incurs ₹43.10 Lakhs in annual OPEX losses (2.40 workover pullings/year, 28 days downtime, and excess motor friction). VectroSync reduces failure frequency by <strong>85.4% (to 0.35 failures/year)</strong>, delivering <strong>₹36.80 Lakhs net savings per well annually</strong>.</p>
+<p>An unmanaged Baghewala well incurs ₹43.10 Lakhs in annual OPEX losses (2.40 workover pullings/year, 28 days downtime, and excess motor friction). Catenary reduces failure frequency by <strong>85.4% (to 0.35 failures/year)</strong>, delivering <strong>₹36.80 Lakhs net savings per well annually</strong>.</p>
 
 <table>
   <thead>
@@ -431,7 +431,7 @@ html_template = """<!DOCTYPE html>
 </div>
 
 <h2>7. Commercialization & Field Trial Roadmap</h2>
-<p>VectroSync follows a phased industrial commercialization trajectory aligned with the <strong>Thiagarajar School of Management (TSM) Innovation & Incubation Centre</strong>:</p>
+<p>Catenary follows a phased industrial commercialization trajectory aligned with the <strong>Thiagarajar School of Management (TSM) Innovation & Incubation Centre</strong>:</p>
 <ul>
   <li><strong>Phase 1: Q1 2026 (Completed)</strong> — Laboratory Hardware-in-the-Loop (HIL) testing and test suite verification (255/255 passing tests).</li>
   <li><strong>Phase 2: Q2 2026 (60 Days)</strong> — Non-invasive shadow deployment on Baghewala Well #14; read-only Modbus integration with Danfoss VFD.</li>
@@ -440,7 +440,7 @@ html_template = """<!DOCTYPE html>
 </ul>
 
 <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #cbd5e1; font-size: 8pt; color: #64748b; text-align: center;">
-  Official Technical Proposal for TSM TECHNOVA 2026 • Verified & Submitted by VectroSync Engineering
+  Official Technical Proposal for TSM TECHNOVA 2026 • Verified & Submitted by Catenary Engineering
 </div>
 
 </body>
@@ -448,7 +448,7 @@ html_template = """<!DOCTYPE html>
 """
 
 html_path = "submission/proposal_render.html"
-pdf_path = "submission/VectroSync_Full_Proposal.pdf"
+pdf_path = "submission/Catenary_Full_Proposal.pdf"
 
 with open(html_path, "w", encoding="utf-8") as f:
     f.write(html_template)

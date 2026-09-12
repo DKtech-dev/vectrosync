@@ -6,7 +6,7 @@ html_template = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>VectroSync - Complete Master Competition Submission Dossier (TSM TECHNOVA 2026)</title>
+<title>Catenary - Complete Master Competition Submission Dossier (TSM TECHNOVA 2026)</title>
 <style>
   @page {
     size: A4;
@@ -208,11 +208,11 @@ html_template = """<!DOCTYPE html>
 <!-- COVER PAGE -->
 <div class="cover-card">
   <div class="cover-badge">TSM TECHNOVA 2026 — OFFICIAL MASTER DOSSIER</div>
-  <div class="cover-title">VectroSync</div>
+  <div class="cover-title">Catenary</div>
   <div class="cover-sub">Autonomous Cyber-Physical Digital Twin & Predictive Edge MPC for Cyclic Steam Stimulation (CSS) Heavy Crude Artificial Lift</div>
   
   <div class="links-box">
-    <div><strong>Live Interactive Prototype:</strong> <a href="https://vectrosync.vercel.app" target="_blank">https://vectrosync.vercel.app</a></div>
+    <div><strong>Live Interactive Prototype:</strong> <a href="https://catenary-ai.vercel.app" target="_blank">https://catenary-ai.vercel.app</a> (Mirror: <a href="https://vectrosync.vercel.app" target="_blank">https://vectrosync.vercel.app</a>)</div>
     <div><strong>Public GitHub Repository:</strong> <a href="https://github.com/DKtech-dev/vectrosync" target="_blank">https://github.com/DKtech-dev/vectrosync</a></div>
   </div>
 
@@ -250,11 +250,11 @@ html_template = """<!DOCTYPE html>
 <p style="font-style: italic; color: #64748b; font-size: 8.5pt;">Official 1-page submission text strictly complying with the TSM TECHNOVA 2026 format (Times New Roman, 12 pt, 1.5 line spacing, under 250 words).</p>
 
 <div style="background: #ffffff; border: 1px solid #cbd5e1; padding: 18px; border-radius: 6px; font-family: 'Times New Roman', Times, serif; font-size: 10pt; line-height: 1.5; color: #111111;">
-  <p><strong>Project Title:</strong> VectroSync: Cyber-Physical AI Platform for Heavy Crude Artificial Lift</p>
+  <p><strong>Project Title:</strong> Catenary: Cyber-Physical AI Platform for Heavy Crude Artificial Lift</p>
   <p><strong>Problem Statement:</strong> Heavy crude extraction under Cyclic Steam Stimulation (CSS) at Oil India Limited’s Baghewala Well #14 suffers catastrophic mechanical failures. Severe post-steam viscosity surges (from 9 cP to 12,000 cP) cause upward Couette shear drag (23.44 N/m) to exceed submerged rod weight (18.84 N/m). Sucker rods buckle into severe compression (-1.80 kN downhole tension), snap, and part, costing ₹14.82 Crores annually across 23 producing wells.</p>
-  <p><strong>Proposed Solution:</strong> VectroSync is an edge-native Cyber-Physical System (CPS) optimizing artificial lift dynamics in real time. Coupling analytical thermodynamics, non-Newtonian emulsion rheology, and 1D hyperbolic wave mechanics with fast-loop predictive control (0.35 ms MPC), VectroSync dynamically modulates pumping stroke speed to enforce an inviolable downhole tension floor (F_min &ge; +1.0 kN), preventing compressive rod buckling.</p>
-  <p><strong>Use of Artificial Intelligence:</strong> VectroSync deploys a SIREN-embedded Physics-Informed Neural Network (PINN) and Extended Kalman Filter to infer subterranean temperature, water-cut, and dynamic viscosity from surface telemetry (flowline temperature, motor power, polished rod load). This eliminates expensive downhole sensors while enforcing Boberg-Lantz and Arrhenius conservation laws.</p>
-  <p><strong>Innovation / Novelty:</strong> Unlike legacy surface dynamometers with 40-year-old empirical lookup tables, VectroSync solves pure 116-node 1D wave mechanics at downhole conditions with zero artificial damping, delivering proactive 4.2-hour advance warning and deterministic Modbus-TCP SCADA automation.</p>
+  <p><strong>Proposed Solution:</strong> Catenary is an edge-native Cyber-Physical System (CPS) optimizing artificial lift dynamics in real time. Coupling analytical thermodynamics, non-Newtonian emulsion rheology, and 1D hyperbolic wave mechanics with fast-loop predictive control (0.35 ms MPC), Catenary dynamically modulates pumping stroke speed to enforce an inviolable downhole tension floor (F_min &ge; +1.0 kN), preventing compressive rod buckling.</p>
+  <p><strong>Use of Artificial Intelligence:</strong> Catenary deploys a SIREN-embedded Physics-Informed Neural Network (PINN) and Extended Kalman Filter to infer subterranean temperature, water-cut, and dynamic viscosity from surface telemetry (flowline temperature, motor power, polished rod load). This eliminates expensive downhole sensors while enforcing Boberg-Lantz and Arrhenius conservation laws.</p>
+  <p><strong>Innovation / Novelty:</strong> Unlike legacy surface dynamometers with 40-year-old empirical lookup tables, Catenary solves pure 116-node 1D wave mechanics at downhole conditions with zero artificial damping, delivering proactive 4.2-hour advance warning and deterministic Modbus-TCP SCADA automation.</p>
   <p><strong>Target Users / Beneficiaries:</strong> National oil companies (Oil India Limited, ONGC), mature thermal heavy oil operators, and field artificial lift production engineers.</p>
   <p><strong>Expected Impact:</strong> Slashes rod buckling failures by 85.4%, reduces lift power by 22.8%, delivers ₹52.5 Crore 5-year fleet NPV with sub-6-week payback, and abates 293.2 Metric Tons of CO2 equivalent annually.</p>
   <p style="margin-bottom: 0;"><strong>Current Development Stage:</strong> Working prototype (TRL-6/7); complete control stack validated across 260/260 passing automated tests (100% Green, 60.09s) with live hardware-in-the-loop Modbus-TCP SCADA simulation.</p>
@@ -278,19 +278,19 @@ html_template = """<!DOCTYPE html>
 <div class="qa-card">
   <div class="qa-q"><span class="tag">Question 15</span> Proposed Solution (Paragraph – Maximum 250 words)</div>
   <div class="qa-a">
-    VectroSync is an edge-native Cyber-Physical System (CPS) that autonomously optimizes artificial lift dynamics in real time directly at the wellhead. Rather than relying on lagging surface measurements, VectroSync operates a continuous, forward-predictive subterranean digital twin coupling three first-principles physical domains:<br><br>
+    Catenary is an edge-native Cyber-Physical System (CPS) that autonomously optimizes artificial lift dynamics in real time directly at the wellhead. Rather than relying on lagging surface measurements, Catenary operates a continuous, forward-predictive subterranean digital twin coupling three first-principles physical domains:<br><br>
     1. Analytical Reservoir Thermodynamics: Formulates Boberg-Lantz heat decay using Bessel integral quadrature to continuously track formation cooldown and fluid heat dissipation.<br>
     2. Non-Newtonian Emulsion Rheology: Combines Arrhenius temperature kinetics with a Brinkman-Vand emulsion crowding model, capturing droplet packing up to 60% water-cut and subsequent phase inversion.<br>
     3. 1D Elastodynamic Wave Mechanics: Discretizes the 1,150 m three-taper steel rod string into 116 spatial nodes (dx = 10.0 m) and solves the damped hyperbolic wave equation under strict Courant-Friedrichs-Lewy stability (dt &lt;= 1.558 ms) with zero artificial damping.<br><br>
-    Coupled to this twin is a fast-loop Model Predictive Controller (MPC) executing in 0.35 milliseconds on an embedded ARM Cortex-A72 processor. Every pumping cycle, it optimizes a 24-step receding horizon to maximize net oil production while enforcing an inviolable downhole tension floor (F_min &gt;= +1.0 kN). When thermal dissipation thickens wellbore fluids, VectroSync proactively modulates pump stroke speed (from 4.7 down to 2.8 strokes per minute), keeping the rod string under positive axial tension, eliminating buckling, and protecting the mechanical drive. The system interfaces directly with existing wellsite PLCs and Variable Frequency Drives over open-standard Modbus-TCP.
+    Coupled to this twin is a fast-loop Model Predictive Controller (MPC) executing in 0.35 milliseconds on an embedded ARM Cortex-A72 processor. Every pumping cycle, it optimizes a 24-step receding horizon to maximize net oil production while enforcing an inviolable downhole tension floor (F_min &gt;= +1.0 kN). When thermal dissipation thickens wellbore fluids, Catenary proactively modulates pump stroke speed (from 4.7 down to 2.8 strokes per minute), keeping the rod string under positive axial tension, eliminating buckling, and protecting the mechanical drive. The system interfaces directly with existing wellsite PLCs and Variable Frequency Drives over open-standard Modbus-TCP.
   </div>
 </div>
 
 <div class="qa-card">
   <div class="qa-q"><span class="tag">Question 16</span> How is Artificial Intelligence used in your solution? (Paragraph – Maximum 250 words)</div>
   <div class="qa-a">
-    VectroSync integrates physics-informed deep learning, robust state estimation, and constrained mathematical optimization into a deterministic real-time edge architecture:<br><br>
-    <strong>AI Models &amp; State Estimation:</strong> Downhole temperature, water-cut, and dynamic viscosity cannot be measured continuously with expensive downhole sensors in hostile thermal wells. VectroSync deploys a Physics-Informed Neural Network (PINN) utilizing Sinusoidal Representation Networks (SIREN) with periodic sine activations to capture steep viscosity gradients. Coupled with an Extended Kalman Filter, this surrogate fuses surface SCADA observables (flowline temperature, motor power, polished rod position, and load) to infer subterranean temperature profiles and emulsion phase behavior while strictly enforcing thermodynamic and Arrhenius momentum conservation laws.<br><br>
+    Catenary integrates physics-informed deep learning, robust state estimation, and constrained mathematical optimization into a deterministic real-time edge architecture:<br><br>
+    <strong>AI Models &amp; State Estimation:</strong> Downhole temperature, water-cut, and dynamic viscosity cannot be measured continuously with expensive downhole sensors in hostile thermal wells. Catenary deploys a Physics-Informed Neural Network (PINN) utilizing Sinusoidal Representation Networks (SIREN) with periodic sine activations to capture steep viscosity gradients. Coupled with an Extended Kalman Filter, this surrogate fuses surface SCADA observables (flowline temperature, motor power, polished rod position, and load) to infer subterranean temperature profiles and emulsion phase behavior while strictly enforcing thermodynamic and Arrhenius momentum conservation laws.<br><br>
     <strong>Algorithms &amp; Decision-Making:</strong> The core supervisory controller is a receding-horizon Model Predictive Controller (MPC). Every cycle, it solves a quadratic programming optimization across a 24-step lookahead horizon. The objective function maximizes net crude recovery while penalizing electrical drive power and aggressive speed changes (|delta SPM| &lt;= 0.50 SPM/hour). It dynamically enforces the physical anti-float tension boundary (F_min &gt;= +1.0 kN) derived from the 1D wave solver.<br><br>
     <strong>Technologies &amp; Execution:</strong> The entire AI, Kalman, and wave mechanics pipeline runs locally on an industrial edge computer (ARM Cortex-A72) in 0.35 milliseconds—well within the 1-second SCADA polling window. To guarantee mission-critical safety, the AI is governed by a deterministic 4-tier state machine over Modbus-TCP. If telemetry drops or anomalous loads emerge, the system automatically transitions into certified failsafe states (speed clamping or safe motor trip) within 25 milliseconds without human intervention.
   </div>
@@ -302,8 +302,8 @@ html_template = """<!DOCTYPE html>
   <div class="qa-q"><span class="tag">Question 17</span> What makes your solution unique? (Paragraph – Maximum 200 words)</div>
   <div class="qa-a">
     Existing industry automation platforms (Weatherford ForeSite, SLB Lift IQ, ChampionX XSPOC, Lufkin SAM) rely entirely on reactive surface dynamometer monitoring. They measure polished rod loads at the surface after mechanical stress waves have already traveled 1,150 meters up the wellbore—a 0.224-second delay. By the time surface sensors detect rod floating or compressive impact, downhole helical buckling, tubing abrasion, and fatigue micro-fracturing have already occurred.<br><br>
-    VectroSync is unique because it shifts artificial lift automation from reactive surface alarms to proactive, causal downhole intelligence. It forecasts subterranean thermal cooldown, viscosity spikes, and compressive forces 4.2 hours before buckling can initiate. Furthermore, unlike proprietary commercial software that relies on 40-year-old empirical lookup tables and synthetic numerical damping, VectroSync solves pure, unconstrained 1D wave mechanics across multi-taper rod strings with zero synthetic clamps.<br><br>
-    Architecturally, VectroSync avoids proprietary vendor lock-in. It operates as an open-architecture edge appliance costing just INR 1.65 Lakhs using commercial off-the-shelf industrial components, or runs as a containerized microservice on existing wellsite RTUs. It communicates natively over Modbus-TCP to standard ABB, Danfoss, or Schneider Variable Frequency Drives.
+    Catenary is unique because it shifts artificial lift automation from reactive surface alarms to proactive, causal downhole intelligence. It forecasts subterranean thermal cooldown, viscosity spikes, and compressive forces 4.2 hours before buckling can initiate. Furthermore, unlike proprietary commercial software that relies on 40-year-old empirical lookup tables and synthetic numerical damping, Catenary solves pure, unconstrained 1D wave mechanics across multi-taper rod strings with zero synthetic clamps.<br><br>
+    Architecturally, Catenary avoids proprietary vendor lock-in. It operates as an open-architecture edge appliance costing just INR 1.65 Lakhs using commercial off-the-shelf industrial components, or runs as a containerized microservice on existing wellsite RTUs. It communicates natively over Modbus-TCP to standard ABB, Danfoss, or Schneider Variable Frequency Drives.
   </div>
 </div>
 
@@ -317,10 +317,10 @@ html_template = """<!DOCTYPE html>
 <div class="qa-card">
   <div class="qa-q"><span class="tag">Question 19</span> Expected Impact (Paragraph)</div>
   <div class="qa-a">
-    VectroSync delivers quantifiable, multi-dimensional impact across economic, social, and environmental spheres:<br><br>
-    <strong>Economic Impact:</strong> In unmanaged heavy crude assets like Baghewala, each well suffers 2.4 failures per year, costing INR 43.1 Lakhs annually in workovers, 28 days of deferred production, and motor drive losses. VectroSync reduces failure frequency by 85.4% (down to 0.35 failures/year), delivering net savings of INR 64.4 Lakhs per well annually. Scaled across Baghewala's 23 producing wells, the platform creates INR 14.82 Crores in annual net recurring value (INR 8.46 Cr in avoided workovers, INR 6.06 Cr in restored oil netback, and INR 0.30 Cr in power savings). Over a 5-year lifecycle, this generates a fleet Net Present Value of INR 52.5 Crores (at 12% WACC) with full capital payback achieved in sub-6 weeks including deployment and commissioning.<br><br>
-    <strong>Social Impact:</strong> Heavy oil workovers in desert fields require hazardous pulling operations involving high-pressure wellheads, heavy hydraulic rod tongs, and ambient temperatures exceeding 48 deg C. By eliminating 47 pulling operations annually, VectroSync eliminates 11,300 high-hazard field exposure man-hours, dramatically reducing pinch-point, fatigue, and blowout hazards for field crews.<br><br>
-    <strong>Environmental Impact:</strong> Optimizing pumping unit kinematics and eliminating severe viscous shear drag cuts artificial lift electrical consumption by 22.8% (saving 403,248 kWh annually across 23 wells). Based on the Central Electricity Authority grid emission factor of 0.727 kg CO2/kWh, VectroSync abates 293.2 Metric Tons of CO2 equivalent per year, directly supporting industrial decarbonization and UN Sustainable Development Goals 7 (Affordable and Clean Energy) and 13 (Climate Action).
+    Catenary delivers quantifiable, multi-dimensional impact across economic, social, and environmental spheres:<br><br>
+    <strong>Economic Impact:</strong> In unmanaged heavy crude assets like Baghewala, each well suffers 2.4 failures per year, costing INR 43.1 Lakhs annually in workovers, 28 days of deferred production, and motor drive losses. Catenary reduces failure frequency by 85.4% (down to 0.35 failures/year), delivering net savings of INR 64.4 Lakhs per well annually. Scaled across Baghewala's 23 producing wells, the platform creates INR 14.82 Crores in annual net recurring value (INR 8.46 Cr in avoided workovers, INR 6.06 Cr in restored oil netback, and INR 0.30 Cr in power savings). Over a 5-year lifecycle, this generates a fleet Net Present Value of INR 52.5 Crores (at 12% WACC) with full capital payback achieved in sub-6 weeks including deployment and commissioning.<br><br>
+    <strong>Social Impact:</strong> Heavy oil workovers in desert fields require hazardous pulling operations involving high-pressure wellheads, heavy hydraulic rod tongs, and ambient temperatures exceeding 48 deg C. By eliminating 47 pulling operations annually, Catenary eliminates 11,300 high-hazard field exposure man-hours, dramatically reducing pinch-point, fatigue, and blowout hazards for field crews.<br><br>
+    <strong>Environmental Impact:</strong> Optimizing pumping unit kinematics and eliminating severe viscous shear drag cuts artificial lift electrical consumption by 22.8% (saving 403,248 kWh annually across 23 wells). Based on the Central Electricity Authority grid emission factor of 0.727 kg CO2/kWh, Catenary abates 293.2 Metric Tons of CO2 equivalent per year, directly supporting industrial decarbonization and UN Sustainable Development Goals 7 (Affordable and Clean Energy) and 13 (Climate Action).
   </div>
 </div>
 
@@ -529,7 +529,7 @@ html_template = """<!DOCTYPE html>
   <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px;">
     <strong>Interactive Simulator Access:</strong>
     <ul style="margin: 6px 0 0 0; padding-left: 18px; font-size: 8.5pt;">
-      <li><strong>Vercel Live App:</strong> <a href="https://vectrosync.vercel.app">vectrosync.vercel.app</a></li>
+      <li><strong>Vercel Live App:</strong> <a href="https://catenary-ai.vercel.app">catenary-ai.vercel.app</a> (Mirror: <a href="https://vectrosync.vercel.app">vectrosync.vercel.app</a>)</li>
       <li><strong>GitHub Code:</strong> <a href="https://github.com/DKtech-dev/vectrosync">DKtech-dev/vectrosync</a></li>
       <li><strong>Local HMI:</strong> <code>streamlit run ui/dashboard.py</code></li>
       <li><strong>Full Test Suite:</strong> <code>pytest -v</code></li>
@@ -540,14 +540,14 @@ html_template = """<!DOCTYPE html>
 <pre>
 # Quick Start: Environment Reproduction
 git clone https://github.com/DKtech-dev/vectrosync.git
-cd vectrosync
+cd catenary
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pytest -v   # Executes all 260 verified unit and integration tests (100% passing)
 </pre>
 
 <div class="footer-note">
-  VectroSync Master Competition Submission Dossier • Prepared for TSM TECHNOVA 2026 • Thiagarajar School of Management, Madurai
+  Catenary Master Competition Submission Dossier • Prepared for TSM TECHNOVA 2026 • Thiagarajar School of Management, Madurai
 </div>
 
 </body>
@@ -555,8 +555,8 @@ pytest -v   # Executes all 260 verified unit and integration tests (100% passing
 """
 
 html_path = "/tmp/master_dossier_render.html"
-pdf_path_1 = "submission/VectroSync_Master_Submission_Dossier.pdf"
-pdf_path_2 = "submission/TeamVectroSync_Master_Submission_Dossier.pdf"
+pdf_path_1 = "submission/Catenary_Master_Submission_Dossier.pdf"
+pdf_path_2 = "submission/TeamCatenary_Master_Submission_Dossier.pdf"
 final_dir = "/home/dk/Documents/FINAL"
 music_dir = "/home/dk/Music"
 
@@ -580,10 +580,10 @@ print("Compiling Master Submission Dossier PDF via Google Chrome...")
 subprocess.run(chrome_cmd, check=True)
 
 shutil.copyfile(pdf_path_1, pdf_path_2)
-shutil.copyfile(pdf_path_1, os.path.join(final_dir, "VectroSync_Master_Submission_Dossier.pdf"))
-shutil.copyfile(pdf_path_1, os.path.join(final_dir, "TeamVectroSync_Master_Submission_Dossier.pdf"))
-shutil.copyfile(pdf_path_1, os.path.join(music_dir, "VectroSync_Master_Submission_Dossier.pdf"))
-shutil.copyfile(pdf_path_2, os.path.join(music_dir, "TeamVectroSync_Master_Submission_Dossier.pdf"))
+shutil.copyfile(pdf_path_1, os.path.join(final_dir, "Catenary_Master_Submission_Dossier.pdf"))
+shutil.copyfile(pdf_path_1, os.path.join(final_dir, "TeamCatenary_Master_Submission_Dossier.pdf"))
+shutil.copyfile(pdf_path_1, os.path.join(music_dir, "Catenary_Master_Submission_Dossier.pdf"))
+shutil.copyfile(pdf_path_2, os.path.join(music_dir, "TeamCatenary_Master_Submission_Dossier.pdf"))
 
 print(f"Generated {pdf_path_1} ({os.path.getsize(pdf_path_1)} bytes)")
 print(f"Copied to {final_dir}/ and {music_dir}/")

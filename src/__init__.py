@@ -1,5 +1,5 @@
 """
-VectroSync Enterprise Industrial Twin: Well-to-Surface Physics-Informed Digital Twin
+Catenary Enterprise Industrial Twin: Well-to-Surface Physics-Informed Digital Twin
 Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited
 Model: OIL-BAGHEWALA-EOR-V2
 """

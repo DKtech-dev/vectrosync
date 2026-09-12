@@ -35,7 +35,7 @@ FONT_MONO = 'Consolas'
 
 def create_deck():
     project_root = os.path.dirname(os.path.abspath(__file__))
-    template_path = os.path.join(project_root, 'VectroSync_Enterprise_Industrial_Twin.pptx')
+    template_path = os.path.join(project_root, 'Catenary_Enterprise_Industrial_Twin.pptx')
     prs = Presentation(template_path)
     
     # 1. Delete slide 7 (Instructions slide if present)
@@ -76,12 +76,12 @@ def create_deck():
         return shape
 
     # Helper: format footer
-    def format_footer(slide, slide_num, team_text="VECTROSYNC | v2.0"):
+    def format_footer(slide, slide_num, team_text="CATENARY | v2.0"):
         for s in slide.shapes:
             if "Footer" in s.name and s.has_text_frame:
                 s.text_frame.word_wrap = True
                 p = s.text_frame.paragraphs[0]
-                p.text = f"VectroSync Enterprise Industrial Twin | Oil India Limited (Baghewala Well #14)" if slide_num > 1 else "VECTROSYNC ENTERPRISE INDUSTRIAL TWIN • WELL-TO-SURFACE CYBERNETICS"
+                p.text = f"Catenary Enterprise Industrial Twin | Oil India Limited (Baghewala Well #14)" if slide_num > 1 else "CATENARY ENTERPRISE INDUSTRIAL TWIN • WELL-TO-SURFACE CYBERNETICS"
                 p.font.name = FONT_BODY
                 p.font.size = Pt(9.5)
                 p.font.color.rgb = C_SLATE
@@ -97,7 +97,7 @@ def create_deck():
                 s.line.color.rgb = C_BLUE
                 s.line.width = Pt(1.5)
                 p = s.text_frame.paragraphs[0]
-                p.text = "VECTROSYNC\nv2.0"
+                p.text = "CATENARY\nv2.0"
                 p.font.name = FONT_HEADING
                 p.font.size = Pt(8.5)
                 p.font.bold = True
@@ -144,7 +144,7 @@ def create_deck():
     tb_tf.margin_top = Inches(0.12)
     
     p0 = tb_tf.paragraphs[0]
-    p0.text = "VECTROSYNC ENTERPRISE INDUSTRIAL TWIN • WELL-TO-SURFACE CYBERNETICS"
+    p0.text = "CATENARY ENTERPRISE INDUSTRIAL TWIN • WELL-TO-SURFACE CYBERNETICS"
     p0.font.name = FONT_HEADING
     p0.font.size = Pt(9.5)
     p0.font.bold = True
@@ -183,7 +183,7 @@ def create_deck():
         ("Domain Theme", "Autonomous Industrial Cybernetics / Energy Optimization", C_SLATE, False),
         ("Deployment Architecture", "Production Edge SCADA & Physics-Informed Engine", C_SLATE, False),
         ("Asset Attribution", "Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited", C_NAVY, True),
-        ("System Platform", "VectroSync Enterprise Industrial Twin", C_EMERALD, True),
+        ("System Platform", "Catenary Enterprise Industrial Twin", C_EMERALD, True),
         ("Release Version", "v2.0 (Enterprise Production)", C_EMERALD, True)
     ]
 
@@ -770,7 +770,7 @@ def create_deck():
         run.font.color.rgb = C_SLATE
 
     # Save final presentation
-    output_path = os.path.join(project_root, 'VectroSync_Enterprise_Industrial_Twin.pptx')
+    output_path = os.path.join(project_root, 'Catenary_Enterprise_Industrial_Twin.pptx')
     prs.save(output_path)
     print(f"Presentation saved to: {output_path}")
 

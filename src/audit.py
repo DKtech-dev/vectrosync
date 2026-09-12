@@ -152,7 +152,7 @@ class AuditLedger:
         """Initializes the root Genesis block."""
         payload = custom_payload if custom_payload is not None else {
             "well_id": self.well_id,
-            "system": "VECTROSYNC_ENTERPRISE_TWIN",
+            "system": "CATENARY_ENTERPRISE_TWIN",
             "status": "ONLINE",
             "asset_attribution": "Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin, Rajasthan | Operator: Oil India Limited",
         }

@@ -1,4 +1,4 @@
-# VectroSync → Top-Notch: The Complete Plan
+# Catenary (formerly VectroSync) → Top-Notch: The Complete Plan
 
 > **Purpose.** Turn VectroSync from *"a well-crafted prototype whose presentation runs ahead of its
 > substance"* into a **defensible, validated, no-regret engineering artifact** — one that survives a

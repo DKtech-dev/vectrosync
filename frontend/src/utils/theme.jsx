@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'vectrosync-theme';
+const STORAGE_KEY = 'catenary-theme';
 const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {}, setTheme: () => {} });
 
 function resolveInitialTheme() {
@@ -10,7 +10,7 @@ function resolveInitialTheme() {
   }
   if (typeof window !== 'undefined') {
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
+      const stored = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem('vectrosync-theme');
       if (stored === 'light' || stored === 'dark') return stored;
     } catch {
       /* ignore */

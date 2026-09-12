@@ -1,6 +1,6 @@
 1
 00:00:00,000 --> 00:00:06,880
-Hey everyone, we're Team VectroSync, and welcome to our live prototype demonstration.
+Hey everyone, we're Team Catenary, and welcome to our live prototype demonstration.
 
 2
 00:00:06,880 --> 00:00:13,040
@@ -60,7 +60,7 @@ That's the exact problem we set out to solve.
 
 16
 00:01:12,080 --> 00:01:17,760
-VectroSync isn't just another monitoring dashboard—it's an autonomous edge controller.
+Catenary isn't just another monitoring dashboard—it's an autonomous edge controller.
 
 17
 00:01:17,760 --> 00:01:20,480
@@ -164,7 +164,7 @@ a Level 3 emergency stop to save the string.
 
 42
 00:03:00,560 --> 00:03:04,480
-Now, let's see VectroSync fix this proactively.
+Now, let's see Catenary fix this proactively.
 
 43
 00:03:04,480 --> 00:03:06,240
@@ -228,7 +228,7 @@ When you scale this across all 23 heavy-oil wells in the Baghewala basin,
 
 58
 00:04:03,360 --> 00:04:08,960
-VectroSync saves an auditable 14.8 crore rupees every single year,
+Catenary saves an auditable 14.8 crore rupees every single year,
 
 59
 00:04:08,960 --> 00:04:15,040
@@ -240,7 +240,7 @@ Real physics, autonomous edge control, and zero mock shortcuts.
 
 61
 00:04:20,720 --> 00:04:23,760
-That is Team VectroSync.
+That is Team Catenary.
 
 62
 00:04:23,760 --> 00:04:24,560

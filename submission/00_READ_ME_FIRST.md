@@ -8,7 +8,7 @@ Existing generated PDF/PPTX files in this directory predate the assurance audit 
 
 ## Permitted headline
 
-> VectroSync is an evidence-aware CSS–SRP advisory research prototype that integrates thermal and rheology assumptions, reduced-order rod-load cards, explicit constraint feasibility, telemetry quality gates, provenance, and a shadow-pilot validation plan.
+> Catenary is an evidence-aware CSS–SRP advisory research prototype that integrates thermal and rheology assumptions, reduced-order rod-load cards, explicit constraint feasibility, telemetry quality gates, provenance, and a shadow-pilot validation plan.
 
 ## Prohibited without new linked evidence
 

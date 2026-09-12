@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-VectroSync Pitch Deck Generator - TSM TECHNOVA 2026 (Light Theme Edition)
+Catenary Pitch Deck Generator - TSM TECHNOVA 2026 (Light Theme Edition)
 Compiles a publication-grade, ultra-modern, professional 10-slide 16:9 presentation.
 Styled in Apple / Stripe executive light theme with rich vector infographics,
 stat ribbons, comparison tables, process flows, and exact rubric alignment.
@@ -225,7 +225,7 @@ class PitchDeckBuilder:
         self.add_header(
             slide,
             "Slide 1: Project & Team | TSM TECHNOVA 2026 Innovation Challenge",
-            "VECTROSYNC",
+            "CATENARY",
             "Cyber-Physical Artificial Lift AI Platform for Cyclic Steam Stimulation Heavy Crude Assets"
         )
 
@@ -257,7 +257,7 @@ class PitchDeckBuilder:
         r1.font.bold = True
         r1.font.color.rgb = COLOR_TEXT_PRIMARY
         r2 = p_title.add_run()
-        r2.text = "VectroSync: Cyber-Physical AI Platform for Heavy Crude Lift"
+        r2.text = "Catenary: Cyber-Physical AI Platform for Heavy Crude Lift"
         r2.font.name = FONT_BODY
         r2.font.size = Pt(9.5)
         r2.font.bold = True
@@ -274,11 +274,11 @@ class PitchDeckBuilder:
         r1.font.color.rgb = COLOR_TEXT_PRIMARY
         r2 = p_desc.add_run()
         r2.text = (
-            "VectroSync is an edge-native, first-principles Cyber-Physical System (CPS) "
+            "Catenary is an edge-native, first-principles Cyber-Physical System (CPS) "
             "engineered to optimize artificial lift dynamics in ultra-heavy crude wells under "
             "Cyclic Steam Stimulation (CSS). By coupling analytical reservoir thermodynamics, "
             "non-Newtonian emulsion rheology, and 1D hyperbolic wave mechanics with sub-millisecond "
-            "predictive MPC (0.35 ms), VectroSync actively modulates pump stroke speed to eliminate "
+            "predictive MPC (0.35 ms), Catenary actively modulates pump stroke speed to eliminate "
             "compressive rod buckling, prevent catastrophic fatigue failure, and maximize heavy crude production."
         )
         r2.font.name = FONT_BODY
@@ -441,7 +441,7 @@ class PitchDeckBuilder:
         self.add_header(
             slide,
             "Slide 3: Solution | Closed-Loop Cyber-Physical Architecture",
-            "VectroSync: Autonomous Real-Time Artificial Lift Platform",
+            "Catenary: Autonomous Real-Time Artificial Lift Platform",
             "Tri-layer edge computing architecture integrating wave mechanics, neural rheology, and real-time Modbus-TCP SCADA."
         )
 
@@ -836,7 +836,7 @@ class PitchDeckBuilder:
             "First-principles acoustic wave mechanics and autonomous edge AI obsolete 40-year-old empirical surface dynamometers."
         )
 
-        headers = ["Capability / Dimension", "Legacy SCADA (e.g. Lufkin SAM)", "Multinational OEM (Weatherford / Baker)", "VectroSync CPS (Our Platform)"]
+        headers = ["Capability / Dimension", "Legacy SCADA (e.g. Lufkin SAM)", "Multinational OEM (Weatherford / Baker)", "Catenary CPS (Our Platform)"]
         rows = [
             ["Downhole Card Derivation", "Empirical lookup tables (Gibbs 1963)", "Analytical approximation (Everitt-Jennings)", "116-Node 1D Wave PDE with Damping"],
             ["Viscosity Cooldown Tracking", "None (assumes constant fluid properties)", "Periodic manual laboratory core assays", "Continuous PINN Emulsion Inversion"],
@@ -860,7 +860,7 @@ class PitchDeckBuilder:
         p1.font.bold = True
         p1.font.color.rgb = COLOR_PRIMARY_DARK
         p1_sub = tf1.add_paragraph()
-        p1_sub.text = "Solves the 116-node hyperbolic wave PDE with Annular Couette shear drag. Unlike black-box ML, VectroSync is mathematically bounded by Newton's laws and wave mechanics."
+        p1_sub.text = "Solves the 116-node hyperbolic wave PDE with Annular Couette shear drag. Unlike black-box ML, Catenary is mathematically bounded by Newton's laws and wave mechanics."
         p1_sub.font.name = FONT_BODY
         p1_sub.font.size = Pt(8.5)
         p1_sub.font.color.rgb = COLOR_TEXT_SECONDARY
@@ -931,7 +931,7 @@ class PitchDeckBuilder:
         p.font.color.rgb = COLOR_PRIMARY_DARK
 
         nat_points = [
-            ("Unlocking Domestic Reserves:", " Baghewala holds 100+ Million Barrels of discovered heavy oil in place. VectroSync unlocks commercial recovery for shallow, highly viscous domestic reserves."),
+            ("Unlocking Domestic Reserves:", " Baghewala holds 100+ Million Barrels of discovered heavy oil in place. Catenary unlocks commercial recovery for shallow, highly viscous domestic reserves."),
             ("Reducing Crude Import Bill:", " Maximizing production from domestic heavy oil fields directly substitutes costly imported heavy crude for Indian refineries (IOCL, HPCL, BPCL)."),
             ("Decarbonizing Artificial Lift:", " Cutting 22.8% of artificial lift electricity consumption eliminates 293.2 Tonnes of CO2e annually across the 23-well Baghewala pad."),
             ("Aligned with 'Make in India':", " 100% locally developed cyber-physical IP eliminates costly reliance on Western oilfield service conglomerates.")
@@ -1015,7 +1015,7 @@ class PitchDeckBuilder:
                 "Direct verification of zero rod buckling and 22.8% power reduction"
             ]),
             ("PHASE 3", "23-Well Pad Rollout", "Q2 - Q3 2027", COLOR_EMERALD, COLOR_EMERALD_LIGHT, [
-                "Deploy VectroSync across all 23 Baghewala heavy crude wells",
+                "Deploy Catenary across all 23 Baghewala heavy crude wells",
                 "Multi-well supervisory telemetry hub at Jodhpur field office",
                 "Achieve INR 14.82 Cr annual net recurring basin savings",
                 "Commercial software licensing with Oil India Limited"
@@ -1155,7 +1155,7 @@ class PitchDeckBuilder:
             ("Acoustic Velocity in Steel:", " c = sqrt(E / rho) = 5,135 m/s (Longitudinal Acoustic Bar Velocity)."),
             ("Spatial Discretization:", " Rod string (1,150 m) divided into 116 uniform nodes: dx = 10.0 m (115 intervals)."),
             ("Courant-Friedrichs-Lewy (CFL) Proof:", " Stable time-step bound: dt <= C_cfl * (dx / c) = 0.80 * (10.0 m / 5,135 m/s) = 1.558 ms."),
-            ("Deterministic Edge Runtime:", " VectroSync's optimized C++ wave solver executes in 0.35 ms--guaranteeing unconditional numerical stability with zero artificial damping or numerical distortion."),
+            ("Deterministic Edge Runtime:", " Catenary's optimized C++ wave solver executes in 0.35 ms--guaranteeing unconditional numerical stability with zero artificial damping or numerical distortion."),
             ("Non-Newtonian Boundary Friction:", " Formulates annular Couette shear drag F_drag = pi*d_rod*L*tau_wall directly at every node, capturing real viscous resistance along the 1,150 m rod string.")
         ]
         for t, d in pde_details:
@@ -1234,7 +1234,7 @@ class PitchDeckBuilder:
             ["Restored Oil Netback", "INR 6.06 Crores", "INR 6.06 Crores", "INR 6.06 Crores", "INR 6.06 Crores", "INR 6.06 Crores", "INR 30.30 Crores"],
             ["Power Optimization Savings", "INR 0.30 Crores", "INR 0.30 Crores", "INR 0.30 Crores", "INR 0.30 Crores", "INR 0.30 Crores", "INR 1.50 Crores"],
             ["Total Gross Fleet Benefit", "INR 14.82 Crores", "INR 14.82 Crores", "INR 14.82 Crores", "INR 14.82 Crores", "INR 14.82 Crores", "INR 74.10 Crores"],
-            ["VectroSync System Cost (Capex+SaaS)", "INR 1.07 Crores", "INR 0.69 Crores", "INR 0.69 Crores", "INR 0.69 Crores", "INR 0.69 Crores", "INR 3.83 Crores"],
+            ["Catenary System Cost (Capex+SaaS)", "INR 1.07 Crores", "INR 0.69 Crores", "INR 0.69 Crores", "INR 0.69 Crores", "INR 0.69 Crores", "INR 3.83 Crores"],
             ["Net Free Cash Flow (Pre-Tax)", "INR 13.75 Crores", "INR 14.13 Crores", "INR 14.13 Crores", "INR 14.13 Crores", "INR 14.13 Crores", "INR 70.27 Crores"],
             ["Cumulative Discounted NPV (@ 12%)", "INR 12.28 Crores", "INR 23.54 Crores", "INR 33.60 Crores", "INR 42.58 Crores", "INR 52.50 Crores", "INR 52.50 Cr NPV"],
         ]
@@ -1329,7 +1329,7 @@ def main():
     builder.build_slide_10()
 
     out_dir = os.path.dirname(os.path.abspath(__file__))
-    pptx_path = os.path.join(out_dir, "VectroSync_Technova2026_PitchDeck.pptx")
+    pptx_path = os.path.join(out_dir, "Catenary_Technova2026_PitchDeck.pptx")
     builder.save(pptx_path)
 
     import shutil
@@ -1341,27 +1341,27 @@ def main():
     os.makedirs(music_dir, exist_ok=True)
 
     # Copies of PPTX
-    shutil.copyfile(pptx_path, os.path.join(out_dir, "TeamVectroSync_Presentation.pptx"))
-    shutil.copyfile(pptx_path, os.path.join(out_dir, "VectroSync_Presentation.pptx"))
-    shutil.copyfile(pptx_path, os.path.join(final_dir, "VectroSync_Presentation.pptx"))
-    shutil.copyfile(pptx_path, os.path.join(final_dir, "TeamVectroSync_Presentation.pptx"))
-    shutil.copyfile(pptx_path, os.path.join(final_dir, "VectroSync_Technova2026_PitchDeck.pptx"))
-    shutil.copyfile(pptx_path, os.path.join(music_dir, "VectroSync_Presentation.pptx"))
+    shutil.copyfile(pptx_path, os.path.join(out_dir, "TeamCatenary_Presentation.pptx"))
+    shutil.copyfile(pptx_path, os.path.join(out_dir, "Catenary_Presentation.pptx"))
+    shutil.copyfile(pptx_path, os.path.join(final_dir, "Catenary_Presentation.pptx"))
+    shutil.copyfile(pptx_path, os.path.join(final_dir, "TeamCatenary_Presentation.pptx"))
+    shutil.copyfile(pptx_path, os.path.join(final_dir, "Catenary_Technova2026_PitchDeck.pptx"))
+    shutil.copyfile(pptx_path, os.path.join(music_dir, "Catenary_Presentation.pptx"))
 
     # Convert to PDF via LibreOffice
     print("Converting PPTX to PDF via LibreOffice...")
     cmd = ["libreoffice", "--headless", "--convert-to", "pdf", pptx_path, "--outdir", out_dir]
     subprocess.run(cmd, check=True)
 
-    gen_pdf = os.path.join(out_dir, "VectroSync_Technova2026_PitchDeck.pdf")
-    pres_pdf = os.path.join(out_dir, "VectroSync_Presentation.pdf")
-    team_pdf = os.path.join(out_dir, "TeamVectroSync_Presentation.pdf")
+    gen_pdf = os.path.join(out_dir, "Catenary_Technova2026_PitchDeck.pdf")
+    pres_pdf = os.path.join(out_dir, "Catenary_Presentation.pdf")
+    team_pdf = os.path.join(out_dir, "TeamCatenary_Presentation.pdf")
     shutil.copyfile(gen_pdf, pres_pdf)
     shutil.copyfile(gen_pdf, team_pdf)
-    shutil.copyfile(gen_pdf, os.path.join(final_dir, "VectroSync_Presentation.pdf"))
-    shutil.copyfile(gen_pdf, os.path.join(final_dir, "TeamVectroSync_Presentation.pdf"))
-    shutil.copyfile(gen_pdf, os.path.join(final_dir, "VectroSync_Technova2026_PitchDeck.pdf"))
-    shutil.copyfile(gen_pdf, os.path.join(music_dir, "VectroSync_Presentation.pdf"))
+    shutil.copyfile(gen_pdf, os.path.join(final_dir, "Catenary_Presentation.pdf"))
+    shutil.copyfile(gen_pdf, os.path.join(final_dir, "TeamCatenary_Presentation.pdf"))
+    shutil.copyfile(gen_pdf, os.path.join(final_dir, "Catenary_Technova2026_PitchDeck.pdf"))
+    shutil.copyfile(gen_pdf, os.path.join(music_dir, "Catenary_Presentation.pdf"))
     print(f"Successfully generated and distributed all PPTX and PDF presentation files to submission/, {final_dir}/, and {music_dir}/")
 
 

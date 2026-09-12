@@ -1,4 +1,4 @@
-# VectroSync Model Card
+# Catenary Model Card
 
 **Version:** 2.0.0 research prototype  
 **Decision scope:** Synthetic CSS–SRP what-if analysis and UI demonstration  
@@ -7,7 +7,7 @@
 
 ## Intended use
 
-VectroSync demonstrates how reservoir cooldown, temperature-dependent viscosity, annular drag, rod-load estimates, a speed governor, supervisory logic, provenance, and commercial assumptions can be presented in one operator workflow.
+Catenary demonstrates how reservoir cooldown, temperature-dependent viscosity, annular drag, rod-load estimates, a speed governor, supervisory logic, provenance, and commercial assumptions can be presented in one operator workflow.
 
 It may be used for:
 

@@ -6,7 +6,7 @@ html_content = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>VectroSync - Innovation Summary</title>
+<title>Catenary - Innovation Summary</title>
 <style>
     @page {
         size: letter;
@@ -52,15 +52,15 @@ html_content = """<!DOCTYPE html>
 <h1>TSM-TECHNOVA 2026 &mdash; Innovation Summary</h1>
 <div class="subtitle">National AI Innovation Challenge | Thiagarajar School of Management, Madurai</div>
 
-<p><span class="field-label">Project Title:</span> VectroSync: Cyber-Physical AI Platform for Heavy Crude Artificial Lift</p>
+<p><span class="field-label">Project Title:</span> Catenary: Cyber-Physical AI Platform for Heavy Crude Artificial Lift</p>
 
 <p><span class="field-label">Problem Statement:</span> Heavy crude extraction under Cyclic Steam Stimulation (CSS) at Oil India Limited’s Baghewala Well #14 suffers catastrophic mechanical failures. Severe post-steam viscosity surges (from 9 cP to 12,000 cP) cause upward Couette shear drag (23.44 N/m) to exceed submerged rod weight (18.84 N/m). Sucker rods buckle into severe compression (-1.80 kN downhole tension), snap, and part, costing &#8377;14.82 Crores annually across 23 producing wells.</p>
 
-<p><span class="field-label">Proposed Solution:</span> VectroSync is an edge-native Cyber-Physical System (CPS) optimizing artificial lift dynamics in real time. Coupling analytical thermodynamics, non-Newtonian emulsion rheology, and 1D hyperbolic wave mechanics with fast-loop predictive control (0.35 ms MPC), VectroSync dynamically modulates pumping stroke speed to enforce an inviolable downhole tension floor (F_min &ge; +1.0 kN), preventing compressive rod buckling.</p>
+<p><span class="field-label">Proposed Solution:</span> Catenary is an edge-native Cyber-Physical System (CPS) optimizing artificial lift dynamics in real time. Coupling analytical thermodynamics, non-Newtonian emulsion rheology, and 1D hyperbolic wave mechanics with fast-loop predictive control (0.35 ms MPC), Catenary dynamically modulates pumping stroke speed to enforce an inviolable downhole tension floor (F_min &ge; +1.0 kN), preventing compressive rod buckling.</p>
 
-<p><span class="field-label">Use of Artificial Intelligence:</span> VectroSync deploys a SIREN-embedded Physics-Informed Neural Network (PINN) and Extended Kalman Filter to infer subterranean temperature, water-cut, and dynamic viscosity from surface telemetry (flowline temperature, motor power, polished rod load). This eliminates expensive downhole sensors while enforcing Boberg-Lantz and Arrhenius conservation laws.</p>
+<p><span class="field-label">Use of Artificial Intelligence:</span> Catenary deploys a SIREN-embedded Physics-Informed Neural Network (PINN) and Extended Kalman Filter to infer subterranean temperature, water-cut, and dynamic viscosity from surface telemetry (flowline temperature, motor power, polished rod load). This eliminates expensive downhole sensors while enforcing Boberg-Lantz and Arrhenius conservation laws.</p>
 
-<p><span class="field-label">Innovation / Novelty:</span> Unlike legacy surface dynamometers with 40-year-old empirical lookup tables, VectroSync solves pure 116-node 1D wave mechanics at downhole conditions with zero artificial damping, delivering proactive 4.2-hour advance warning and deterministic Modbus-TCP SCADA automation.</p>
+<p><span class="field-label">Innovation / Novelty:</span> Unlike legacy surface dynamometers with 40-year-old empirical lookup tables, Catenary solves pure 116-node 1D wave mechanics at downhole conditions with zero artificial damping, delivering proactive 4.2-hour advance warning and deterministic Modbus-TCP SCADA automation.</p>
 
 <p><span class="field-label">Target Users / Beneficiaries:</span> National oil companies (Oil India Limited, ONGC), mature thermal heavy oil operators, and field artificial lift production engineers.</p>
 
@@ -72,9 +72,9 @@ html_content = """<!DOCTYPE html>
 </html>
 """
 
-html_path = "/tmp/VectroSync_InnovationSummary_Humanized.html"
-pdf_path_1 = "submission/VectroSync_InnovationSummary.pdf"
-pdf_path_2 = "submission/TeamVectroSync_InnovationSummary.pdf"
+html_path = "/tmp/Catenary_InnovationSummary_Humanized.html"
+pdf_path_1 = "submission/Catenary_InnovationSummary.pdf"
+pdf_path_2 = "submission/TeamCatenary_InnovationSummary.pdf"
 final_dir = "/home/dk/Documents/FINAL"
 os.makedirs(final_dir, exist_ok=True)
 
@@ -95,8 +95,8 @@ print("Compiling humanized Innovation Summary PDF via Google Chrome...")
 subprocess.run(cmd, check=True)
 
 shutil.copyfile(pdf_path_1, pdf_path_2)
-shutil.copyfile(pdf_path_1, os.path.join(final_dir, "VectroSync_InnovationSummary.pdf"))
-shutil.copyfile(pdf_path_1, os.path.join(final_dir, "TeamVectroSync_InnovationSummary.pdf"))
+shutil.copyfile(pdf_path_1, os.path.join(final_dir, "Catenary_InnovationSummary.pdf"))
+shutil.copyfile(pdf_path_1, os.path.join(final_dir, "TeamCatenary_InnovationSummary.pdf"))
 
 print(f"Generated {pdf_path_1} ({os.path.getsize(pdf_path_1)} bytes)")
-print(f"Copied to {final_dir}/VectroSync_InnovationSummary.pdf")
+print(f"Copied to {final_dir}/Catenary_InnovationSummary.pdf")

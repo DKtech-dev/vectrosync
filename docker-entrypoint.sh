@@ -2,7 +2,7 @@
 set -e
 
 echo "=================================================================="
-echo " Starting VectroSync Enterprise Industrial Digital Twin           "
+echo " Starting Catenary Enterprise Industrial Digital Twin             "
 echo " Asset: Well #14, Baghewala Heavy Oil Asset, Bikaner-Nagaur Basin "
 echo " Operator: Oil India Limited | Model: OIL-BAGHEWALA-EOR-V2       "
 echo "=================================================================="
