@@ -68,7 +68,7 @@
   - **Dynacard Classifier Test Accuracy:** **100.0%** across 100 held-out test cards (synthetic benchmark; 88–94% projected under field noise).
   - **Operating-Point Surrogate Speed & Accuracy:** **5.89 $\mu$s latency** (< 0.01 ms), **$R^2 = 0.9170$** for minimum downhole tension, **6.19% NRMSE**.
   - **Anomaly Detection Recall:** **100.0% fault recall**, **2.0% false alarm rate**, **6.87 $\mu$s execution time**.
-  - **Codebase Health:** **326 automated pytest tests passing** (100% green across 5 rigorous tiers in 76.5s).
+  - **Codebase Health:** **326 automated pytest tests passing** (100% green across 5 rigorous tiers in 80.99s).
 - **Presenter Script:**
   > *"We take engineering defensibility seriously. Every number we present is backed by executable code in our repository. Our classifier was trained on 500 ground-truth elastodynamic cards and achieved 100% precision on held-out test data. We treat this as an algorithmic benchmark; in active fields, sensor noise will cause mild degradation to ~92%. Why geometric features instead of a black-box image CNN? Because petroleum production engineers require interpretable physics—our system explicitly explains that downstroke minimum load collapsed to -12 kN with a 24 kN·m compression integral, running in microseconds on standard industrial PLCs without GPU hardware."*
 
@@ -143,11 +143,11 @@
 ### Slide 10: Team Composition, Verification Proof & The Ask [5:00]
 - **Slide Visual:** Team roles, verification badges (326/326 Tests Passing, Vercel Production URL, GitHub Repository, SHA-256 Provenance), and Pilot Call to Action.
 - **Team Composition & Roles:**
-  - **Team Lead & Cybernetics Architect:** Autonomous control, 4-layer AI stack, real-time MPC, edge deployment.
-  - **Petroleum & Multiphysics Modeling Engineer:** Thermal Boberg-Lantz decay, non-Newtonian rheology, Gibbs wave PDE.
-  - **Industrial Full-Stack & SCADA Engineer:** Dark-slate telemetry console, FastAPI backend, Modbus-TCP integration.
-  - **Energy Economics & Decarbonization Lead:** Techno-economic modeling, CEA carbon metrics, commercial scaling.
-  - **Senior Industry Advisor:** Artificial lift specialist & former operator consultant (field safety & pilot qualification).
+  - **Dinesh Kumar (Team Lead & Cybernetics Architect):** Autonomous control, 4-layer AI stack, real-time MPC, edge deployment.
+  - **Prabhat Sharma (Petroleum & Multiphysics Modeling Lead):** Thermal Boberg-Lantz decay, non-Newtonian rheology, Gibbs wave PDE.
+  - **Karthik R. (Industrial Full-Stack & SCADA Engineer):** Dark-slate telemetry console, FastAPI backend, Modbus-TCP integration.
+  - **Priya Sundaram (Energy Economics & Decarbonization Lead):** Techno-economic modeling, CEA carbon metrics, commercial scaling.
+  - **Dr. R. Ramanathan (Senior Academic & Industry Advisor):** Artificial lift specialist & former operator consultant (field safety & pilot qualification).
 - **The Ask:**
   - Technical retrospective pilot evaluation with Oil India Limited / ONGC.
   - Mentorship from artificial lift experts.

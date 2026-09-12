@@ -108,5 +108,5 @@ Interpreter:    Python 3.14.3 / NumPy 2.5.2 / SciPy 1.18.1
 Timing Method:  time.perf_counter() with nanosecond-resolution monotonic clock
 Reproducibility: Seed 42 across synthetic generation, splits, and optimizer runs
 Test Suite:     tests/test_ai_layers.py (10/10 passing unit tests)
-Full Suite:     326 passed in 76.50s
+Full Suite:     326 passed in 80.99s (0:01:20)
 ```

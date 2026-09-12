@@ -51,19 +51,19 @@ Catenary bridges downhole thermal depletion, non-Newtonian emulsion rheology, el
 
 ### Team Composition & Engineering Ownership
 
-| Role | Domain & Responsibilities | Key Deliverables |
+| Member Name & Role | Domain & Responsibilities | Key Deliverables |
 | :--- | :--- | :--- |
-| **Team Lead & Cybernetics Architect** | Architecture design, system integration, edge deployment | 4-layer AI architecture, MPC formulations, safety state machine |
-| **Petroleum & Multiphysics Engineer** | Heavy oil rheology, Boberg-Lantz decay, Gibbs wave PDE | 116-node wave solver, Brinkman-Vand model, A/B benchmark |
-| **Industrial Full-Stack & SCADA Engineer** | High-speed telemetry, Modbus-TCP, mission control console | Dark-slate SCADA frontend, FastAPI engine, real-time WebSockets |
-| **Energy Economics & Decarbonization Lead** | Financial modeling, sensitivity analysis, carbon accounting | ₹14.9 Cr value model, CEA grid emissions, 24.5-day payback proof |
-| **Senior Industry Advisor** | Artificial lift specialist & former operator consultant | Operational sanity check, wellsite safety protocol, pilot roadmap |
+| **Dinesh Kumar**<br>*Team Lead & Cybernetics Architect* | Architecture design, system integration, edge deployment | 4-layer AI architecture, MPC formulations, safety state machine |
+| **Prabhat Sharma**<br>*Petroleum & Multiphysics Engineer* | Heavy oil rheology, Boberg-Lantz decay, Gibbs wave PDE | 116-node wave solver, Brinkman-Vand model, A/B benchmark |
+| **Karthik R.**<br>*Industrial Full-Stack & SCADA Engineer* | High-speed telemetry, Modbus-TCP, mission control console | Dark-slate SCADA frontend, FastAPI engine, real-time WebSockets |
+| **Priya Sundaram**<br>*Energy Economics & Decarbonization Lead* | Financial modeling, sensitivity analysis, carbon accounting | ₹14.9 Cr value model, CEA grid emissions, 24.5-day payback proof |
+| **Dr. R. Ramanathan**<br>*Senior Academic & Industry Advisor* | Artificial lift specialist & former operator consultant | Operational sanity check, wellsite safety protocol, pilot roadmap |
 
 ---
 
 ### Verification Proof & Engineering Defensibility
 
-- **Automated Test Suite:** **326 automated tests passing** (`pytest tests/ -q` 100% green in 76.5s across 5 tiers).
+- **Automated Test Suite:** **326 automated tests passing** (`pytest tests/ -q` 100% green in 80.99s across 5 tiers).
 - **Frontend SCADA Console:** Modern Dark-Slate Industrial Mission Control deployed at [**catenary-ai.vercel.app**](https://catenary-ai.vercel.app) (mirror: [vectrosync.vercel.app](https://vectrosync.vercel.app)).
 - **Data Integrity:** In-memory **SHA-256 cryptographic provenance chain** logging every sensor reading and control decision.
 - **Strict Evidence Gating:** Models are transparently presented as calibrated research twins. Zero unverified field claims.

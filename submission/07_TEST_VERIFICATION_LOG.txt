@@ -5,7 +5,7 @@ Environment observed: Linux, Python 3.14 virtual environment
 
 Command: .venv/bin/python -m pytest -q
 Result: 326 passed, 1 external Starlette/httpx deprecation warning
-Duration: 76.50 seconds (final run)
+Duration: 80.99 seconds (final run: 0:01:20)
 
 Command: npm run build (frontend/)
 Result: PASS — 1600 modules transformed

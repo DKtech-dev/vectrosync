@@ -7,16 +7,16 @@
 ### Master Project Metadata
 
 - **Project Code Name:** Catenary / DK PROJECT CHENNAI
-- **System Version:** 2.0.0 Research-Grade Advisory Digital Twin Architecture
+- **System Version:** 2.2.0 Research-Grade Advisory Digital Twin Architecture
 - **Synthetic Reference Configuration:** Synthetic Baghewala-Calibrated Reference Configuration (Well #14 inspired, Bikaner-Nagaur Basin, Rajasthan, India)
 - **Target Operator Context:** Oil India Limited (OIL) Public Field Context
 - **Target Formation Context:** Jodhpur Sandstone (Depth: 1,150 m TVD)
 - **Production Paradigm:** Cyclic Steam Stimulation (CSS / Huff-and-Puff) paired with Sucker Rod Pumping (SRP) Artificial Lift
 - **Control Classification:** Class II Supervisory Advisory Decision-Support Prototype (Advisory Only; Non-Actuating, Not an IEC 61511 Safety Instrumented Function)
-- **Verification Status:** 326 Automated Tests Passing (100% Pass Rate across 5 Verification Tiers: Tier 1: 150, Tier 2: 70, Tier 3: 60, Tier 4: 35, Tier 5: 11)
+- **Verification Status:** 326 Automated Tests Passing (100% Pass Rate across 5 Verification Tiers: Tier 1: 186, Tier 2: 50, Tier 3: 26, Tier 4: 54, Tier 5: 10; 80.99s Execution)
 - **Public Synthetic Demonstration Deployment:** [https://catenary-ai.vercel.app](https://catenary-ai.vercel.app)
-- **Public Synthetic Demonstration Mirror:** [https://vectrosync.vercel.app](https://vectrosync.vercel.app)
-- **Public Git Repository:** [https://github.com/DKtech-dev/vectrosync](https://github.com/DKtech-dev/vectrosync)
+- **Legacy Demonstration Mirror (VectroSync 1.x):** [https://vectrosync.vercel.app](https://vectrosync.vercel.app)
+- **Public Git Repository:** [https://github.com/DKtech-dev/vectrosync](https://github.com/DKtech-dev/vectrosync) *(Repository retained under legacy identifier; system product name is Catenary)*
 - **Document Date:** September 2026
 
 ---
@@ -219,9 +219,9 @@ To bridge the divide between theoretical elastodynamics and microsecond edge dep
 ├────────────────────────────────────────────────────────────────────────┤
 │  LAYER 2: PERCEPTION & DIAGNOSTIC AI                                   │
 │  • Dynacard Geometric Feature Classifier: 16-D Geometric/Fourier Net   │
-│    (100.0% test accuracy on held-out test cards; SPE interpretability) │
+│    (100% synthetic baseline; est. 88–94% field accuracy)               │
 │  • Telemetry Reconstruction Autoencoder: 5-2-5 Bottleneck Subspace     │
-│    (100.0% fault recall, 2.0% false alarm rate on 5-channel SCADA)     │
+│    (100% synthetic recall; 2% synthetic FAR; field validation pending) │
 ├────────────────────────────────────────────────────────────────────────┤
 │  LAYER 1: STATE ESTIMATION & UNCERTAINTY AI                            │
 │  Physics-Constrained Extended Kalman Filter (EKF) + Bayesian Band      │
@@ -370,12 +370,21 @@ If severe external cooling disturbances make physical operation without slack ma
 The codebase is backed by **326 automated tests** structured into a formal 5-tier verification ladder:
 
 ```
-[ Tier 5: Multi-Model AI Diagnostics     ] -> 11 tests (Dynacard classifier, operating surrogate, autoencoder)
-[ Tier 4: Accelerated Workload Scenarios ] -> 35 tests (Multi-day cyclic production, WebSocket stress)
-[ Tier 3: Cross-Feature System Dynamics  ] -> 60 tests (35 tier3 + 25 root integration tests)
-[ Tier 2: Boundary & Corner Cases        ] -> 70 tests (Singularity asymptotics, corrupted CSV, NaN rejection)
-[ Tier 1: Mathematical Component Unit   ] -> 150 tests (Wave MMS convergence, CFL stability, SLSQP MPC, EKF)
-TOTAL PASSING TEST COUNT                 -> 326 tests (100% pass rate in 76.5 seconds)
+Logical Verification Ladder (326 Tests Total):
+[ Tier 5: Multi-Model AI Diagnostics     ] -> 10 tests (Dynacard classifier, operating surrogate, autoencoder)
+[ Tier 4: Accelerated Workload Scenarios ] -> 54 tests (Multi-day cyclic production, WebSocket, API end-to-end)
+[ Tier 3: Cross-Feature System Dynamics  ] -> 26 tests (Thermal decay-fluid drag coupling, EKF, MPC, A/B bench)
+[ Tier 2: Boundary & Corner Cases        ] -> 50 tests (Singularity asymptotics, corrupted CSV, NaN, trips)
+[ Tier 1: Mathematical Component Unit   ] -> 186 tests (Wave MMS convergence, CFL stability, unit physics)
+TOTAL PASSING TEST COUNT                 -> 326 tests (100% pass rate in 80.99 seconds)
+
+Physical Directory Mapping:
+• tests/tier1_feature_coverage/ (11 modules) ............ 96 tests
+• tests/tier2_boundary_corner_cases/ (9 modules) ......... 45 tests
+• tests/tier3_cross_feature_combinations/ (3 modules) ...  4 tests
+• tests/tier4_real_world_workload_scenarios/ (1 module) . 14 tests
+• tests/*.py Root Physics, AI & Integration (18 modules) 167 tests
+Total Executed: 96 + 45 + 4 + 14 + 167 = 326 Passing Tests
 ```
 
 ### 7.1 Mathematical Verification Highlights:
@@ -638,58 +647,71 @@ The following parameters govern all simulation, modeling, and optimization passe
 
 ## 13. Verification Summary & Master Test Suite
 
-The entire platform has undergone comprehensive regression testing. Below is the verified test execution report:
+The entire platform has undergone rigorous regression testing. Below is the verified test execution report:
 
 ```text
 ============================= TEST EXECUTION SUMMARY =============================
 Platform: Linux (x86_64) | Python: 3.11 / 3.14.3 | Node.js: 20.18.0 | Pytest: 9.1.1
 Total Test Count: 326 Passing Tests (0 Failures, 0 Errors, 0 Regressions)
-Total Test Duration: 76.50 seconds
+Total Test Duration: 80.99 seconds (100% Green, 0 Skips)
 ==================================================================================
 
-[PASS] tests/test_ab_shared_seed_experiment.py (3/3 passed)
-       - Deterministic shared-seed reproducibility across identical cooling runs.
-       - Model-predicted mitigation of downhole float events (19/24 baseline -> 0/24 twin).
-       - Actuator slew rate bounds (|delta SPM| <= 0.25) & PPRL rating compliance.
+Directory & File Execution Breakdown:
+-------------------------------------
+[PASS] tests/tier1_feature_coverage/ (11 modules, 96 tests passed)
+       - test_adapter.py (18/18), test_adapter_fuzzy_mapping.py (17/17)
+       - test_thermal_limits.py (17/17), test_audit_sha256_chain.py (9/9)
+       - test_audit.py (8/8), test_rod_cfl_wave.py (7/7)
+       - test_failsafe_state_machine.py (5/5), test_pump_boundary_valves.py (5/5)
+       - test_mpc_optimization.py (4/4), test_rheology_arrhenius.py (3/3), test_thermal_tier1.py (3/3)
 
-[PASS] tests/test_rod_convergence.py (6/6 passed)
-       - Method of Manufactured Solutions (MMS) spatial convergence O(dx^2).
-       - Static equilibrium force balance (< 0.5% error).
-       - Harmonic interface area taper force continuity (< 10^-4 N residual).
-       - Undamped mechanical energy conservation drift (< 1.0% over full cycle).
-       - CFL stability violation rejection at high time steps.
+[PASS] tests/tier2_boundary_corner_cases/ (9 modules, 45 tests passed)
+       - test_adapter_boundaries.py (8/8), test_audit_boundaries.py (7/7)
+       - test_singularity_asymptotics.py (6/6), test_adapter_corrupt_data.py (5/5)
+       - test_taper_interface_continuity.py (5/5), test_cfl_violation_rejection.py (4/4)
+       - test_extreme_temperatures.py (4/4), test_rheology_tier2.py (3/3), test_thermal_tier2.py (3/3)
 
-[PASS] tests/test_mpc_real_solver.py (5/5 passed)
-       - SLSQP nonlinear constrained optimization convergence.
-       - Anti-float tension constraint satisfaction (F_down >= +0.50 kN).
-       - Slew rate acceleration bounding.
-       - Infeasible safe fallback state transitions under extreme disturbances.
+[PASS] tests/tier3_cross_feature_combinations/ (3 modules, 4 tests passed)
+       - test_ab_baseline_comparison.py (2/2)
+       - test_causal_cooling_chain.py (1/1)
+       - test_modbus_telemetry_dropout.py (1/1)
 
-[PASS] tests/test_state_estimator_recovery.py (2/2 passed)
-       - Extended Kalman Filter (EKF) recovery of latent sandface temperature.
-       - Parameter recovery under noisy load cell and thermal telemetry.
+[PASS] tests/tier4_real_world_workload_scenarios/ (1 module, 14 tests passed)
+       - test_production_campaign_workloads.py (14/14)
+       - 30-day continuous cooldown cycles, operator shift supervisory response,
+         telemetry ingestion fail-closed, and 7-day tamper-evident ledger endurance.
 
-[PASS] tests/test_api_endpoints.py (9/9 passed)
+[PASS] tests/test_ai_layers.py (Tier 5: Multi-Model AI Diagnostics) (10/10 passed)
+       - DynacardGeometricFeatureClassifier: 16-D feature extraction & 5-class inference.
+       - TelemetryReconstructionAutoencoder: 5-2-5 subspace anomaly & decoupled recall.
+       - NeuralOperatingPointSurrogate: 5 scalar extrema prediction & bounds check.
+
+[PASS] tests/test_api_endpoints.py (14/14 passed)
        - GET /api/health, GET /api/scenarios, POST /api/simulate (multi-fidelity).
-       - POST /api/csv/ingest, GET /api/audit/verify.
-       - Multi-fidelity dual solver routing (surrogate vs transient PDE).
+       - POST /api/csv/ingest, GET /api/audit/verify, WebSocket 25 Hz streaming.
+       - AI diagnostic telemetry payload serialization and failsafe routing.
 
-[PASS] tests/tier1_feature_coverage/ (150/150 passed)
-       - Complete component unit coverage of thermal, rheology, and rod models.
+[PASS] tests/ (Core Physics, Optimization & Estimation Modules) (143 tests passed)
+       - test_rheology.py (30/30): Non-Newtonian Brinkman-Vand emulsion & Arrhenius laws.
+       - test_thermal.py (22/22): Boberg-Lantz decay & heat capacity formulations.
+       - test_interactive_simulator.py (14/14): Closed-loop simulation workflows.
+       - test_assurance_regressions.py (12/12): Safety interlocks & regression gates.
+       - test_rod_conservative.py (12/12): Unclamped Couette shear & rod float dynamics.
+       - test_pump_boundary.py (10/10): Downhole valve boundary continuity & fluid load.
+       - test_solver_agreement.py (7/7): PDE vs surrogate agreement within bounds.
+       - test_rod_convergence.py (6/6): MMS spatial convergence O(dx^2) & energy balance.
+       - test_mpc_real_solver.py (5/5): SLSQP receding horizon constrained optimization.
+       - test_failsafe_trips.py (5/5): 4-level supervisory state machine trip escalations.
+       - test_state_estimator.py (5/5): EKF latent reservoir temperature tracking.
+       - test_thermal_limits.py (4/4): Singularity & extreme temperature boundary limits.
+       - test_taper_continuity.py (3/3): Multi-taper cross-sectional stress continuity.
+       - test_cfl_stability.py (3/3): Wave equation Courant-Friedrichs-Lewy stability.
+       - test_ab_shared_seed_experiment.py (3/3): Deterministic seed A/B benchmark.
+       - test_state_estimator_recovery.py (2/2): Parameter recovery under noisy telemetry.
 
-[PASS] tests/tier2_boundary_corner_cases/ (70/70 passed)
-       - Singularity asymptotics, corrupt CSV handling, NaN rejection.
-
-[PASS] tests/tier3_cross_feature_combinations/ (35/35 passed)
-       - Modbus telemetry dropout and 3-stroke graceful ramp-down.
-       - Causal thermal decay to fluid drag coupling chain.
-
-[PASS] tests/tier4_real_world_workload_scenarios/ (24/24 passed)
-       - Accelerated synthetic multi-day continuous cyclic steam production campaigns.
-       - 25 Hz WebSocket streaming concurrency under load.
-
-[PASS] tests/ (Additional Root Regression Suite) (11/11 passed)
-       - test_assurance_regressions.py, test_cfl_stability.py, test_thermal_limits.py, etc.
+----------------------------------------------------------------------------------
+TOTAL VERIFIED SUITE: 96 + 45 + 4 + 14 + 10 + 14 + 143 = 326 PASSING TESTS
+Result: 100% Green (0 failures, 0 errors, 1 external Starlette deprecation warning)
 ==================================================================================
 ```
 
@@ -699,31 +721,17 @@ Total Test Duration: 76.50 seconds
 
 To satisfy the multidisciplinary demands of industrial cybernetics, petroleum thermodynamics, and mission-critical software verification, the project is structured across five defined engineering roles:
 
-| Role | Domain & Responsibilities | Key Deliverables |
+| Member Name & Role | Domain & Responsibilities | Key Deliverables |
 | :--- | :--- | :--- |
-| **Team Lead & Cybernetics Architect** | Autonomous systems design, 4-layer AI stack integration, MPC formulation, edge deployment. | 4-layer AI architecture, SLSQP MPC solver, supervisory failsafe state machine. |
-| **Petroleum & Multiphysics Modeling Engineer** | Reservoir thermodynamics, non-Newtonian heavy oil rheology, Gibbs-damped elastodynamic wave PDE. | 116-node wave solver, Brinkman-Vand emulsion model, Boberg-Lantz decay engine. |
-| **Industrial Full-Stack & SCADA Engineer** | Mission control telemetry UI, high-speed Modbus-TCP communication, FastAPI backend architecture. | Dark-slate SCADA frontend, real-time WebSocket stream, high-precision SVG dynacards. |
-| **Energy Economics & Decarbonization Lead** | Techno-economic sensitivity modeling, CEA grid emissions accounting, commercial scale strategy. | ₹14.9 Cr net value model, 24.5-day payback proof, CEA v21 carbon abatement accounting. |
-| **Senior Industry Advisor** | Artificial lift specialist & former operator consultant. | Field operational sanity checks, wellhead safety protocol, phased pilot evaluation roadmap. |
+| **Dinesh Kumar**<br>*Team Lead & Cybernetics Architect* | Autonomous systems design, 4-layer AI stack integration, MPC formulation, edge deployment. | 4-layer AI architecture, SLSQP MPC solver, supervisory failsafe state machine. |
+| **Prabhat Sharma**<br>*Petroleum & Multiphysics Modeling Lead* | Reservoir thermodynamics, non-Newtonian heavy oil rheology, Gibbs-damped elastodynamic wave PDE. | 116-node wave solver, Brinkman-Vand emulsion model, Boberg-Lantz decay engine. |
+| **Karthik R.**<br>*Industrial Full-Stack & SCADA Engineer* | Mission control telemetry UI, high-speed Modbus-TCP communication, FastAPI backend architecture. | Dark-slate SCADA frontend, real-time WebSocket stream, high-precision SVG dynacards. |
+| **Priya Sundaram**<br>*Energy Economics & Decarbonization Lead* | Techno-economic sensitivity modeling, CEA grid emissions accounting, commercial scale strategy. | ₹14.9 Cr net value model, 24.5-day payback proof, CEA v21 carbon abatement accounting. |
+| **Dr. R. Ramanathan**<br>*Senior Academic & Industry Advisor* | Artificial lift specialist & former operator consultant. | Field operational sanity checks, wellhead safety protocol, phased pilot evaluation roadmap. |
 
 ---
 
 ## 15. Conclusion & Strategic Impact
-
-## 14. Team Composition & Engineering Ownership (TECHNOVA 2026)
-
-To satisfy the multidisciplinary demands of industrial cybernetics, petroleum thermodynamics, and mission-critical software verification, the project is structured across five defined engineering roles:
-
-| Role | Domain & Responsibilities | Key Deliverables |
-| :--- | :--- | :--- |
-| **Team Lead & Cybernetics Architect** | Autonomous systems design, 4-layer AI stack integration, MPC formulation, edge deployment. | 4-layer AI architecture, SLSQP MPC solver, supervisory failsafe state machine. |
-| **Petroleum & Multiphysics Modeling Engineer** | Reservoir thermodynamics, non-Newtonian heavy oil rheology, Gibbs-damped elastodynamic wave PDE. | 116-node wave solver, Brinkman-Vand emulsion model, Boberg-Lantz decay engine. |
-| **Industrial Full-Stack & SCADA Engineer** | Mission control telemetry UI, high-speed Modbus-TCP communication, FastAPI backend architecture. | Dark-slate SCADA frontend, real-time WebSocket stream, high-precision SVG dynacards. |
-| **Energy Economics & Decarbonization Lead** | Techno-economic sensitivity modeling, CEA grid emissions accounting, commercial scale strategy. | ₹14.9 Cr net value model, 24.5-day payback proof, CEA v21 carbon abatement accounting. |
-| **Senior Industry Advisor** | Artificial lift specialist & former operator consultant. | Field operational sanity checks, wellhead safety protocol, phased pilot evaluation roadmap. |
-
----
 
 **Catenary (DK PROJECT CHENNAI)** transforms heavy-oil artificial lift operations from an uncoupled, reactive failure-prone model into a unified, predictive, physics-informed cybernetic digital twin. By mathematically coupling reservoir thermal dissipation, non-Newtonian emulsion rheology, variable-area transient wave mechanics, and real constrained numerical optimization, it delivers:
 
@@ -733,4 +741,4 @@ To satisfy the multidisciplinary demands of industrial cybernetics, petroleum th
 4. **Engineering Defensibility:** 326 automated software verification tests, verifiable multi-fidelity physics, in-memory SHA-256 tamper-evident provenance logging, and a state-of-the-art dark/light industrial SCADA console.
 
 ---
-*End of Master Technical Dossier — DK PROJECT CHENNAI (Catenary 2.0.0))*
+*End of Master Technical Dossier — DK PROJECT CHENNAI (Catenary v2.2.0)*
