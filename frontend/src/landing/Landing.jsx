@@ -34,11 +34,25 @@ function usePrefersReducedMotion() {
 }
 
 /**
- * Full-bleed looping hero video with a manual fade-in/fade-out crossfade at
- * the loop point (rAF-driven opacity ramp over the first/last 0.5s of
- * playback), matching the reference's custom loop logic. Falls back to a
- * static gradient (no network dependency) if the video fails to load, so a
- * hostile/offline venue never shows a broken hero.
+ * Full-bleed looping hero video.
+ *
+ * Fade logic (rAF-driven, no CSS transition on opacity):
+ *   - Starts at opacity 1 immediately so the video is visible from frame 0.
+ *     The white gradient overlay handles the visual "arrival" at the top; no
+ *     need to fade the video itself in from black.
+ *   - Fades OUT over 0.6 s approaching the end of the clip, so the loop
+ *     crossfades cleanly through the white page background rather than
+ *     jumping on the first-frame/last-frame cut.
+ *   - On 'ended': opacity is already near 0 from the fade-out; waits 80 ms
+ *     then resets currentTime and replays, opacity goes back to 1 on the
+ *     first tick of the new loop.
+ *
+ * DO NOT add a CSS `transition` to the video element's opacity property.
+ * Setting style.opacity every ~16 ms at 60 fps while a CSS transition is
+ * also active on the same property causes two competing animations that
+ * produce visible stutter on every frame.
+ *
+ * Falls back to a static gradient if the video URL is unreachable.
  */
 function HeroVideo({ reduced }) {
   const videoRef = useRef(null);
@@ -48,37 +62,34 @@ function HeroVideo({ reduced }) {
     if (reduced || failed) return undefined;
     const video = videoRef.current;
     if (!video) return undefined;
-    const FADE_S = 0.5;
+
+    // Fade-out window (seconds before loop point where opacity ramps to 0).
+    // The browser's native `loop` attribute restarts currentTime instantly;
+    // the rAF tick detects currentTime = 0 and immediately sets opacity back
+    // to 1, producing a clean white-page crossfade at every loop point with
+    // zero extra bookkeeping.
+    const FADE_OUT_S = 0.55;
     let raf = null;
 
     const tick = () => {
       const d = video.duration;
       const t = video.currentTime;
-      if (d && Number.isFinite(d)) {
-        let opacity = 1;
-        if (t < FADE_S) opacity = t / FADE_S;
-        else if (t > d - FADE_S) opacity = Math.max(0, (d - t) / FADE_S);
-        video.style.opacity = String(opacity);
+      if (d && Number.isFinite(d) && d > FADE_OUT_S) {
+        const timeLeft = d - t;
+        video.style.opacity = timeLeft < FADE_OUT_S
+          ? String(Math.max(0, timeLeft / FADE_OUT_S))
+          : '1';
+      } else {
+        // Metadata not yet ready — show the video at full opacity.
+        video.style.opacity = '1';
       }
       raf = requestAnimationFrame(tick);
     };
 
-    const onEnded = () => {
-      video.style.opacity = '0';
-      window.setTimeout(() => {
-        try {
-          video.currentTime = 0;
-          video.play().catch(() => {});
-        } catch {
-          /* ignore */
-        }
-      }, 100);
-    };
-
-    video.addEventListener('ended', onEnded);
+    // Ensure the video is immediately visible; no fade-in from black.
+    video.style.opacity = '1';
     raf = requestAnimationFrame(tick);
     return () => {
-      video.removeEventListener('ended', onEnded);
       if (raf) cancelAnimationFrame(raf);
     };
   }, [reduced, failed]);
@@ -87,7 +98,7 @@ function HeroVideo({ reduced }) {
     return (
       <div
         className="bg-canvas-fallback"
-        style={{ background: 'linear-gradient(180deg, #f4f4f4 0%, #e9e9e9 55%, #f9f9f9 100%)' }}
+        style={{ background: 'linear-gradient(180deg, #ededed 0%, #e0e0e0 55%, #efefef 100%)' }}
         aria-hidden="true"
       />
     );
@@ -105,6 +116,10 @@ function HeroVideo({ reduced }) {
       aria-hidden="true"
       onError={() => setFailed(true)}
     >
+      {/* `loop` is intentional: the rAF tick fades opacity to 0 in the last
+          0.55 s; native loop resets currentTime instantly; tick then reads
+          timeLeft = full duration and snaps opacity back to 1. Result: a
+          clean white-crossfade on every loop with zero extra JS. */}
       <source src={VIDEO_URL} type="video/mp4" />
     </video>
   );

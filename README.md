@@ -4,7 +4,6 @@
 [![Live synthetic demo](https://img.shields.io/badge/Live-synthetic_demo-0ea5e9?style=for-the-badge)](https://vectrosync.vercel.app)
 [![Mirror](https://img.shields.io/badge/Live-mirror-64748b?style=for-the-badge)](https://vectrosync-digital-twin.vercel.app)
 [![Verification](https://img.shields.io/badge/tests-315_passing-16a34a?style=for-the-badge)](#verification)
-[![Cinematic Film](https://img.shields.io/badge/Cinematic_Film-60s_1080p-a855f7?style=for-the-badge)](#cinematic-executive-film)
 [![Control authority](https://img.shields.io/badge/control-advisory_only-f59e0b?style=for-the-badge)](#safety-and-evidence-boundary)
 [![Python](https://img.shields.io/badge/Python-3.11_%7C_3.14-3776ab?style=for-the-badge&logo=python&logoColor=white)](#local-setup)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react&logoColor=black)](#operator-console)
@@ -50,15 +49,6 @@ flowchart LR
    - Coupled Twin holds positive downhole tension ($+1.58$ to $+5.51\text{ kN}$) with zero float incidents.
 4. **Traceable 4-Tier Verification Ladder:**
    - 315 automated tests covering Method of Manufactured Solutions (MMS), CFL numerical stability, energy conservation, taper interface force continuity, cross-solver PPRL agreement, EKF parameter recovery, Modbus dropout, and real-world production campaigns.
-
----
-
-## Cinematic Executive Film
-
-A 60-second high-concept engineering film illustrating the subterranean thermodynamics, the catastrophic compressive rod buckling failure mode, and VectroSync's autonomous closed-loop resolution is available in the repository root:
-
-- **Master Film Deliverable:** [`VectroSync_Cinematic_Movie.mp4`](file:///home/dk/Documents/main/VectroSync_Cinematic_Movie.mp4) (1080p Full HD, 48kHz Stereo Master, 84.5 MB, < 100 MB).
-- **Executive Presentation:** 4-Act narrative arc with custom neural voiceover, multi-layer synthesized soundscape (sub-bass braam impact on rod compression, acoustic sweep on digital twin activation), and real-time SCADA HUD overlays.
 
 ---
 

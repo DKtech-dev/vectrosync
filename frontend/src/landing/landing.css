@@ -36,30 +36,60 @@
   inset: 0;
   overflow: hidden;
   z-index: 0;
-  background: #ffffff;
+  background: #fff;
 }
-.vs-landing .bg-video,
-.vs-landing .bg-canvas-fallback {
+
+/* Full-bleed from y=0. No CSS transition — the rAF loop owns opacity
+   exclusively; a CSS transition on the same property fights the loop and
+   causes visible stuttering at 60 fps. */
+.vs-landing .bg-video {
   position: absolute;
-  top: 300px;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
-  height: calc(100% - 300px);
+  height: 100%;
   object-fit: cover;
   pointer-events: none;
-  transition: opacity 0.1s linear;
+  will-change: opacity;
 }
+
 .vs-landing .bg-canvas-fallback {
-  opacity: 1;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
+
+/* Gradient overlay strategy:
+   0-10%  — near-white (nav text must be black-on-white, legible).
+   10-28% — dissolves into the video (smooth editorial blend).
+   28-68% — video shines through; a very soft white wash keeps serif text
+             readable over whatever the video content happens to be.
+   68-88% — fades back to white (stats footer zone).
+   88-100% — solid white (footer background).
+   Plus a vignette that softens the left/right edges for a cinematic feel. */
 .vs-landing .video-overlay {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(to bottom, #fff 0%, rgba(255, 255, 255, 0.15) 24%, transparent 46%, transparent 72%, #fff 100%);
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.97)  0%,
+      rgba(255, 255, 255, 0.80) 10%,
+      rgba(255, 255, 255, 0.40) 20%,
+      rgba(255, 255, 255, 0.14) 30%,
+      rgba(255, 255, 255, 0.10) 50%,
+      rgba(255, 255, 255, 0.22) 64%,
+      rgba(255, 255, 255, 0.60) 78%,
+      rgba(255, 255, 255, 0.90) 90%,
+      rgba(255, 255, 255, 0.97) 100%
+    ),
+    radial-gradient(
+      ellipse 80% 60% at 50% 46%,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 70%,
+      rgba(255, 255, 255, 0.28) 100%
+    );
 }
 
 /* ---- Page skeleton ----------------------------------------------------------- */
