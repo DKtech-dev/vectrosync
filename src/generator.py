@@ -4,7 +4,7 @@ Generates Physics-Coupled CSS + SRP Production History, Dynamometer Cards,
 and Realistic Sensor Telemetry with Calibrated Noise for Benchmarking and Ingestion.
 """
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 import numpy as np
 import pandas as pd
 
@@ -107,7 +107,6 @@ class CoupledDataGenerator:
         Both Branch A (Uncoupled Baseline at 4.7 SPM) and Branch B (Coupled MPC Twin)
         receive the EXACT SAME latent disturbances (soak cooling) and measurement noise.
         """
-        from typing import Any
         from src.controller import FastMPCController, MPCConfig, WellState
 
         rng = np.random.RandomState(seed)
