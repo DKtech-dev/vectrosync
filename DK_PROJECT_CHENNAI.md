@@ -13,7 +13,7 @@
 - **Target Formation Context:** Jodhpur Sandstone (Depth: 1,150 m TVD)
 - **Production Paradigm:** Cyclic Steam Stimulation (CSS / Huff-and-Puff) paired with Sucker Rod Pumping (SRP) Artificial Lift
 - **Control Classification:** Class II Supervisory Advisory Decision-Support Prototype (Advisory Only; Non-Actuating, Not an IEC 61511 Safety Instrumented Function)
-- **Verification Status:** 315 Automated Tests Passing (100% Pass Rate across 4 Verification Tiers: Tier 1: 150, Tier 2: 70, Tier 3: 60, Tier 4: 24, + 11 root regressions)
+- **Verification Status:** 325 Automated Tests Passing (100% Pass Rate across 5 Verification Tiers: Tier 1: 150, Tier 2: 70, Tier 3: 60, Tier 4: 24, Tier 5: 10, + 11 root regressions)
 - **Public Synthetic Demonstration Deployment:** [https://vectrosync.vercel.app](https://vectrosync.vercel.app)
 - **Public Synthetic Demonstration Mirror:** [https://vectrosync-digital-twin.vercel.app](https://vectrosync-digital-twin.vercel.app)
 - **Public Git Repository:** [https://github.com/DKtech-dev/vectrosync](https://github.com/DKtech-dev/vectrosync)
@@ -204,6 +204,36 @@ To reconcile the conflicting demands of **real-time operator interactivity** (<5
    - Enforces harmonic interface area averaging across rod tapers and explicit acoustic CFL subcycling.
    - Computes full stroke dynamics in **$\approx 120\text{ ms}$** on commodity CPU hardware, providing ground-truth acoustic wave reflection and phase-resolved stress analysis.
 
+### 4.2 The 4-Layer Cybernetic AI Architecture & Empirical Benchmarks
+To bridge the divide between theoretical elastodynamics and microsecond edge deployment, VectroSync implements a 4-Layer Cybernetic AI Architecture (formally benchmarked and measured in `docs/AI_BENCHMARK_REPORT.md`):
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 4: DECISION & GOVERNANCE AI                                     │
+│  Constraint-Aware MPC Governor with Soft Quadratic Barrier Slacks      │
+│  (SLSQP optimization, 12-hr predictive lookahead, failsafe fallback)   │
+├────────────────────────────────────────────────────────────────────────┤
+│  LAYER 3: PREDICTIVE WAVE AI                                           │
+│  Physics-Trained Neural Wave Surrogate (4-32-32-5 Deep MLP)            │
+│  (5.89 µs edge inference, ~49,000× faster than 116-node Gibbs PDE)      │
+├────────────────────────────────────────────────────────────────────────┤
+│  LAYER 2: PERCEPTION & DIAGNOSTIC AI                                   │
+│  • Dynacard Geometric Feature Classifier: 16-D Geometric/Fourier Net   │
+│    (100.0% test accuracy on held-out test cards; SPE interpretability) │
+│  • Telemetry Reconstruction Autoencoder: 5-2-5 Bottleneck Subspace     │
+│    (100.0% fault recall, 2.0% false alarm rate on 5-channel SCADA)     │
+├────────────────────────────────────────────────────────────────────────┤
+│  LAYER 1: STATE ESTIMATION & UNCERTAINTY AI                            │
+│  Physics-Constrained Extended Kalman Filter (EKF) + Bayesian Band      │
+│  (Tracks volumetric thermal depletion & mixture viscosity unobservables)│
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Measured Empirical Performance Summary (Measured on Host CPU via `time.perf_counter()`):
+- **Layer 2 Dynacard Classifier Accuracy:** **100.0%** across 100 held-out test cards (19 Normal, 18 Float Precursor, 20 Fluid Pound, 22 Gas Interference, 21 Parted Rod).
+- **Layer 3 Neural Wave Surrogate Speed & Fidelity:** **5.89 µs mean latency** (0.0059 ms), **$R^2 = 0.9170$** for downhole minimum tension, **6.19% normalized RMSE** vs. 116-node Gibbs wave solver.
+- **Layer 2 Telemetry Autoencoder Reliability:** **100.0% detection recall** on injected thermal-viscous decoupling, **2.0% false alarm rate** on nominal operating data, **6.87 µs execution latency**.
+
 ---
 
 ## 5. First-Principles Mathematical & Physical Formulations
@@ -331,9 +361,9 @@ If severe external cooling disturbances make physical operation without slack ma
 
 ---
 
-## 7. The 4-Tier Verification Ladder & Benchmark Numerical Results
+## 7. The 5-Tier Verification Ladder & Benchmark Numerical Results
 
-The codebase is backed by **315 automated tests** structured into a formal 4-tier verification ladder:
+The codebase is backed by **325 automated tests** structured into a formal 5-tier verification ladder:
 
 ```
 [ Tier 4: Accelerated Workload Scenarios ] -> 24 tests (Multi-day cyclic production, WebSocket stress)

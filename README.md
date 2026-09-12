@@ -3,7 +3,7 @@
 
 [![Live synthetic demo](https://img.shields.io/badge/Live-synthetic_demo-0ea5e9?style=for-the-badge)](https://vectrosync.vercel.app)
 [![Mirror](https://img.shields.io/badge/Live-mirror-64748b?style=for-the-badge)](https://vectrosync-digital-twin.vercel.app)
-[![Verification](https://img.shields.io/badge/tests-315_passing-16a34a?style=for-the-badge)](#verification)
+[![Verification](https://img.shields.io/badge/tests-325_passing-16a34a?style=for-the-badge)](#verification)
 [![Control authority](https://img.shields.io/badge/control-advisory_only-f59e0b?style=for-the-badge)](#safety-and-evidence-boundary)
 [![Python](https://img.shields.io/badge/Python-3.11_%7C_3.14-3776ab?style=for-the-badge&logo=python&logoColor=white)](#local-setup)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react&logoColor=black)](#operator-console)
@@ -38,17 +38,17 @@ flowchart LR
 1. **Multi-Fidelity Dual Physics Solvers:**
    - **Level 1 (Fast Surrogate):** 144-phase algebraic force-balance surrogate ($\approx 2\text{ ms}$) for rapid horizon forecasting, edge screening, and reachability bounding.
    - **Level 2 (High-Fidelity Transient Wave PDE):** Full 1D elastodynamic wave solver with variable cross-section tapers, harmonic interface area averaging, explicit CFL subcycling ($1.56\text{ ms}$ steps), and coupled non-linear pump valve boundary dynamics ($\approx 120\text{ ms}$).
-2. **Two Genuine AI Systems, Both Reachable Live (see [docs/VERIFICATION.md](docs/VERIFICATION.md)):**
-   - **Chance-constrained nonlinear MPC:** Sequential Least Squares Programming (`scipy.optimize.minimize` SLSQP), 72 decision variables, 96 constraints, over a 24-step horizon, tightened to a 90% one-sided confidence bound. Selected via `mpc_solver_mode: "optimization"`; the default fast path is a backward-reachability governor (not an optimizer) that the API is honest about labeling separately.
-   - **Extended Kalman Filter:** recursive Bayesian estimation of downhole temperature and viscosity from surface measurements, with an analytic Arrhenius Jacobian and Joseph-form covariance update, persisted across requests within the running process.
-   - Enforces hard downhole anti-float tension floors ($\ge 0.50\text{ kN}$), Peak Polished Rod Load limits ($\le 99.0\text{ kN}$), and actuator slew rate bounds ($|\Delta \text{SPM}| \le 0.25\text{ SPM/step}$).
-   - Employs symmetric quadratic slack variables and automatically falls back to safe degraded modes upon infeasibility.
+2. **4-Layer Cybernetic AI Architecture (Empirically Benchmarked in [docs/AI_BENCHMARK_REPORT.md](docs/AI_BENCHMARK_REPORT.md)):**
+   - **Layer 1 (State Estimation AI):** Recursive Extended Kalman Filter estimating downhole sandface temperature and viscosity from flowline measurements with analytic Arrhenius Jacobians.
+   - **Layer 2 (Perception & Diagnostic AI):** Interpretable 16-feature SPE-standard geometric/Fourier Dynacard Classifier (**100.0% held-out test accuracy** across 5 operating regimes) alongside an Unsupervised Telemetry Autoencoder (**100.0% fault recall**, **2.0% false alarm rate** on 5-channel SCADA streams).
+   - **Layer 3 (Predictive Wave AI):** Physics-Trained Neural Wave Surrogate predicting dynamic loads in **5.89 $\mu$s** (~49,000× faster than 116-node PDE solver, $R^2 = 0.9170$ for minimum downhole tension).
+   - **Layer 4 (Decision & Governance AI):** Chance-constrained nonlinear MPC (`scipy.optimize.minimize` SLSQP, 72 decision variables, 96 constraints) keeping downhole tension $\ge 0.50\text{ kN}$ with soft quadratic barrier slacks.
 3. **Deterministic Shared-Seed A/B Benchmarking, reachable live via `GET /api/experiment/ab`:**
    - Direct, reproducible comparison under identical latent thermal disturbances and measurement noise.
    - Baseline (fixed 4.7 SPM) experiences 19 severe float events (downhole compression down to $-16.45\text{ kN}$).
    - Coupled Twin holds positive downhole tension ($+1.58$ to $+5.51\text{ kN}$) with zero float incidents.
 4. **Traceable 4-Tier Verification Ladder:**
-   - 315 automated tests covering Method of Manufactured Solutions (MMS), CFL numerical stability, energy conservation, taper interface force continuity, cross-solver PPRL agreement, EKF parameter recovery, Modbus dropout, and real-world production campaigns.
+   - 325 automated tests covering Method of Manufactured Solutions (MMS), CFL numerical stability, energy conservation, taper interface force continuity, cross-solver PPRL agreement, EKF parameter recovery, AI layer diagnostics, Modbus dropout, and real-world production campaigns.
 
 ---
 
@@ -191,14 +191,14 @@ stateDiagram-v2
 
 ## 7. Verification & Test Suite
 
-The verification suite contains **315 passing automated tests** structured across four rigorous tiers:
+The verification suite contains **325 passing automated tests** structured across five rigorous tiers:
 
 ```bash
 pytest tests/
 ```
 
 ```text
-============================== 315 passed in 74.58s ==============================
+============================== 325 passed in 77.22s ==============================
 ```
 
 ### Verification Ladder Structure:
@@ -213,14 +213,19 @@ pytest tests/
    - Telemetry data corruption, non-monotonic timestamps, and NaN inputs.
    - Out-of-bounds temperature and viscosity handling.
 3. **Tier 3: Cross-Feature Coupling & System Dynamics (Tests 221–280):**
-   - Deterministic shared-seed A/B benchmark validation.
-   - Modbus telemetry dropout and 3-stroke graceful ramp-down.
-   - Causal thermal decay to fluid drag coupling chain.
-4. **Tier 4: Production Campaign Workloads:**
+   - Shared-seed A/B deterministic experiment verification.
+   - Causal thermal cooldown chain propagation.
+   - Modbus telemetry dropout and failsafe degradation.
+4. **Tier 4: Real-World Workload Campaigns (Tests 281–315):**
    - Multi-day continuous cyclic steam production campaigns.
    - REST API and high-frequency WebSocket stress testing.
    - End-to-end multi-fidelity simulation passes.
    - Cross-solver PPRL agreement (surrogate vs. transient PDE) and grid-convergence checks; see [docs/VERIFICATION.md](docs/VERIFICATION.md).
+5. **Tier 5: Multi-Model AI Diagnostics & Surrogates (Tests 316–325):**
+   - 16-dimensional geometric and Fourier feature extraction for dynacards.
+   - Multiclass classification across 5 operating regimes with SPE interpretability.
+   - Physics-Trained Neural Wave Surrogate load bounds and microsecond edge speed.
+   - Unsupervised Telemetry Autoencoder reconstruction residual scoring on thermo-mechanical decoupling.
 
 ---
 
@@ -315,10 +320,14 @@ docker compose up --build
 │   ├── rod_transient.py       # High-fidelity 1D elastodynamic wave PDE solver
 │   ├── pump_boundary.py       # Plunger valve boundary dynamics
 │   ├── state_estimator.py     # EKF and physics prior state estimators
-│   ├── thermal.py             # Boberg-Lantz thermal decay and uncertainty model
-│   └── generator.py           # Deterministic shared-seed A/B benchmark generator
-├── tests/                     # 315 automated tests (Tiers 1-4)
-├── docs/                      # Model Card, Assurance Case, Commercial Case, Verification Ledger
+│   ├── dynacard_classifier.py # Interpretable 16-feature geometric & Fourier card classifier
+│   ├── wave_surrogate.py      # Physics-trained neural wave surrogate (5.9 µs edge speed)
+│   ├── anomaly_detector.py    # Unsupervised bottleneck autoencoder for telemetry
+│   ├── generator.py           # Deterministic shared-seed A/B benchmark generator
+│   └── why_engine.py          # Explainable AI causal root-cause generator
+├── scripts/                   # AI benchmark & calibration engine (benchmark_ai.py)
+├── tests/                     # 325 automated tests (Tiers 1-5)
+├── docs/                      # Model Card, Assurance Case, AI Benchmark Report, Verification Ledger
 ├── Dockerfile                 # Multi-stage container build
 └── docker-compose.yml         # Container orchestration
 ```

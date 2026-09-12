@@ -204,3 +204,20 @@ def test_api_estimator_and_sustainability_fields_present():
     assert "co2_avoided_tonnes_per_year" in data["economics"]
     assert "co2_avoided_tonnes_per_year" in data["economics"]["sensitivity"]["base"]
 
+
+def test_api_ai_diagnostics_fields_present():
+    """Verify Layer 2 & 3 AI diagnostics are served live by /api/simulate."""
+    res = client.post("/api/simulate", json={"scenario": "SCENARIO_A"})
+    assert res.status_code == 200
+    data = res.json()
+    assert "ai_diagnostics" in data
+    ai = data["ai_diagnostics"]
+    assert "classifier" in ai
+    assert "wave_surrogate" in ai
+    assert "anomaly_detector" in ai
+    assert ai["classifier"]["predicted_class"] in (
+        "NORMAL_OPERATION", "ROD_FLOAT_PRECURSOR", "FLUID_POUND", "GAS_INTERFERENCE", "PARTED_ROD"
+    )
+    assert ai["wave_surrogate"]["inference_time_ms"] < 10.0
+    assert ai["anomaly_detector"]["status"] in ("NOMINAL", "ELEVATED", "CRITICAL")
+

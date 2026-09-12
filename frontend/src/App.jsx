@@ -288,6 +288,7 @@ export default function App() {
                   dynacard={simState.dynacard}
                   isBuckling={simState.is_buckling_active}
                   minTensionKn={simState.actual_min_tension_kn}
+                  aiDiagnostics={simState.ai_diagnostics}
                 />
               )}
 
