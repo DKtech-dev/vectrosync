@@ -20,7 +20,7 @@ Catenary bridges downhole thermal depletion, non-Newtonian emulsion rheology, el
 1. **Layer 1: State Estimation AI** — A Physics-Constrained Extended Kalman Filter (EKF) tracking volumetric reservoir cooling and apparent viscosity from standard wellhead surface sensors.
 2. **Layer 2: Perception & Diagnostic AI** —
    - **Dynacard Feature Classifier:** Extracts 16 SPE-standard geometric and Fourier harmonic descriptors, achieving **100.0% synthetic test accuracy** (projected 88–94% field recall under noise) across 5 operating classes (`NORMAL_OPERATION`, `ROD_FLOAT_PRECURSOR`, `FLUID_POUND`, `GAS_INTERFERENCE`, `PARTED_ROD`).
-   - **Telemetry Autoencoder:** An unsupervised bottleneck model monitoring the 5-channel SCADA stream, providing **100.0% fault recall** on injected decouplings (2.0% false alarm rate), detecting decoupling hours before threshold alarms.
+   - **Telemetry Autoencoder:** An unsupervised bottleneck model monitoring the 5-channel SCADA stream, providing **100.0% synthetic fault recall** on injected decouplings (2.0% synthetic false alarm rate; field validation pending), detecting decoupling hours before threshold alarms.
 3. **Layer 3: Predictive Operating-Point AI** — A Physics-Trained Neural Operating-Point Surrogate predicting 5 critical scalar load extrema in **5.89 $\mu$s** (~49,000× faster than 116-node finite-difference wave solvers) with **$R^2 = 0.9170$** for minimum downhole tension, enabling real-time edge MPC optimization.
 4. **Layer 4: Decision & Governance AI** — A Constraint-Aware Model Predictive Control (MPC) governor with soft quadratic slacks, modulating VFD speeds (1.0–5.5 SPM) to eliminate compressive rod float.
 

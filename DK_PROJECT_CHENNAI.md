@@ -232,7 +232,7 @@ To bridge the divide between theoretical elastodynamics and microsecond edge dep
 #### Measured Empirical Performance Summary (Measured on Host CPU via `time.perf_counter()`):
 - **Layer 2 Dynacard Classifier Accuracy:** **100.0%** across 100 held-out synthetic test cards (19 Normal, 18 Float Precursor, 20 Fluid Pound, 22 Gas Interference, 21 Parted Rod). Expected real-world field accuracy: 88.0%–94.0% due to dynamometer load cell drift, fluid inertia, and tubing friction harmonics.
 - **Layer 3 Neural Operating-Point Surrogate Speed & Fidelity:** **5.89 µs mean latency** (0.0059 ms), **$R^2 = 0.9170$** for downhole minimum tension, **6.19% normalized RMSE** vs. 116-node Gibbs wave solver. Predicts 5 scalar load extrema for the real-time MPC inner loop.
-- **Layer 2 Telemetry Autoencoder Reliability:** **100.0% detection recall** on injected thermal-viscous decoupling, **2.0% false alarm rate** on nominal operating data, **6.87 µs execution latency**.
+- **Layer 2 Telemetry Autoencoder Reliability:** **100.0% synthetic recall** on injected thermal-viscous decoupling, **2.0% synthetic false alarm rate** on nominal operating data, **6.87 µs execution latency**. Field validation pending.
 
 > [!NOTE]
 > **Defensibility & Gating Disclosure:**
@@ -377,7 +377,11 @@ Logical Verification Ladder (326 Tests Total):
 [ Tier 2: Boundary & Corner Cases        ] -> 50 tests (Singularity asymptotics, corrupted CSV, NaN, trips)
 [ Tier 1: Mathematical Component Unit   ] -> 186 tests (Wave MMS convergence, CFL stability, unit physics)
 TOTAL PASSING TEST COUNT                 -> 326 tests (100% pass rate in 80.99 seconds)
+```
 
+> **Architectural Taxonomy Note:** The logical verification ladder classifies tests by *what* they verify; the physical directory mapping classifies them by *where* they live. Root-level tests in `tests/*.py` span multiple logical tiers — e.g., `test_mpc_real_solver.py` is Tier 3 logically but lives at the root physically.
+
+```
 Physical Directory Mapping:
 • tests/tier1_feature_coverage/ (11 modules) ............ 96 tests
 • tests/tier2_boundary_corner_cases/ (9 modules) ......... 45 tests

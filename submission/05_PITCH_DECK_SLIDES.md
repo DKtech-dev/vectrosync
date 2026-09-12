@@ -46,7 +46,7 @@
 │  • Dynacard Feature Classifier: 16-D Geometric/Fourier Softmax Head    │
 │    (100.0% synthetic test accuracy, ~92% expected field recall)        │
 │  • Telemetry Autoencoder: 5-2-5 Bottleneck Subspace                    │
-│    (100.0% fault recall on decoupling, 2.0% false alarm rate on SCADA) │
+│    (100% synthetic recall; 2% synthetic FAR; field validation pending) │
 ├────────────────────────────────────────────────────────────────────────┤
 │  LAYER 1: STATE ESTIMATION & UNCERTAINTY AI                            │
 │  Physics-Constrained Extended Kalman Filter (EKF) + Bayesian Band      │
@@ -67,7 +67,7 @@
 - **Measured Results (Empirically Verified):**
   - **Dynacard Classifier Test Accuracy:** **100.0%** across 100 held-out test cards (synthetic benchmark; 88–94% projected under field noise).
   - **Operating-Point Surrogate Speed & Accuracy:** **5.89 $\mu$s latency** (< 0.01 ms), **$R^2 = 0.9170$** for minimum downhole tension, **6.19% NRMSE**.
-  - **Anomaly Detection Recall:** **100.0% fault recall**, **2.0% false alarm rate**, **6.87 $\mu$s execution time**.
+  - **Anomaly Detection Recall:** **100.0% synthetic recall**, **2.0% synthetic false alarm rate**, **6.87 $\mu$s execution time** (field validation pending).
   - **Codebase Health:** **326 automated pytest tests passing** (100% green across 5 rigorous tiers in 80.99s).
 - **Presenter Script:**
   > *"We take engineering defensibility seriously. Every number we present is backed by executable code in our repository. Our classifier was trained on 500 ground-truth elastodynamic cards and achieved 100% precision on held-out test data. We treat this as an algorithmic benchmark; in active fields, sensor noise will cause mild degradation to ~92%. Why geometric features instead of a black-box image CNN? Because petroleum production engineers require interpretable physics—our system explicitly explains that downstroke minimum load collapsed to -12 kN with a 24 kN·m compression integral, running in microseconds on standard industrial PLCs without GPU hardware."*
