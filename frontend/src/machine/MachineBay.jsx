@@ -328,7 +328,19 @@ export const MachineBay = forwardRef(function MachineBay(
         }
 
         /* ---- Buckling ---------------------------------------------------- */
-        const compressed = !stats.parted && Number.isFinite(minKn) && minKn < 0;
+        // The trigger itself is gated on checkLoadKn -- the EXACT checkpoint
+        // depth, matching "F @750 M" on the headline and predictedTaperTensionKn
+        // bit for bit. minKn (the deeper scan) is only used below, once this is
+        // already true, to size the severity/extent of the buckling drawing --
+        // never to decide whether the event is happening at all. With the real
+        // (non-synthetic) downhole card, some depth strictly below the taper top
+        // can dip more negative than the checkpoint itself even while the
+        // checkpoint stays positive; letting THAT drive "Compression" is exactly
+        // what made the governed branch flag a failure the headline denied.
+        // minKn's scan starts AT checkDepthM, so it is always <= checkLoadKn --
+        // whenever the checkpoint itself is negative, minKn is too, and stays a
+        // safe, meaningful magnitude for sizing the buckling drawing below.
+        const compressed = !stats.parted && Number.isFinite(checkLoadKn) && checkLoadKn < 0;
         const severity = compressed ? clamp(Math.abs(minKn) / 12, 0.08, 1) : 0;
         if (bucklePathRef.current) {
           if (compressed) {
