@@ -323,7 +323,7 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
       </div>
 
       {/* ---------------- headline comparison ---------------- */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-hairline border-b border-hairline">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-3.5 bg-surface-1">
         <Headline
           label="Commanded speed"
           a={`${fmt(baselineSpm, 2)} SPM`}
@@ -371,7 +371,7 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
       </div>
 
       {/* ---------------- the bays ---------------- */}
-      <div ref={hostRef} className={`grid gap-px bg-hairline ${mode === 'compare' ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+      <div ref={hostRef} className={`grid gap-3.5 p-3.5 bg-surface-1 ${mode === 'compare' ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
         {showA && (
           <BayFrame
             tone={partedA || baselineTaper < 0 ? 'critical' : baselineTaper < FLOOR_KN ? 'caution' : 'safe'}
@@ -585,7 +585,7 @@ function BayFrame({ tone, eyebrow, title, subtitle, state, profile, spm, icon, c
           </span>
         </div>
 
-        <dl className="grid grid-cols-4 gap-x-3 gap-y-1 mt-3.5 py-2 px-3 bg-surface-2 rounded border border-hairline">
+        <dl className="grid grid-cols-4 gap-x-4 gap-y-1.5 mt-3 py-2.5 px-3.5 bg-surface-2 rounded-md">
           <Cell label="Speed" value={fmt(spm, 2)} unit="SPM" />
           <Cell
             label="Tension @ 750 m"
@@ -622,17 +622,15 @@ function BayFrame({ tone, eyebrow, title, subtitle, state, profile, spm, icon, c
           </p>
         )}
       </header>
-      <div className="p-2 bg-surface-2">{children}</div>
+      <div className="p-3 bg-surface-2">{children}</div>
     </div>
   );
 }
 
 /**
  * HERO INSTRUMENT GAUGE:
- * Full-width, high-visibility 28px instrument gauge with explicitly shaded physical zones:
- * - Red zone (< 0 kN): Rod string in helical buckling / compression
- * - Amber zone (0 to +0.50 kN): Degraded anti-float margin
- * - Green zone (>= +0.50 kN): Fully protected axial tension operating envelope
+ * Recessed physical instrument dial trough with shaded physical zones,
+ * gliding pointer needle, and clean external rulers (zero text cramming inside the bar).
  */
 function TensionGauge({ value, domain, floor, compressed }) {
   const [lo, hi] = domain;
@@ -642,93 +640,123 @@ function TensionGauge({ value, domain, floor, compressed }) {
   const valuePct = Number.isFinite(value) ? pct(value) : null;
   const deltaFromFloor = Number.isFinite(value) ? value - floor : null;
   const isSafe = Number.isFinite(value) && value >= floor;
+  const isLowMargin = !compressed && !isSafe;
+
+  const stateLabel = compressed
+    ? 'Compression (< 0 kN)'
+    : isLowMargin
+      ? 'Low margin buffer'
+      : 'Safe envelope';
+  const stateTone = compressed
+    ? 'tone-critical text-critical'
+    : isLowMargin
+      ? 'tone-caution text-caution'
+      : 'tone-safe text-safe';
+  const needleTone = compressed
+    ? 'bg-critical'
+    : isLowMargin
+      ? 'bg-caution'
+      : 'bg-safe';
 
   return (
-    <div className="mt-3.5 pt-3 border-t border-hairline">
-      <div className="flex items-baseline justify-between mb-1.5">
+    <div className="mt-3.5 pt-3 border-t border-hairline/60">
+      {/* Instrument Header: Label + Active Zone Badge + Live Tabular Delta */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 mb-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-ink">Axial tension gauge</span>
           <span className="text-[11px] text-muted">(750 m taper checkpoint)</span>
         </div>
-        <div className="flex items-baseline gap-1.5">
-          <span className={`text-base font-bold font-mono ${compressed ? 'text-critical' : isSafe ? 'text-safe' : 'text-caution'}`}>
-            {Number.isFinite(value) ? `${value >= 0 ? '+' : ''}${value.toFixed(2)} kN` : '—'}
+        <div className="flex items-center gap-2">
+          <span className={`pill ${stateTone} text-[10.5px] py-0.5 px-2`}>
+            <span className="chip-dot" />
+            {stateLabel}
           </span>
-          {deltaFromFloor !== null && (
-            <span className="text-[11px] font-mono text-muted">
-              ({deltaFromFloor >= 0 ? `+${deltaFromFloor.toFixed(2)} margin` : `${deltaFromFloor.toFixed(2)} deficit`})
+          <div className="flex items-baseline gap-1 font-mono">
+            <span className={`text-base font-bold ${compressed ? 'text-critical' : isSafe ? 'text-safe' : 'text-caution'}`}>
+              {Number.isFinite(value) ? `${value >= 0 ? '+' : ''}${value.toFixed(2)} kN` : '—'}
             </span>
-          )}
+            {deltaFromFloor !== null && (
+              <span className="text-[11px] text-muted">
+                ({deltaFromFloor >= 0 ? `+${deltaFromFloor.toFixed(2)} margin` : `${deltaFromFloor.toFixed(2)} deficit`})
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Hero Physical Instrument Gauge Bar */}
-      <div className="relative h-7 rounded-sm overflow-hidden bg-surface-3 border border-hairline">
-        {/* Compression shaded zone (< 0 kN) */}
+      {/* Recessed Physical Instrument Dial Trough (28px) */}
+      <div className="relative h-7 rounded instrument-trough">
+        {/* Shaded Zone 1: Helical Buckling / Compression (< 0 kN) */}
         <div
-          className="absolute inset-y-0 left-0 flex items-center justify-center overflow-hidden"
-          style={{ width: zeroPct, background: 'rgba(185, 28, 28, 0.16)' }}
-        >
-          <span className="text-[10px] font-semibold text-critical tracking-tight select-none opacity-85 px-1 truncate">
-            COMPRESSION (&lt; 0 kN)
-          </span>
-        </div>
+          className="absolute inset-y-0 left-0"
+          style={{ width: zeroPct, background: 'rgba(185, 28, 28, 0.18)' }}
+          title="Helical buckling compression zone (< 0 kN)"
+        />
 
-        {/* Low margin buffer zone (0 to +0.50 kN) */}
+        {/* Shaded Zone 2: Anti-Float Margin Buffer (0 to +0.50 kN) */}
         <div
-          className="absolute inset-y-0 flex items-center justify-center overflow-hidden"
+          className="absolute inset-y-0"
           style={{
             left: zeroPct,
             width: `calc(${floorPct} - ${zeroPct})`,
-            background: 'rgba(180, 83, 9, 0.18)',
+            background: 'rgba(180, 83, 9, 0.22)',
           }}
-        >
-          <span className="text-[9.5px] font-semibold text-caution tracking-tight select-none opacity-90 px-0.5 truncate">
-            MARGIN
-          </span>
-        </div>
+          title={`Anti-float buffer margin (0 to +${floor.toFixed(2)} kN)`}
+        />
 
-        {/* Safe tension operating zone (>= +0.50 kN) */}
+        {/* Shaded Zone 3: Safe Operating Envelope (>= +0.50 kN) */}
         <div
-          className="absolute inset-y-0 right-0 flex items-center justify-start pl-2 overflow-hidden"
+          className="absolute inset-y-0 right-0"
           style={{
             left: floorPct,
-            background: 'rgba(21, 128, 61, 0.13)',
+            background: 'rgba(21, 128, 61, 0.14)',
           }}
-        >
-          <span className="text-[10px] font-semibold text-safe tracking-tight select-none opacity-85 truncate">
-            SAFE ENVELOPE (&ge; +{floor.toFixed(2)} kN)
-          </span>
-        </div>
+          title={`Safe axial tension operating envelope (>= +${floor.toFixed(2)} kN)`}
+        />
 
-        {/* Vertical boundary rules */}
+        {/* Boundary Pin: 0.00 kN Neutral Point */}
         <div
-          className="absolute inset-y-0 w-0.5 bg-critical z-10"
+          className="absolute inset-y-0 w-[1.5px] bg-critical/90 z-10 pointer-events-none"
           style={{ left: zeroPct }}
           title="0.00 kN neutral point"
         />
+
+        {/* Boundary Pin: +0.50 kN Anti-Float Threshold */}
         <div
-          className="absolute inset-y-0 w-0.5 bg-caution z-10"
+          className="absolute inset-y-0 w-[1.5px] bg-caution/90 z-10 pointer-events-none"
           style={{ left: floorPct }}
           title={`+${floor.toFixed(2)} kN anti-float threshold`}
         />
 
-        {/* High-contrast precision needle / cursor */}
+        {/* Gliding High-Contrast Pointer Needle */}
         {valuePct !== null && (
           <div
-            className="absolute inset-y-0 z-20 pointer-events-none -translate-x-1/2"
+            className="absolute inset-y-0 z-20 pointer-events-none -translate-x-1/2 transition-[left] duration-300 ease-out"
             style={{ left: valuePct }}
           >
-            <div className={`w-1 h-full shadow-sm ${compressed ? 'bg-critical' : isSafe ? 'bg-safe' : 'bg-caution'}`} />
+            {/* Top Indicator Triangle Head */}
+            <div
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-x-[4px] border-x-transparent border-t-[5px]"
+              style={{
+                borderTopColor: compressed
+                  ? 'rgb(var(--accent-critical))'
+                  : isSafe
+                    ? 'rgb(var(--accent-safe))'
+                    : 'rgb(var(--accent-caution))',
+              }}
+            />
+            {/* Vertical Needle Line */}
+            <div className={`w-[2px] h-full mx-auto shadow-sm ${needleTone}`} />
           </div>
         )}
       </div>
 
-      {/* Axis Scale Labels */}
-      <div className="flex items-center justify-between mt-1 text-[11px] font-mono text-muted">
+      {/* Clean Physical Scale Ruler */}
+      <div className="flex items-center justify-between mt-1.5 text-[11px] font-mono text-muted">
         <span>{lo.toFixed(0)} kN min</span>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <span className="text-critical font-medium">0 kN (neutral)</span>
+          <span className="text-muted">·</span>
           <span className="text-caution font-medium">+{floor.toFixed(2)} kN floor</span>
         </div>
         <span>+{hi.toFixed(0)} kN max</span>
@@ -774,14 +802,14 @@ function Cell({ label, value, unit, bad }) {
 
 function Headline({ label, a, b, note, aBad, bBad }) {
   return (
-    <div className="bg-surface-2 px-4 py-3">
-      <div className="text-xs font-medium text-muted">{label}</div>
-      <div className="flex items-baseline gap-2 mt-1">
-        <span className={`readout text-base font-bold ${aBad ? 'text-critical' : 'text-muted'}`}>{a}</span>
+    <div className="bg-surface-2 rounded-lg px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+      <div className="text-xs font-semibold text-muted">{label}</div>
+      <div className="flex items-baseline gap-2 mt-1.5 whitespace-nowrap">
+        <span className={`readout text-base font-bold ${aBad ? 'text-critical' : 'text-primary'}`}>{a}</span>
         <span className="text-muted text-xs">→</span>
         <span className={`readout text-base font-bold ${bBad ? 'text-critical' : 'text-safe'}`}>{b}</span>
       </div>
-      <div className="caption mt-1 text-[11px] text-muted">{note}</div>
+      <div className="caption mt-1.5 text-[11px] text-muted leading-tight">{note}</div>
     </div>
   );
 }

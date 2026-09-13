@@ -948,16 +948,16 @@ function buildStaticGeometry({ fluidLevelM, uid, fx, tone = 'signal' }) {
   /* ---------------- part key (replaces all inline surface captions) ------ */
   const partKey = (
     <g>
-      <rect x="2" y="44" width="84" height={20 + PART_KEY.length * 10.5} rx="3" fill="rgb(var(--bg-canvas))" fillOpacity="0.72" stroke={hair} strokeWidth="0.5" />
-      <text x="7" y="55" fontSize="5.4" fill={faint} letterSpacing="0.13em">
-        PART KEY
+      <rect x="2" y="44" width="86" height={16 + PART_KEY.length * 10} rx="3" fill="rgb(var(--bg-canvas))" fillOpacity="0.90" stroke={hair} strokeWidth="0.5" />
+      <text x="7" y="54" fontSize="5.4" fill="rgb(var(--text-primary))" fontWeight="600">
+        Part key
       </text>
       {PART_KEY.map(([n, label], i) => (
         <g key={n}>
-          <text x="7" y={66 + i * 10.5} fontSize="4.6" fill="rgb(var(--text-secondary))" fontWeight="600">
+          <text x="7" y={64 + i * 10} fontSize="4.6" fill="rgb(var(--text-secondary))" fontWeight="600">
             {n}
           </text>
-          <text x="19" y={66 + i * 10.5} fontSize="4.6" fill={faint}>
+          <text x="18" y={64 + i * 10} fontSize="4.6" fill={faint}>
             {label}
           </text>
         </g>

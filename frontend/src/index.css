@@ -17,19 +17,20 @@
 
 :root,
 [data-theme='light'] {
-  --bg-canvas: 242 244 247;          /* #F2F4F7  cool architectural paper tone */
-  --bg-surface-1: 232 236 241;       /* #E8ECF1  elevated instrument deck */
-  --bg-surface-2: 255 255 255;       /* #FFFFFF  high-contrast reading well / drawing bed */
-  --bg-surface-3: 221 227 234;       /* #DDE3EA  recessed track / control well */
-  --border-hairline: 209 215 224;    /* #D1D7E0  scale boundaries / subtle divider */
+  --bg-canvas: 244 245 247;          /* #F4F5F7  cool technical paper canvas */
+  --bg-surface-1: 234 237 241;       /* #EAEDF1  structural module panel surface */
+  --bg-surface-2: 255 255 255;       /* #FFFFFF  elevated reading well / drawing bed */
+  --bg-surface-3: 223 227 232;       /* #DFE3E8  recessed instrument dial track */
+  --border-hairline: 218 222 229;    /* #DADE05  subtle divider when physically needed */
   --border-strong: 180 190 205;      /* #B4BEC0  physical structural boundary */
 
   --text-primary: 11 18 28;          /* #0B121C  hero numbers, dense near-black */
   --text-secondary: 51 65 85;        /* #334155  standard body, labels, explanations */
   --text-tertiary: 100 116 139;      /* #64748B  technical units, captions, ticks */
 
-  --accent-interactive: 30 58 138;   /* #1E3A8A  restrained technical navy */
-  --accent-interactive-soft: 59 130 246;
+  --accent-hero: 2 132 199;          /* #0284C7  precision cyan reserved ONLY for hero SPM */
+  --accent-interactive: 2 132 199;   /* #0284C7 */
+  --accent-interactive-soft: 56 189 248;
   --accent-safe: 21 128 61;          /* #15803D  desaturated precision emerald */
   --accent-caution: 180 83 9;        /* #B45309  technical amber / low margin */
   --accent-critical: 185 28 28;      /* #B91C1C  industrial carmine / buckle fault */
@@ -42,10 +43,10 @@
 
   --shadow-card: none;
   --shadow-float: 0 4px 16px -4px rgb(15 23 42 / 0.08);
-  --shadow-inset: none;
+  --shadow-inset: inset 0 1.5px 3px rgba(0, 0, 0, 0.08);
 
-  --skeleton-base: 232 236 241;
-  --skeleton-sheen: 242 244 247;
+  --skeleton-base: 234 237 241;
+  --skeleton-sheen: 244 245 247;
   color-scheme: light;
 }
 
@@ -170,22 +171,31 @@
   .card-flat {
     position: relative;
     background-color: rgb(var(--bg-surface-1));
-    border: 1px solid rgb(var(--border-hairline));
-    border-radius: 6px;
+    border: none;
+    border-radius: 8px;
     box-shadow: none;
   }
   .panel-nested,
   .panel-inset,
   .card-nested {
     background-color: rgb(var(--bg-surface-2));
-    border: 1px solid rgb(var(--border-hairline));
-    border-radius: 4px;
+    border: none;
+    border-radius: 6px;
   }
   .well {
     background-color: rgb(var(--bg-surface-2));
-    border: 1px solid rgb(var(--border-hairline));
-    border-radius: 4px;
+    border: none;
+    border-radius: 6px;
     box-shadow: none;
+  }
+
+  /* Recessed instrument trough with physical inset shadow */
+  .instrument-trough {
+    background-color: rgb(var(--bg-surface-3));
+    box-shadow: var(--shadow-inset);
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
   }
 
   /* Header strip that sits flush at the top of a panel. */
@@ -194,8 +204,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 14px;
-    border-bottom: 1px solid rgb(var(--border-hairline));
+    padding: 12px 18px;
+    border-bottom: 1px solid rgb(var(--border-hairline) / 0.6);
     background-color: rgb(var(--bg-surface-1));
   }
 
@@ -275,6 +285,19 @@
     font-weight: 600;
     letter-spacing: -0.045em;
     line-height: 1;
+  }
+  .metric-advised-hero {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'zero' 1;
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    color: rgb(var(--accent-hero));
+  }
+  .text-hero {
+    color: rgb(var(--accent-hero));
   }
   .metric-secondary {
     font-family: 'JetBrains Mono', ui-monospace, monospace;

@@ -113,9 +113,9 @@ export function ScadaHeader({
   };
 
   return (
-    <header className="bg-surface-1 border-b border-hairline">
+    <header className="bg-surface-1">
       {/* --- Top Bar: Identity & Supervisory Status --- */}
-      <div className="px-5 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-hairline bg-surface-1">
+      <div className="px-5 lg:px-6 py-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-surface-1">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-ink">Well 14</span>
@@ -158,21 +158,21 @@ export function ScadaHeader({
       </div>
 
       {/* --- Main Instrument Strip: Primary Hero Advised SPM & Functional Controls --- */}
-      <div className="px-5 lg:px-6 py-3 bg-surface-2 flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+      <div className="px-5 lg:px-6 py-3.5 bg-surface-2 flex flex-wrap items-center justify-between gap-x-8 gap-y-4 shadow-sm">
         {/* PRIMARY HERO: Advised Pump Speed */}
         <div className="flex items-baseline gap-4 min-w-[220px]">
           <div>
-            <div className="text-xs font-medium text-muted">Advised pump speed</div>
+            <div className="text-xs font-semibold text-muted">Advised pump speed</div>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-4xl lg:text-5xl font-bold font-mono text-ink tracking-tight">
+              <span className="text-4xl lg:text-5xl font-bold font-mono text-hero tracking-tight">
                 {spmText}
               </span>
-              <span className="text-sm font-medium text-muted font-mono">SPM</span>
+              <span className="text-sm font-bold text-muted font-mono">SPM</span>
             </div>
           </div>
-          <div className="text-xs text-muted leading-tight border-l border-hairline pl-3 py-0.5">
-            <div>Solve latency: <span className="font-mono text-ink font-medium">{solveText} ms</span></div>
-            <div className="text-[11px] text-faint mt-0.5">
+          <div className="text-xs text-muted leading-tight border-l border-hairline/60 pl-3.5 py-0.5">
+            <div>Solve latency: <span className="font-mono text-ink font-semibold">{solveText} ms</span></div>
+            <div className="text-[11px] text-muted mt-0.5">
               {solverType === 'transient' ? 'Transient wave PDE' : 'Closed-form surrogate'}
             </div>
           </div>
