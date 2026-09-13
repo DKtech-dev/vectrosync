@@ -193,6 +193,17 @@ export const MachineBay = forwardRef(function MachineBay(
         const st = surfaceState(phase, spm, strokeM);
         const tiltDeg = st.beamTiltDeg;
         const stats = statsRef.current;
+        // Every failure indicator below (rod float, buckling, compression
+        // cycles, wall wear, the "Compression" pill) is gated on THIS depth --
+        // the same 750 m taper checkpoint the governor's own anti-float floor
+        // protects, and the same one MachineTheatre's headline text uses for
+        // "String in compression". The profile's raw depth-0 minimum is an
+        // anchoring artifact (see wellModel.js: only the surface PEAK is
+        // calibrated, never its trough) that goes negative at unrealistically
+        // low speed on BOTH branches alike, which used to make every failure
+        // animation fire identically for governed and ungoverned. Gating here
+        // instead makes the drawing agree with the numbers next to it.
+        const checkDepthM = profile?.checkDepthM ?? 750;
 
         // Walking beam + horsehead rotate rigidly about the saddle bearing.
         beamRef.current?.setAttribute('transform', `rotate(${tiltDeg} ${SADDLE.x} ${SADDLE.y})`);
@@ -216,17 +227,18 @@ export const MachineBay = forwardRef(function MachineBay(
           pitmanCapRef.current.setAttribute('cy', py);
         }
 
-        /* ---- Surface rod float --------------------------------------------
-           The instantaneous polished-rod load. Below zero the bridle cannot
-           push, so the clamp + rod can no longer be dragged down at the
-           beam's commanded rate: it lags, opening a real gap below the
-           (still rigid) carrier bar, until tension returns and it slams
-           shut again. */
-        const surfaceLoadKn = profile ? profile.force(0, phase) : NaN;
-        const floating = Number.isFinite(surfaceLoadKn) && surfaceLoadKn < 0;
+        /* ---- Rod float, animated at the surface -----------------------------
+           Driven by the checkpoint tension, not the raw polished-rod load: when
+           the string goes into compression at the taper the governor actually
+           protects, the bridle can no longer stay taut all the way to surface,
+           so the clamp + rod lag behind the beam's commanded rate, opening a
+           real gap below the (still rigid) carrier bar, until tension returns
+           and it slams shut again. */
+        const checkLoadKn = profile ? profile.force(checkDepthM, phase) : NaN;
+        const floating = Number.isFinite(checkLoadKn) && checkLoadKn < 0;
         const flt = floatRef.current;
         const MAX_LAG = 5.5; // scene units, ~6 in of real clamp travel
-        const targetLag = floating ? clamp(Math.abs(surfaceLoadKn) / 6, 0, 1) * MAX_LAG : 0;
+        const targetLag = floating ? clamp(Math.abs(checkLoadKn) / 4, 0, 1) * MAX_LAG : 0;
         const approachRate = floating ? 9 : 30; // opens gradually, snaps shut fast
         flt.lag += (targetLag - flt.lag) * clamp(dtS * approachRate, 0, 1);
         const justImpacted = flt.wasFloating && !floating && flt.lag > 0.05;
@@ -273,15 +285,23 @@ export const MachineBay = forwardRef(function MachineBay(
         strokeMarkRef.current?.setAttribute('transform', `translate(0 ${(carrierY - TANGENT.y).toFixed(2)})`);
 
         /* ---- Axial force profile ---------------------------------------- */
+        // The curve itself is still drawn over the FULL column -- that is a
+        // faithful plot of the reconstruction, off-model excursion and all,
+        // and the panel already labels where it goes off-model ("clipped" /
+        // validity note). But minKn/neutralM, which decide whether the string
+        // is treated as BUCKLED, only look from checkDepthM down to the pump:
+        // see the comment above checkDepthM for why the shallow column can't
+        // be trusted for that decision.
         let minKn = NaN;
         let neutralM = null;
         if (profile && !stats.parted) {
           let path = '';
           for (let dd = 0; dd <= WELL.totalDepthM; dd += 25) {
             const f = profile.force(dd, phase);
+            path += `${path ? 'L' : 'M'}${fx(f).toFixed(1)},${depthY(dd).toFixed(1)}`;
+            if (dd < checkDepthM) continue;
             if (!Number.isNaN(f) && (Number.isNaN(minKn) || f < minKn)) minKn = f;
             if (f < 0 && neutralM === null) neutralM = dd;
-            path += `${path ? 'L' : 'M'}${fx(f).toFixed(1)},${depthY(dd).toFixed(1)}`;
           }
           forceCurveRef.current?.setAttribute('d', path);
           forceCurveRef.current?.setAttribute('opacity', '1');
@@ -312,7 +332,7 @@ export const MachineBay = forwardRef(function MachineBay(
         const severity = compressed ? clamp(Math.abs(minKn) / 12, 0.08, 1) : 0;
         if (bucklePathRef.current) {
           if (compressed) {
-            const top = neutralM ?? 750;
+            const top = neutralM ?? checkDepthM;
             const buck = helicalBuckling(Math.abs(minKn), Math.max(top, 760));
             // Drawn at a decimated spatial frequency: the true pitch is
             // sub-pixel here. The detail window below carries the true pitch.
@@ -347,7 +367,7 @@ export const MachineBay = forwardRef(function MachineBay(
             stats.contactMetreStrokes += contactM * (spm / 60) * dtS * simSpeed;
           }
           if (profile) {
-            const sigma750 = axialStressMpa(profile.force(750, phase), 750);
+            const sigma750 = axialStressMpa(profile.force(checkDepthM, phase), checkDepthM);
             if (Number.isFinite(sigma750)) {
               cyc.sigmaMax = Math.max(cyc.sigmaMax, sigma750);
               cyc.sigmaMin = Math.min(cyc.sigmaMin, sigma750);
@@ -480,7 +500,7 @@ export const MachineBay = forwardRef(function MachineBay(
           svOpen,
           travelRatio,
           plungerFraction: pf,
-          surfaceLoadKn,
+          checkLoadKn,
           floating,
           floatLag: flt.lag,
           compressionCycles: stats.compressionCycles,
