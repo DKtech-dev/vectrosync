@@ -15,8 +15,41 @@
       full-fidelity "technical paper" alternate, not an afterthought.
    ========================================================================== */
 
-[data-theme='dark'],
-:root {
+:root,
+[data-theme='light'] {
+  --bg-canvas: 242 244 247;          /* #F2F4F7  cool architectural paper tone */
+  --bg-surface-1: 232 236 241;       /* #E8ECF1  elevated instrument deck */
+  --bg-surface-2: 255 255 255;       /* #FFFFFF  high-contrast reading well / drawing bed */
+  --bg-surface-3: 221 227 234;       /* #DDE3EA  recessed track / control well */
+  --border-hairline: 209 215 224;    /* #D1D7E0  scale boundaries / subtle divider */
+  --border-strong: 180 190 205;      /* #B4BEC0  physical structural boundary */
+
+  --text-primary: 11 18 28;          /* #0B121C  hero numbers, dense near-black */
+  --text-secondary: 51 65 85;        /* #334155  standard body, labels, explanations */
+  --text-tertiary: 100 116 139;      /* #64748B  technical units, captions, ticks */
+
+  --accent-interactive: 30 58 138;   /* #1E3A8A  restrained technical navy */
+  --accent-interactive-soft: 59 130 246;
+  --accent-safe: 21 128 61;          /* #15803D  desaturated precision emerald */
+  --accent-caution: 180 83 9;        /* #B45309  technical amber / low margin */
+  --accent-critical: 185 28 28;      /* #B91C1C  industrial carmine / buckle fault */
+  --accent-thermal: 194 65 12;       /* #C2410C  thermal marker */
+
+  --grid-line: 15 23 42;
+  --grid-alpha: 0.02;
+  --sheen: 15 23 42;
+  --sheen-alpha: 0.0;
+
+  --shadow-card: none;
+  --shadow-float: 0 4px 16px -4px rgb(15 23 42 / 0.08);
+  --shadow-inset: none;
+
+  --skeleton-base: 232 236 241;
+  --skeleton-sheen: 242 244 247;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
   --bg-canvas: 6 8 12;          /* #06080C  the void behind the instrument   */
   --bg-surface-1: 13 17 23;     /* #0D1117  panel body                        */
   --bg-surface-2: 18 24 33;     /* #121821  inset well / nested               */
@@ -40,46 +73,13 @@
   --sheen: 255 255 255;
   --sheen-alpha: 0.045;
 
-  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.02) inset, 0 12px 32px -18px rgb(0 0 0 / 0.9);
-  --shadow-float: 0 32px 64px -24px rgb(0 0 0 / 0.85), 0 2px 8px -2px rgb(0 0 0 / 0.6);
-  --shadow-inset: inset 0 1px 2px 0 rgb(0 0 0 / 0.5);
+  --shadow-card: none;
+  --shadow-float: 0 16px 36px -12px rgb(0 0 0 / 0.7);
+  --shadow-inset: none;
 
   --skeleton-base: 18 24 33;
   --skeleton-sheen: 34 45 61;
   color-scheme: dark;
-}
-
-[data-theme='light'] {
-  --bg-canvas: 232 235 240;
-  --bg-surface-1: 255 255 255;
-  --bg-surface-2: 244 246 249;
-  --bg-surface-3: 235 239 244;
-  --border-hairline: 219 225 233;
-  --border-strong: 190 200 213;
-
-  --text-primary: 12 18 28;
-  --text-secondary: 88 102 120;
-  --text-tertiary: 124 138 156;
-
-  --accent-interactive: 0 124 173;
-  --accent-interactive-soft: 0 150 208;
-  --accent-safe: 8 145 116;
-  --accent-caution: 181 116 8;
-  --accent-critical: 208 41 52;
-  --accent-thermal: 199 91 12;
-
-  --grid-line: 15 23 42;
-  --grid-alpha: 0.035;
-  --sheen: 15 23 42;
-  --sheen-alpha: 0.02;
-
-  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 8px 24px -16px rgb(15 23 42 / 0.18);
-  --shadow-float: 0 24px 56px -20px rgb(15 23 42 / 0.22), 0 2px 6px -2px rgb(15 23 42 / 0.08);
-  --shadow-inset: inset 0 1px 2px 0 rgb(15 23 42 / 0.06);
-
-  --skeleton-base: 236 239 244;
-  --skeleton-sheen: 250 251 253;
-  color-scheme: light;
 }
 
 @layer base {
@@ -164,8 +164,6 @@
   }
 
   /* ---- Surfaces --------------------------------------------------------- */
-  /* One card primitive. `.card`/`.panel` are the same thing on purpose so
-     legacy markup and new markup can never drift apart again. */
   .panel,
   .card,
   .panel-hero,
@@ -173,21 +171,21 @@
     position: relative;
     background-color: rgb(var(--bg-surface-1));
     border: 1px solid rgb(var(--border-hairline));
-    border-radius: 10px;
-    box-shadow: var(--shadow-card);
+    border-radius: 6px;
+    box-shadow: none;
   }
   .panel-nested,
   .panel-inset,
   .card-nested {
     background-color: rgb(var(--bg-surface-2));
     border: 1px solid rgb(var(--border-hairline));
-    border-radius: 7px;
+    border-radius: 4px;
   }
   .well {
-    background-color: rgb(var(--bg-canvas));
+    background-color: rgb(var(--bg-surface-2));
     border: 1px solid rgb(var(--border-hairline));
-    border-radius: 7px;
-    box-shadow: var(--shadow-inset);
+    border-radius: 4px;
+    box-shadow: none;
   }
 
   /* Header strip that sits flush at the top of a panel. */
@@ -198,7 +196,7 @@
     gap: 12px;
     padding: 10px 14px;
     border-bottom: 1px solid rgb(var(--border-hairline));
-    background: linear-gradient(180deg, rgb(var(--sheen) / var(--sheen-alpha)), transparent);
+    background-color: rgb(var(--bg-surface-1));
   }
 
   /* Corner registration ticks — reads as an engineering drawing frame. */
@@ -208,7 +206,7 @@
     position: absolute;
     width: 7px;
     height: 7px;
-    border-color: rgb(var(--accent-interactive) / 0.55);
+    border-color: rgb(var(--border-strong));
     pointer-events: none;
   }
   .registered::before {
@@ -216,33 +214,33 @@
     left: -1px;
     border-top: 1px solid;
     border-left: 1px solid;
-    border-top-left-radius: 10px;
+    border-top-left-radius: 6px;
   }
   .registered::after {
     bottom: -1px;
     right: -1px;
     border-bottom: 1px solid;
     border-right: 1px solid;
-    border-bottom-right-radius: 10px;
+    border-bottom-right-radius: 6px;
   }
 
   /* ---- Typography ------------------------------------------------------- */
   .eyebrow {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgb(var(--text-tertiary));
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    text-transform: none;
+    color: rgb(var(--text-secondary));
   }
   .panel-title,
   .card-title,
   .section-title {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: -0.005em;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
     color: rgb(var(--text-primary));
-    line-height: 1.3;
+    line-height: 1.35;
   }
   .display-title {
     font-family: 'Instrument Serif', Georgia, serif;
@@ -252,10 +250,10 @@
   }
   .unit-label {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
     color: rgb(var(--text-tertiary));
   }
   .caption {
@@ -306,16 +304,16 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 3px 8px;
-    border-radius: 5px;
+    padding: 2.5px 8px;
+    border-radius: 4px;
     border: 1px solid rgb(var(--border-hairline));
     background: rgb(var(--bg-surface-2));
     color: rgb(var(--text-secondary));
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
     white-space: nowrap;
     line-height: 1.4;
   }

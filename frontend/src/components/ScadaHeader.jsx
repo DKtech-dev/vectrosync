@@ -114,16 +114,28 @@ export function ScadaHeader({
 
   return (
     <header className="bg-surface-1 border-b border-hairline">
-      {/* -- Row 1: asset identity + supervisory state + primary action ----- */}
-      <div className="px-5 lg:px-6 py-3.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+      {/* --- Top Bar: Identity & Supervisory Status --- */}
+      <div className="px-5 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-hairline bg-surface-1">
         <div className="min-w-0">
-          <p className="eyebrow truncate">WELL 14 · BAGHEWALA SECTOR · JODHPUR SANDSTONE · 1150 M TVD</p>
-          <h1 className="text-[18px] font-extrabold tracking-[-0.02em] text-ink leading-tight mt-0.5 truncate">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-ink">Well 14</span>
+            <span className="text-xs text-muted">/</span>
+            <span className="text-xs text-muted">Baghewala Heavy Oil Sector</span>
+            <span className="text-xs text-faint hidden sm:inline">(1,150 m Jodhpur Sandstone)</span>
+          </div>
+          <h1 className="text-base font-bold text-ink tracking-tight mt-0.5 truncate">
             {activeLabel}
           </h1>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Telemetry link status */}
+          <span className={`pill ${linkTone}`}>
+            <span className={`chip-dot ${isWsLive && !isModbusSevered ? 'vs-live-dot' : ''}`} aria-hidden="true" />
+            {linkLabel}
+          </span>
+
+          {/* Supervisory state badge */}
           <span
             key={level}
             role="status"
@@ -137,44 +149,49 @@ export function ScadaHeader({
             )}
             {levelLabel}
           </span>
-          {failsafeLevel ? (
-            <span className="pill hidden xl:inline-flex" title="Raw failsafe enum reported by the supervisor">
-              {failsafeLevel}
-            </span>
-          ) : null}
 
-          <button type="button" onClick={onToggleDrawer} className="btn btn-primary">
-            <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+          <button type="button" onClick={onToggleDrawer} className="btn btn-primary ml-1 text-xs">
+            <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
             <span className="hidden sm:inline">Case inputs</span>
           </button>
         </div>
       </div>
 
-      {/* -- Row 2: readout strip ------------------------------------------- */}
-      <div className="px-5 lg:px-6 py-2.5 border-t border-hairline blueprint-fine">
-        <div className="flex flex-wrap items-end gap-x-7 gap-y-3">
-        <Readout
-          label="ADVISED SPM"
-          value={spmText}
-          unit="spm"
-          tone={isNum(currentSpm) ? 'text-interactive' : 'text-faint'}
-        />
-        <Readout label="SOLVE TIME" value={solveText} unit="ms" describedBy="solver-help" />
+      {/* --- Main Instrument Strip: Primary Hero Advised SPM & Functional Controls --- */}
+      <div className="px-5 lg:px-6 py-3 bg-surface-2 flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+        {/* PRIMARY HERO: Advised Pump Speed */}
+        <div className="flex items-baseline gap-4 min-w-[220px]">
+          <div>
+            <div className="text-xs font-medium text-muted">Advised pump speed</div>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-4xl lg:text-5xl font-bold font-mono text-ink tracking-tight">
+                {spmText}
+              </span>
+              <span className="text-sm font-medium text-muted font-mono">SPM</span>
+            </div>
+          </div>
+          <div className="text-xs text-muted leading-tight border-l border-hairline pl-3 py-0.5">
+            <div>Solve latency: <span className="font-mono text-ink font-medium">{solveText} ms</span></div>
+            <div className="text-[11px] text-faint mt-0.5">
+              {solverType === 'transient' ? 'Transient wave PDE' : 'Closed-form surrogate'}
+            </div>
+          </div>
+        </div>
 
+        {/* Solver Mode Segmented Toggle */}
         <div className="flex flex-col gap-1">
-          <span className="eyebrow">SOLVER MODE</span>
+          <span className="text-xs font-medium text-muted">Solver fidelity</span>
           <div className="segmented" role="group" aria-label="Solver mode">
             {SOLVERS.map((s) => (
               <button
                 key={s.id}
                 type="button"
                 aria-pressed={solverType === s.id}
-                aria-describedby="solver-help"
                 disabled={loading}
                 onClick={() => {
                   if (solverType !== s.id) onToggleSolverType?.();
                 }}
-                className="segmented-item"
+                className="segmented-item text-xs"
               >
                 {s.label}
               </button>
@@ -182,16 +199,31 @@ export function ScadaHeader({
           </div>
         </div>
 
+        {/* Operational Scenario Dispatch */}
         <div className="flex flex-col gap-1">
-          <span className="eyebrow">TELEMETRY LINK</span>
-          <span className={`pill ${linkTone}`}>
-            <span className={`chip-dot ${isWsLive && !isModbusSevered ? 'vs-live-dot' : ''}`} aria-hidden="true" />
-            {linkLabel}
-          </span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-muted">Operating scenario</span>
+            {loading && <span className="text-[11px] text-muted animate-pulse">Re-solving…</span>}
+          </div>
+          <div className="segmented" role="group" aria-label="Scenario presets">
+            {SCENARIOS.map((sc) => (
+              <button
+                type="button"
+                key={sc.id}
+                aria-pressed={scenarioId === sc.id}
+                onClick={() => onApplyScenario?.(sc.id)}
+                disabled={loading}
+                className="segmented-item text-xs"
+              >
+                {sc.label}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {/* Animation Transport */}
         <div className="flex flex-col gap-1 ml-auto">
-          <span className="eyebrow">PLAYBACK</span>
+          <span className="text-xs font-medium text-muted">Animation clock</span>
           <div className="segmented" role="group" aria-label="Animation playback">
             <button
               type="button"
@@ -213,51 +245,19 @@ export function ScadaHeader({
                 aria-pressed={simSpeed === spd}
                 aria-label={`Playback speed ${spd} times`}
                 onClick={() => onChangeSpeed?.(spd)}
-                className="segmented-item readout px-2.5"
+                className="segmented-item font-mono text-xs px-2"
               >
                 {spd}×
               </button>
             ))}
           </div>
         </div>
-        </div>
-
-        {/* Visible (not title-only) explanation of the solver modes, referenced
-            by aria-describedby from both solver buttons and the solve readout. */}
-        <p id="solver-help" className="caption mt-2.5 max-w-[80ch] leading-relaxed">
-          {SOLVER_HELP}
-        </p>
       </div>
 
-      {/* -- Row 3: scenario dispatch --------------------------------------- */}
-      <div className="px-5 lg:px-6 py-2.5 border-t border-hairline flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span className="eyebrow">SCENARIO</span>
-        <div className="segmented" role="group" aria-label="Synthetic scenario presets">
-          {SCENARIOS.map((sc) => (
-            <button
-              type="button"
-              key={sc.id}
-              aria-pressed={scenarioId === sc.id}
-              onClick={() => onApplyScenario?.(sc.id)}
-              disabled={loading}
-              className="segmented-item"
-            >
-              {sc.label}
-            </button>
-          ))}
-        </div>
-        {scenarioId ? (
-          <span className="pill hidden lg:inline-flex" title="Raw scenario enum applied by the backend">
-            {scenarioId}
-          </span>
-        ) : null}
-        {loading ? <span className="caption">Re-solving…</span> : null}
-      </div>
-
-      {/* -- Mobile view switcher: same roving-tabindex contract as the rail - */}
+      {/* Mobile view switcher */}
       {tabs.length > 0 && (
         <div
-          className="lg:hidden px-5 pb-3 pt-1 flex gap-2 overflow-x-auto no-scrollbar border-t border-hairline"
+          className="lg:hidden px-5 pb-2.5 pt-1.5 flex gap-2 overflow-x-auto no-scrollbar border-t border-hairline bg-surface-1"
           role="tablist"
           aria-label="Analysis views"
         >
@@ -274,7 +274,7 @@ export function ScadaHeader({
                 type="button"
                 onClick={() => onSelectTab?.(tab.id)}
                 onKeyDown={(event) => handleMobileTabKeyDown(event, tabIndex)}
-                className="segmented-item shrink-0 border border-hairline"
+                className="segmented-item shrink-0 border border-hairline text-xs"
               >
                 {tab.label}
               </button>

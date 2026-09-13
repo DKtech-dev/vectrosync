@@ -8,8 +8,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 const STORAGE_KEY = 'catenary-theme';
 const LEGACY_STORAGE_KEY = 'vectrosync-theme';
 
-/** Dark is the product default (control-room ergonomics). */
-const DEFAULT_THEME = 'dark';
+/** Light is the product default (premium architectural paper instrument). */
+const DEFAULT_THEME = 'light';
 
 const isTheme = (value) => value === 'light' || value === 'dark';
 

@@ -274,10 +274,10 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
           </span>
           <div className="min-w-0">
             <h2 id="theatre-title" className="panel-title">
-              Machine theatre — governed vs. ungoverned
+              Machine theatre: governed twin vs. uncontrolled baseline
             </h2>
-            <p className="caption truncate">
-              One clock · two identical {UNIT.designation} units · {WELL.formation} at {WELL.totalDepthM} m TVD
+            <p className="caption text-muted truncate">
+              Synchronized wall clock · identical {UNIT.designation} units in {WELL.formation} ({WELL.totalDepthM} m TVD)
             </p>
           </div>
         </div>
@@ -323,47 +323,42 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
       </div>
 
       {/* ---------------- headline comparison ---------------- */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-hairline border-b border-hairline">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-hairline border-b border-hairline">
         <Headline
           label="Commanded speed"
           a={`${fmt(baselineSpm, 2)} SPM`}
           b={`${fmt(governedSpm, 2)} SPM`}
           note={
             spmDelta > 0.01
-              ? `${advisorySource === 'solver' ? 'governor' : 'constraint'} backs off ${fmt(spmDelta, 2)} SPM to hold the floor`
+              ? `${advisorySource === 'solver' ? 'governor' : 'constraint'} backs off ${fmt(spmDelta, 2)} SPM`
               : spmDelta < -0.01
-                ? `governor finds ${fmt(-spmDelta, 2)} SPM of headroom`
-                : 'governor concurs with the request'
+                ? `governor finds ${fmt(-spmDelta, 2)} SPM headroom`
+                : 'governor concurs with request'
           }
         />
         <Headline
-          label="Min tension @ 750 m"
+          label="Min tension at 750 m"
           a={`${fmt(baselineTaper)} kN`}
           b={`${fmt(governedTaper)} kN`}
           aBad={baselineTaper < FLOOR_KN}
           bBad={governedTaper < FLOOR_KN}
-          note={`top of the bottom taper · anti-float floor +${FLOOR_KN.toFixed(2)} kN`}
+          note={`Anti-float floor: +${FLOOR_KN.toFixed(2)} kN`}
         />
         <Headline
-          label="String in compression"
-          // Gated on the 750 m taper checkpoint, not the profile's global
-          // minimum: the reconstruction is disclosed as invalid right at
-          // the surface (see the validity note below), and that artifact
-          // hits both branches almost equally, which is exactly why this
-          // used to read identically for governed and ungoverned alike.
+          label="Rod in compression"
           a={baselineTaper < 0 ? `${Math.round(WELL.totalDepthM - baseline.minDepthM)} m` : 'none'}
           b={governedTaper < 0 ? `${Math.round(WELL.totalDepthM - governed.minDepthM)} m` : 'none'}
           aBad={baselineTaper < 0}
           bBad={governedTaper < 0}
-          note="rod length below the neutral point"
+          note="Rod length below neutral point"
         />
         <Headline
-          label="Compression cycles logged"
+          label="Compression cycles"
           a={String(cycles)}
           b={String(Math.floor(readout?.b?.compressionCycles ?? 0))}
           aBad={cycles > 0}
           bBad={(readout?.b?.compressionCycles ?? 0) > 0}
-          note="strokes taken below the neutral point, since reset"
+          note="Strokes below neutral point"
         />
         <Headline
           label="Carrier-bar impacts"
@@ -371,7 +366,7 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
           b={String(floatImpactsB)}
           aBad={floatImpactsA > 0}
           bBad={floatImpactsB > 0}
-          note="rod float events: bridle slack, then slammed shut"
+          note="Bridle slack re-impacts"
         />
       </div>
 
@@ -568,38 +563,38 @@ function BayFrame({ tone, eyebrow, title, subtitle, state, profile, spm, icon, c
   const pillLabel = parted
     ? 'String parted'
     : isCompressed
-      ? 'Compression'
+      ? 'Compression active'
       : isLowMargin
-        ? 'Low margin'
+        ? 'Low safety margin'
         : 'Tension held';
   return (
     <div className={`bg-surface-1 min-w-0 ${parted ? 'ring-1 ring-inset ring-critical' : ''}`}>
-      <header className="px-4 pt-3.5 pb-3 border-b border-hairline">
+      <header className="px-5 pt-4 pb-3.5 border-b border-hairline bg-surface-1">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <span className="eyebrow">{eyebrow}</span>
-            <h3 className="panel-title mt-0.5 flex items-center gap-2">
+            <span className="text-xs font-medium text-muted">{eyebrow}</span>
+            <h3 className="text-base font-bold text-ink mt-0.5 flex items-center gap-2 tracking-tight">
               <span className={`icon-badge !w-5 !h-5 !rounded-[4px] ${toneClass}`}>{icon}</span>
               {title}
             </h3>
-            <p className="caption mt-1">{subtitle}</p>
+            <p className="caption mt-0.5 text-muted">{subtitle}</p>
           </div>
-          <span className={`pill ${toneClass} shrink-0`}>
+          <span className={`pill ${toneClass} shrink-0 text-xs`}>
             <span className="chip-dot" />
             {pillLabel}
           </span>
         </div>
 
-        <dl className="grid grid-cols-4 gap-x-3 gap-y-1 mt-3">
+        <dl className="grid grid-cols-4 gap-x-3 gap-y-1 mt-3.5 py-2 px-3 bg-surface-2 rounded border border-hairline">
           <Cell label="Speed" value={fmt(spm, 2)} unit="SPM" />
           <Cell
-            label="F @750 m"
+            label="Tension @ 750 m"
             value={parted ? '—' : fmt(profile?.predictedTaperTensionKn)}
             unit={parted ? 'no signal' : 'kN min'}
             bad={parted || (profile?.predictedTaperTensionKn ?? 1) < FLOOR_KN}
           />
           <Cell
-            label="Plunger"
+            label="Plunger stroke"
             value={parted ? '—' : fmt((state?.travelRatio ?? 0) * 100, 0)}
             unit={parted ? 'isolated' : '% travel'}
             bad={parted || (state?.travelRatio ?? 1) < 0.7}
@@ -627,46 +622,116 @@ function BayFrame({ tone, eyebrow, title, subtitle, state, profile, spm, icon, c
           </p>
         )}
       </header>
-      <div className="p-2">{children}</div>
+      <div className="p-2 bg-surface-2">{children}</div>
     </div>
   );
 }
 
-/** A compact, shared-axis bar so the governed/ungoverned difference reads at
- *  a glance before anyone has read the full drawing below. Red below zero
- *  (string in compression), amber between zero and the anti-float floor,
- *  green above it. */
+/**
+ * HERO INSTRUMENT GAUGE:
+ * Full-width, high-visibility 28px instrument gauge with explicitly shaded physical zones:
+ * - Red zone (< 0 kN): Rod string in helical buckling / compression
+ * - Amber zone (0 to +0.50 kN): Degraded anti-float margin
+ * - Green zone (>= +0.50 kN): Fully protected axial tension operating envelope
+ */
 function TensionGauge({ value, domain, floor, compressed }) {
   const [lo, hi] = domain;
   const pct = (v) => `${(100 * (clamp01((v - lo) / (hi - lo)))).toFixed(2)}%`;
   const zeroPct = pct(0);
   const floorPct = pct(floor);
   const valuePct = Number.isFinite(value) ? pct(value) : null;
+  const deltaFromFloor = Number.isFinite(value) ? value - floor : null;
+  const isSafe = Number.isFinite(value) && value >= floor;
+
   return (
-    <div className="mt-3">
-      <div className="relative h-2.5 rounded-full overflow-hidden bg-surface-3">
-        <div className="absolute inset-y-0 left-0" style={{ width: zeroPct, background: 'rgb(var(--accent-critical) / 0.28)' }} />
+    <div className="mt-3.5 pt-3 border-t border-hairline">
+      <div className="flex items-baseline justify-between mb-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-ink">Axial tension gauge</span>
+          <span className="text-[11px] text-muted">(750 m taper checkpoint)</span>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className={`text-base font-bold font-mono ${compressed ? 'text-critical' : isSafe ? 'text-safe' : 'text-caution'}`}>
+            {Number.isFinite(value) ? `${value >= 0 ? '+' : ''}${value.toFixed(2)} kN` : '—'}
+          </span>
+          {deltaFromFloor !== null && (
+            <span className="text-[11px] font-mono text-muted">
+              ({deltaFromFloor >= 0 ? `+${deltaFromFloor.toFixed(2)} margin` : `${deltaFromFloor.toFixed(2)} deficit`})
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Hero Physical Instrument Gauge Bar */}
+      <div className="relative h-7 rounded-sm overflow-hidden bg-surface-3 border border-hairline">
+        {/* Compression shaded zone (< 0 kN) */}
         <div
-          className="absolute inset-y-0"
-          style={{ left: zeroPct, width: `calc(${floorPct} - ${zeroPct})`, background: 'rgb(var(--accent-caution) / 0.32)' }}
+          className="absolute inset-y-0 left-0 flex items-center justify-center overflow-hidden"
+          style={{ width: zeroPct, background: 'rgba(185, 28, 28, 0.16)' }}
+        >
+          <span className="text-[10px] font-semibold text-critical tracking-tight select-none opacity-85 px-1 truncate">
+            COMPRESSION (&lt; 0 kN)
+          </span>
+        </div>
+
+        {/* Low margin buffer zone (0 to +0.50 kN) */}
+        <div
+          className="absolute inset-y-0 flex items-center justify-center overflow-hidden"
+          style={{
+            left: zeroPct,
+            width: `calc(${floorPct} - ${zeroPct})`,
+            background: 'rgba(180, 83, 9, 0.18)',
+          }}
+        >
+          <span className="text-[9.5px] font-semibold text-caution tracking-tight select-none opacity-90 px-0.5 truncate">
+            MARGIN
+          </span>
+        </div>
+
+        {/* Safe tension operating zone (>= +0.50 kN) */}
+        <div
+          className="absolute inset-y-0 right-0 flex items-center justify-start pl-2 overflow-hidden"
+          style={{
+            left: floorPct,
+            background: 'rgba(21, 128, 61, 0.13)',
+          }}
+        >
+          <span className="text-[10px] font-semibold text-safe tracking-tight select-none opacity-85 truncate">
+            SAFE ENVELOPE (&ge; +{floor.toFixed(2)} kN)
+          </span>
+        </div>
+
+        {/* Vertical boundary rules */}
+        <div
+          className="absolute inset-y-0 w-0.5 bg-critical z-10"
+          style={{ left: zeroPct }}
+          title="0.00 kN neutral point"
         />
         <div
-          className="absolute inset-y-0 right-0"
-          style={{ left: floorPct, background: 'rgb(var(--accent-safe) / 0.22)' }}
+          className="absolute inset-y-0 w-0.5 bg-caution z-10"
+          style={{ left: floorPct }}
+          title={`+${floor.toFixed(2)} kN anti-float threshold`}
         />
-        <div className="absolute inset-y-0 w-px bg-critical/70" style={{ left: zeroPct }} />
-        <div className="absolute inset-y-0 w-px bg-caution/80" style={{ left: floorPct }} />
+
+        {/* High-contrast precision needle / cursor */}
         {valuePct !== null && (
           <div
-            className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ring-2 ring-canvas ${compressed ? 'bg-critical' : 'bg-safe'}`}
+            className="absolute inset-y-0 z-20 pointer-events-none -translate-x-1/2"
             style={{ left: valuePct }}
-          />
+          >
+            <div className={`w-1 h-full shadow-sm ${compressed ? 'bg-critical' : isSafe ? 'bg-safe' : 'bg-caution'}`} />
+          </div>
         )}
       </div>
-      <div className="flex items-center justify-between mt-1 text-[9.5px] readout text-faint">
-        <span>{lo.toFixed(0)} kN</span>
-        <span>floor +{floor.toFixed(2)}</span>
-        <span>{hi.toFixed(0)} kN</span>
+
+      {/* Axis Scale Labels */}
+      <div className="flex items-center justify-between mt-1 text-[11px] font-mono text-muted">
+        <span>{lo.toFixed(0)} kN min</span>
+        <div className="flex items-center gap-4">
+          <span className="text-critical font-medium">0 kN (neutral)</span>
+          <span className="text-caution font-medium">+{floor.toFixed(2)} kN floor</span>
+        </div>
+        <span>+{hi.toFixed(0)} kN max</span>
       </div>
     </div>
   );
@@ -674,23 +739,20 @@ function TensionGauge({ value, domain, floor, compressed }) {
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-/** The one thing each bay has to say before anyone looks at the drawing:
- *  branch A is a failure case getting worse in real time, branch B is the
- *  margin the governor buys and what little it costs. Same shape, opposite
- *  tone, so the two read as a matched pair rather than two unrelated panels. */
+/** Clean verdict callouts without middle-dot meta clutter */
 function VerdictPanel({ tone, title, lines }) {
   const toneClass = tone === 'critical' ? 'tone-critical' : 'tone-safe';
   const items = lines.filter(Boolean);
   return (
-    <div className={`well ${toneClass} px-3 py-2.5 mb-2`}>
-      <div className="eyebrow flex items-center gap-1.5">
+    <div className={`well ${toneClass} px-3.5 py-2.5 mb-2`}>
+      <div className="text-xs font-semibold flex items-center gap-1.5 mb-1">
         <span className="chip-dot" />
         {title}
       </div>
-      <ul className="mt-1.5 space-y-1">
+      <ul className="space-y-1">
         {items.map((line, i) => (
-          <li key={i} className="caption leading-snug flex gap-1.5">
-            <span aria-hidden="true" className="shrink-0">▸</span>
+          <li key={i} className="caption leading-snug flex gap-1.5 text-ink">
+            <span aria-hidden="true" className="shrink-0 text-muted">▸</span>
             <span>{line}</span>
           </li>
         ))}
@@ -702,9 +764,9 @@ function VerdictPanel({ tone, title, lines }) {
 function Cell({ label, value, unit, bad }) {
   return (
     <div className="min-w-0">
-      <dt className="eyebrow truncate">{label}</dt>
-      <dd className={`readout text-[13px] font-semibold truncate ${bad ? 'text-critical' : 'text-ink'}`}>
-        {value} <span className="text-faint font-normal text-[10px]">{unit}</span>
+      <dt className="text-xs font-medium text-muted truncate">{label}</dt>
+      <dd className={`readout text-sm font-semibold truncate ${bad ? 'text-critical' : 'text-ink'}`}>
+        {value} <span className="text-muted font-normal text-[11px]">{unit}</span>
       </dd>
     </div>
   );
@@ -712,23 +774,23 @@ function Cell({ label, value, unit, bad }) {
 
 function Headline({ label, a, b, note, aBad, bBad }) {
   return (
-    <div className="bg-surface-1 px-4 py-3">
-      <div className="eyebrow">{label}</div>
-      <div className="flex items-baseline gap-2 mt-1.5">
-        <span className={`readout text-[15px] font-semibold ${aBad ? 'text-critical' : 'text-muted'}`}>{a}</span>
-        <span className="text-faint text-[11px]">→</span>
-        <span className={`readout text-[15px] font-semibold ${bBad ? 'text-critical' : 'text-safe'}`}>{b}</span>
+    <div className="bg-surface-2 px-4 py-3">
+      <div className="text-xs font-medium text-muted">{label}</div>
+      <div className="flex items-baseline gap-2 mt-1">
+        <span className={`readout text-base font-bold ${aBad ? 'text-critical' : 'text-muted'}`}>{a}</span>
+        <span className="text-muted text-xs">→</span>
+        <span className={`readout text-base font-bold ${bBad ? 'text-critical' : 'text-safe'}`}>{b}</span>
       </div>
-      <div className="caption mt-1 text-[10.5px]">{note}</div>
+      <div className="caption mt-1 text-[11px] text-muted">{note}</div>
     </div>
   );
 }
 
 function Fact({ title, body }) {
   return (
-    <div className="bg-surface-1 px-4 py-3.5">
-      <h4 className="panel-title text-[12px]">{title}</h4>
-      <p className="caption mt-1.5">{body}</p>
+    <div className="bg-surface-2 px-4 py-3.5">
+      <h4 className="text-xs font-semibold text-ink">{title}</h4>
+      <p className="caption mt-1 text-muted">{body}</p>
     </div>
   );
 }
