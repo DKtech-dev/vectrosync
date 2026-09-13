@@ -170,7 +170,7 @@ export const MachineBay = forwardRef(function MachineBay(
   const FX_ZERO = fx(0);
 
   /* --- precomputed static geometry -------------------------------------- */
-  const geom = useMemo(() => buildStaticGeometry({ fluidLevelM, uid, fx }), [fluidLevelM, uid, fx]);
+  const geom = useMemo(() => buildStaticGeometry({ fluidLevelM, uid, fx, tone }), [fluidLevelM, uid, fx, tone]);
 
   /* --- envelope band (min/max force over the stroke, per depth) ---------- */
   const envelope = useMemo(() => {
@@ -756,7 +756,7 @@ export const MachineBay = forwardRef(function MachineBay(
         <g clipPath={`url(#${uid}-buckwin)`}>
           <rect x={BUCK_WIN.x} y={BUCK_WIN.y} width={BUCK_WIN.w} height={BUCK_WIN.h} fill="rgb(var(--bg-canvas))" />
           {geom.buckle.static}
-          <BuckleDetail branch={branch} profile={profile} geom={geom} />
+          <BuckleDetail branch={branch} profile={profile} geom={geom} tone={tone} />
         </g>
         {geom.buckle.frame}
 
@@ -792,11 +792,11 @@ function setValve(group, open, r) {
 /* Buckling detail — true Lubinski pitch                                      */
 /* ========================================================================== */
 
-function BuckleDetail({ profile, geom }) {
-  const min = profile?.minKn ?? NaN;
-  const compressed = Number.isFinite(min) && min < 0;
+function BuckleDetail({ profile, geom, tone: bayTone }) {
+  const taperMin = profile?.predictedTaperTensionKn;
+  const compressed = Number.isFinite(taperMin) ? taperMin < 0 : false;
   const depth = profile?.minDepthM ?? 900;
-  const buck = helicalBuckling(Math.abs(compressed ? min : 1), depth);
+  const buck = helicalBuckling(Math.abs(compressed ? taperMin : 1), depth);
   const g = geom.buckle;
 
   // 1:1 magnified window. Vertical scale chosen to show ~2 helix pitches.
@@ -918,7 +918,11 @@ const PART_KEY = [
   ['14', 'Edge node (advisory)'],
 ];
 
-function buildStaticGeometry({ fluidLevelM, uid, fx }) {
+function buildStaticGeometry({ fluidLevelM, uid, fx, tone = 'signal' }) {
+  const isCrit = tone === 'critical';
+  const frameTone = isCrit ? 'rgb(var(--accent-critical))' : 'rgb(var(--accent-safe))';
+  const frameBgOpacity = isCrit ? 0.14 : 0.08;
+  const frameStrokeOpacity = isCrit ? 0.4 : 0.28;
   const hair = 'rgb(var(--border-strong))';
   const steel = 'rgb(var(--text-secondary))';
   const faint = 'rgb(var(--text-tertiary))';
@@ -1505,9 +1509,9 @@ function buildStaticGeometry({ fluidLevelM, uid, fx }) {
     ),
     frame: (
       <g>
-        <rect x={bw.x} y={bw.y} width={bw.w} height={bw.h} rx="4" fill="none" stroke="rgb(var(--accent-critical))" strokeWidth="0.8" strokeOpacity="0.4" />
-        <rect x={bw.x} y={bw.y - 11} width={bw.w} height="11" rx="2" fill="rgb(var(--accent-critical))" fillOpacity="0.14" />
-        <text x={bw.x + 4} y={bw.y - 3} fontSize="5.8" fill="rgb(var(--accent-critical))" letterSpacing="0.08em">
+        <rect x={bw.x} y={bw.y} width={bw.w} height={bw.h} rx="4" fill="none" stroke={frameTone} strokeWidth="0.8" strokeOpacity={frameStrokeOpacity} />
+        <rect x={bw.x} y={bw.y - 11} width={bw.w} height="11" rx="2" fill={frameTone} fillOpacity={frameBgOpacity} />
+        <text x={bw.x + 4} y={bw.y - 3} fontSize="5.8" fill={frameTone} letterSpacing="0.08em">
           DETAIL B — ROD IN TUBING, LUBINSKI 1:1
         </text>
       </g>
@@ -1527,7 +1531,7 @@ function buildStaticGeometry({ fluidLevelM, uid, fx }) {
       <path
         d={`M ${bw.x + bw.w} ${bw.y + bw.h - 40} L ${WELL_X - 24} ${depthY(1000)}`}
         fill="none"
-        stroke="rgb(var(--accent-critical))"
+        stroke={frameTone}
         strokeWidth="0.6"
         strokeDasharray="3 3"
       />
