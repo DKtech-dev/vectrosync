@@ -3,8 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Intelligence Designed To See It Coming — Catenary</title>
-    <meta name="description" content="Synthetic reduced-order CSS-SRP advisory twin for research and demonstration." />
+    <title>Catenary — CSS–SRP Advisory Digital Twin</title>
+    <meta
+      name="description"
+      content="Catenary couples Boberg–Lantz reservoir cooldown, emulsion rheology and dual-fidelity rod elastodynamics into a constrained advisory governor for heavy-oil cyclic steam wells. Synthetic research prototype."
+    />
+    <meta name="color-scheme" content="dark light" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,22 +16,17 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
       rel="stylesheet"
     />
-    <!-- Retro dot-matrix display face for the landing page headline/stat glyphs -->
-    <link
-      href="https://db.onlinewebfonts.com/c/8cb707a9b8a73f8a7403336b861c3074?family=BubbledotICG-FinePos"
-      rel="stylesheet"
-    />
-
-    <!-- Resolve the theme before first paint to avoid a flash of the wrong theme. -->
+    <!-- Resolve the theme before first paint to avoid a flash of the wrong theme.
+         Dark is the default: this is a control-room surface. -->
     <script>
       (function () {
         try {
           var stored = localStorage.getItem('catenary-theme') || localStorage.getItem('vectrosync-theme');
-          var theme = stored === 'light' || stored === 'dark' ? stored : 'light';
+          var theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
           document.documentElement.setAttribute('data-theme', theme);
           document.documentElement.style.colorScheme = theme;
         } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'light');
+          document.documentElement.setAttribute('data-theme', 'dark');
         }
       })();
     </script>

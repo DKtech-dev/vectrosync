@@ -1,15 +1,18 @@
 import React, { useMemo } from 'react';
 
 /**
- * LED dot-matrix numeral display: renders a string as a bitmap of filled
- * circles, the way a real industrial telemetry readout looks (a Bloomberg-
- * terminal / avionics convention, not decoration). Adapted from the
- * dot-matrix glyph technique in the design reference, extended with '-'/'+'
- * for signed tension readouts.
+ * LED dot-matrix numeral display: renders a short numeric string as a bitmap
+ * of filled circles, the way a panel-mounted telemetry readout looks.
  *
- * Each glyph is a 7-row bitmap; digits/'.' are 5 cols wide, '-'/'+' are 5,
- * everything is laid out left-to-right with a fixed pitch so digits never
- * reflow mid count-up.
+ * Scope and limits (deliberate, and the reason this is no longer used for
+ * primary data): the glyph set covers only `0-9`, `.`, `-`, `+` and a space.
+ * Any other character is rendered as a blank cell of the same advance width —
+ * never silently substituted with a digit — and the full original string is
+ * always exposed to assistive technology through a `.sr-only` twin, so the
+ * SVG can stay `aria-hidden` without the value becoming unreadable.
+ *
+ * Each glyph is a 7-row bitmap laid out left-to-right on a fixed pitch, so
+ * digits never reflow mid count-up.
  */
 const GLYPHS = {
   '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
@@ -30,45 +33,78 @@ const GLYPHS = {
 const COLS = 5;
 const ROWS = 7;
 
+/** Narrow glyphs get a tighter cell so signed decimals don't look gappy. */
+function cellWidth(ch) {
+  if (ch === '.' || ch === '1') return 3;
+  if (ch === ' ') return 2;
+  return COLS;
+}
+
 export function DotNumber({ value, dotRadius = 2.2, pitch = 4.2, gap = 1, className = '', style }) {
-  const text = String(value);
+  const text = value === null || value === undefined ? '' : String(value);
 
   const { circles, width } = useMemo(() => {
-    let cursorX = 0;
     const dots = [];
-    for (const ch of text) {
-      const bitmap = GLYPHS[ch] || GLYPHS['0'];
-      const colsForChar = ch === '.' || ch === '1' ? 3 : COLS;
-      for (let row = 0; row < ROWS; row++) {
-        const bits = bitmap[row];
-        for (let col = 0; col < colsForChar; col++) {
-          if (bits[col] === '1') {
-            dots.push({
-              cx: cursorX + col * pitch + dotRadius,
-              cy: row * pitch + dotRadius,
-            });
+    let cursorX = 0;
+    let rightEdge = dotRadius * 2;
+
+    text.split('').forEach((ch, index) => {
+      const cols = cellWidth(ch);
+      const bitmap = GLYPHS[ch];
+
+      if (bitmap) {
+        for (let row = 0; row < ROWS; row++) {
+          for (let col = 0; col < cols; col++) {
+            if (bitmap[row][col] === '1') {
+              dots.push({
+                key: `${index}-${row}-${col}`,
+                cx: cursorX + col * pitch + dotRadius,
+                cy: row * pitch + dotRadius,
+              });
+            }
           }
         }
       }
-      cursorX += colsForChar * pitch + gap * pitch;
-    }
-    return { circles: dots, width: cursorX };
+
+      // Right-most ink of this cell. Tracked separately from the cursor so the
+      // inter-glyph gap is never baked into the viewBox as trailing dead space
+      // (which used to left-shift every value inside its box).
+      rightEdge = cursorX + (cols - 1) * pitch + dotRadius * 2;
+
+      if (index < text.length - 1) {
+        cursorX += cols * pitch + gap * pitch;
+      }
+    });
+
+    return { circles: dots, width: Math.max(rightEdge, dotRadius * 2) };
   }, [text, pitch, dotRadius, gap]);
 
   const height = (ROWS - 1) * pitch + dotRadius * 2;
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
+    <span
       className={`dot-number ${className}`}
-      style={{ height: '0.74em', width: 'auto', aspectRatio: `${width} / ${height}`, overflow: 'visible', display: 'inline-block', verticalAlign: 'middle', ...style }}
-      aria-hidden="true"
-      role="img"
+      style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 1, ...style }}
     >
-      {circles.map((d, i) => (
-        <circle key={i} cx={d.cx} cy={d.cy} r={dotRadius} fill="currentColor" />
-      ))}
-    </svg>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        style={{
+          height: '0.74em',
+          width: 'auto',
+          aspectRatio: `${width} / ${height}`,
+          overflow: 'visible',
+          display: 'block',
+        }}
+        aria-hidden="true"
+        focusable="false"
+      >
+        {circles.map((d) => (
+          <circle key={d.key} cx={d.cx} cy={d.cy} r={dotRadius} fill="currentColor" />
+        ))}
+      </svg>
+      {/* Text equivalent — the dot bitmap itself is invisible to AT. */}
+      <span className="sr-only">{text}</span>
+    </span>
   );
 }
 

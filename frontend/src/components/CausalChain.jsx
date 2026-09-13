@@ -1,18 +1,51 @@
 import React, { useMemo } from 'react';
-import { Flame, Thermometer, Droplet, Gauge, ArrowUpRight, Send } from 'lucide-react';
+import { Flame, Thermometer, Droplets, Waves, MoveVertical, Gauge, Send } from 'lucide-react';
 import { AnimatedNumber } from './AnimatedNumber';
 
 /**
- * The hero visualization: an animated, always-live causal chain from steam
- * soak through to the advisory speed command. Built for a non-domain judge
- * to grasp the failure mechanism in ~20 seconds by watching it, not reading
- * a dynacard.
+ * The hero visualization: the failure mechanism drawn as a signal path, not a
+ * row of cards. Six instrument tags run left to right, and every connector is
+ * annotated with the transfer that produces the next stage — so a reader can
+ * see *why* elapsed soak days end up as a pump-speed command.
  *
- * Every node is a real field from simState -- nothing here is decorative.
- * Connector flow speed is driven by drag_beta (thicker oil -> visibly slower
- * flow), and the chain re-propagates left-to-right with a short stagger
- * whenever the underlying scenario/data changes (via the `propagateKey`).
+ *   CSS day --Boberg-Lantz--> sandface T --Arrhenius x emulsion--> viscosity
+ *     --annular Couette--> drag beta --rod statics--> min tension
+ *     --MPC constraint--> advised SPM
+ *
+ * Every node is a live field from simState; nothing here is decorative.
+ * Connector flow speed is driven by drag_beta (thicker oil visibly slows the
+ * flow), and the chain re-propagates left-to-right with a short stagger when
+ * the underlying scenario/data changes (via `propagateKey`).
  */
+
+const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+
+const NODE_MIN = 108;
+const EDGE_W = 68;
+
+function Connector({ model, seconds }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-1.5 self-center" aria-hidden="true">
+      <span className="eyebrow text-center leading-[1.2] break-words px-0.5">{model}</span>
+      <svg viewBox="0 0 68 10" className="w-full h-[10px]" preserveAspectRatio="none">
+        <line
+          x1="0"
+          y1="5"
+          x2="58"
+          y2="5"
+          className="vs-flow"
+          style={{
+            stroke: 'rgb(var(--accent-interactive))',
+            strokeWidth: 1.5,
+            animationDuration: `${seconds}s`,
+          }}
+        />
+        <path d="M 58 1.5 L 66 5 L 58 8.5 Z" fill="rgb(var(--accent-interactive))" opacity="0.85" />
+      </svg>
+    </div>
+  );
+}
+
 export function CausalChain({
   elapsedDays,
   temperatureC,
@@ -24,158 +57,178 @@ export function CausalChain({
   isBuckling,
   propagateKey,
 }) {
-  const meetsFloor = minTensionKn >= 0.5;
-  const tone = isBuckling ? 'critical' : meetsFloor ? 'safe' : 'caution';
-  const toneClass = {
-    safe: 'text-safe',
-    caution: 'text-caution',
-    critical: 'text-critical',
-  }[tone];
-  const toneBg = {
-    safe: 'bg-safe/10',
-    caution: 'bg-caution/10',
-    critical: 'bg-critical/10',
-  }[tone];
+  const meetsFloor = isNum(minTensionKn) && minTensionKn >= 0.5;
+  const tone = isBuckling || (isNum(minTensionKn) && minTensionKn < 0) ? 'critical' : meetsFloor ? 'safe' : 'caution';
+  const toneClass = { safe: 'text-safe', caution: 'text-caution', critical: 'text-critical' }[tone];
+  const tonePill = { safe: 'tone-safe', caution: 'tone-caution', critical: 'tone-critical' }[tone];
 
-  // Flow speed: viscous oil visibly slows the animation (2.4s idle -> ~0.5s
+  // Flow speed: viscous oil visibly slows the animation (2.4 s idle -> ~0.5 s
   // at extreme drag). Clamped so it never fully stops or races unreadably.
   const flowSeconds = useMemo(() => {
-    const s = 2.4 - Math.min(1.9, dragBeta / 60);
+    const s = 2.4 - Math.min(1.9, (isNum(dragBeta) ? dragBeta : 0) / 60);
     return Math.max(0.5, Number.isFinite(s) ? s : 1.2);
   }, [dragBeta]);
 
-  const nodes = [
+  const viscKilo = isNum(viscosityCp) && viscosityCp >= 1000;
+
+  const stages = [
     {
       key: 'soak',
+      tag: 'CSS-01',
       icon: Flame,
-      label: 'Steam soak',
+      label: 'Elapsed soak',
       value: elapsedDays,
       format: (v) => v.toFixed(0),
       unit: 'days',
-      tone: 'text-muted',
+      tone: 'text-thermal',
+      edge: 'Boberg–Lantz',
     },
     {
       key: 'temp',
+      tag: 'TI-101',
       icon: Thermometer,
-      label: 'Reservoir temp',
+      label: 'Sandface temp',
       value: temperatureC,
       format: (v) => v.toFixed(1),
-      unit: '\u00b0C',
-      tone: 'text-ink',
+      unit: '°C',
+      tone: 'text-thermal',
+      note: '48 °C native',
+      edge: 'Arrhenius ×emulsion',
     },
     {
       key: 'visc',
-      icon: Droplet,
-      label: 'Oil viscosity',
+      tag: 'VI-201',
+      icon: Droplets,
+      label: 'Mixture viscosity',
       value: viscosityCp,
-      format: (v) => (v > 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0)),
+      format: (v) => (viscKilo ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0)),
       unit: 'cP',
       tone: 'text-caution',
+      edge: 'annular Couette',
     },
     {
       key: 'drag',
-      icon: Droplet,
-      label: 'Annular drag',
+      tag: 'FE-301',
+      icon: Waves,
+      label: 'Drag coefficient β',
       value: dragBeta,
       format: (v) => v.toFixed(1),
-      unit: 'N\u00b7s/m\u00b2',
+      unit: 'N·s/m²',
       tone: 'text-caution',
+      note: 'up on downstroke',
+      edge: 'rod statics',
     },
     {
       key: 'tension',
-      icon: ArrowUpRight,
+      tag: 'WE-401',
+      icon: MoveVertical,
       label: 'Min rod tension',
       value: minTensionKn,
       format: (v) => (v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2)),
       unit: 'kN',
       tone: toneClass,
-      alert: isBuckling,
+      note: 'floor +0.50 kN',
+      alert: Boolean(isBuckling),
+      edge: 'MPC constraint',
     },
     {
       key: 'command',
+      tag: 'SIC-501',
       icon: Send,
-      label: 'Advisory speed',
+      label: 'Advised speed',
       value: effectiveSpm,
       format: (v) => v.toFixed(2),
       unit: 'SPM',
       tone: 'text-interactive',
+      note: isNum(targetSpm) ? `req ${targetSpm.toFixed(2)}` : 'req unavailable',
     },
   ];
 
-  const caption = isBuckling
-    ? `Oil is ${(viscosityCp / 830).toFixed(0)}\u00d7 thicker than at soak temperature. Drag now exceeds the rod's submerged weight on the downstroke -- the string is modeled in compression. The advisory speed of ${effectiveSpm.toFixed(2)} SPM is the supervisor's protective response.`
-    : meetsFloor
-      ? `Viscous drag from the cooling reservoir is offset by throttling to ${effectiveSpm.toFixed(2)} SPM (requested ${targetSpm.toFixed(1)} SPM), holding ${minTensionKn >= 0 ? '+' : ''}${minTensionKn.toFixed(2)} kN of tension -- ${(minTensionKn - 0.5).toFixed(2)} kN above the anti-float floor.`
-      : `Tension is below the +0.50 kN screening floor at the current advisory speed. The supervisor is evaluating a protective ramp-down.`;
+  const gridTemplateColumns = stages.map(() => `minmax(${NODE_MIN}px, 1fr)`).join(` ${EDGE_W}px `);
+  const minWidth = stages.length * NODE_MIN + (stages.length - 1) * EDGE_W;
+
+  let caption;
+  if (!isNum(minTensionKn) || !isNum(effectiveSpm)) {
+    caption = 'Rod-tension or advised-speed output is unavailable, so the chain cannot be interpreted end to end.';
+  } else if (isBuckling || minTensionKn < 0) {
+    caption = `Annular drag now exceeds the submerged weight of the lower rod tapers on the downstroke: modelled minimum tension is ${minTensionKn.toFixed(2)} kN, so the string is in compression and helically buckling against the tubing. The advised ${effectiveSpm.toFixed(2)} SPM is the supervisor's protective response.`;
+  } else if (meetsFloor) {
+    caption = `Viscous drag from the cooling near-wellbore is absorbed by throttling to ${effectiveSpm.toFixed(2)} SPM${isNum(targetSpm) ? ` (requested ${targetSpm.toFixed(2)} SPM)` : ''}, holding +${minTensionKn.toFixed(2)} kN — ${(minTensionKn - 0.5).toFixed(2)} kN above the +0.50 kN anti-float floor.`;
+  } else {
+    caption = `Minimum tension is ${(0.5 - minTensionKn).toFixed(2)} kN below the +0.50 kN anti-float floor at the current advised speed. The supervisor is evaluating a protective ramp-down.`;
+  }
 
   return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-2.5">
-          <span className={`icon-badge w-9 h-9 ${toneBg} ${toneClass}`}>
-            <Gauge className="w-[18px] h-[18px]" />
+    <section className="panel registered overflow-hidden" aria-labelledby="causal-chain-heading">
+      <div className="panel-rail">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className={`icon-badge w-6 h-6 ${toneClass}`}>
+            <Gauge className="w-3.5 h-3.5" />
           </span>
-          <div>
-            <h2 className="card-title">Causal chain</h2>
-            <p className="caption">Live physics, steam to speed command</p>
+          <div className="min-w-0">
+            <h2 id="causal-chain-heading" className="panel-title truncate">
+              Causal chain
+            </h2>
+            <p className="caption truncate">Live signal path · steam soak to speed command</p>
           </div>
         </div>
-        <span className={`pill ${toneBg} ${toneClass}`}>
+        <span className={`pill ${tonePill} shrink-0`}>
           <span className="chip-dot" />
-          {isBuckling ? 'Compression risk' : meetsFloor ? 'Tension held' : 'Below floor'}
+          {tone === 'critical' ? 'Compression risk' : tone === 'safe' ? 'Tension held' : 'Below floor'}
         </span>
       </div>
 
-      {/* Node row with animated connectors */}
-      <div className="relative flex items-stretch justify-between gap-1 sm:gap-2">
-        {nodes.map((node, i) => {
-          const Icon = node.icon;
-          return (
-            <React.Fragment key={node.key}>
-              <div
-                key={`${node.key}-${propagateKey}`}
-                className="vs-propagate flex flex-col items-center text-center gap-2 min-w-0 flex-1"
-                style={{ animationDelay: `${i * 90}ms` }}
-              >
-                <span
-                  className={`icon-badge w-10 h-10 bg-surface-2 ${node.tone} ${node.alert ? 'vs-node-alert' : ''}`}
+      <div className="overflow-x-auto blueprint">
+        {/* A div-based list: the connectors between nodes are decorative, and
+            an <ol> may only contain <li>, so semantics come from ARIA roles. */}
+        <div className="grid items-stretch px-4 py-5" style={{ gridTemplateColumns, minWidth }} role="list">
+          {stages.map((stage, i) => {
+            const Icon = stage.icon;
+            const available = isNum(stage.value);
+            return (
+              <React.Fragment key={stage.key}>
+                <div
+                  key={`${stage.key}-${propagateKey}`}
+                  role="listitem"
+                  className="vs-propagate min-w-0"
+                  style={{ animationDelay: `${i * 90}ms` }}
                 >
-                  <Icon className="w-[18px] h-[18px]" />
-                </span>
-                <div className="min-w-0">
-                  <div className={`readout text-[15px] font-bold leading-tight ${node.tone}`}>
-                    <AnimatedNumber value={node.value} format={node.format} />
-                    <span className="text-[11px] font-medium text-muted ml-1">{node.unit}</span>
-                  </div>
-                  <div className="unit-label mt-0.5 truncate">{node.label}</div>
-                </div>
-              </div>
+                  <div
+                    className={`panel-nested h-full p-2.5 flex flex-col gap-2 ${stage.alert ? 'tone-critical vs-node-alert' : ''}`}
+                  >
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="eyebrow">{stage.tag}</span>
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${stage.tone}`} />
+                    </div>
 
-              {i < nodes.length - 1 && (
-                <svg
-                  className="flex-none w-6 sm:w-10 self-center"
-                  height="8"
-                  viewBox="0 0 40 8"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  <line
-                    x1="0"
-                    y1="4"
-                    x2="40"
-                    y2="4"
-                    className="vs-flow"
-                    style={{ stroke: 'rgb(var(--accent-interactive))', strokeWidth: 2, animationDuration: `${flowSeconds}s` }}
-                  />
-                </svg>
-              )}
-            </React.Fragment>
-          );
-        })}
+                    <div className="leading-none">
+                      {available ? (
+                        <AnimatedNumber value={stage.value} format={stage.format} className={`metric-secondary ${stage.tone}`} />
+                      ) : (
+                        <span className="metric-secondary text-faint">
+                          <span aria-hidden="true">{'\u2014'}</span>
+                          <span className="sr-only">unavailable</span>
+                        </span>
+                      )}
+                      <div className="unit-label mt-1">{stage.unit}</div>
+                    </div>
+
+                    <div className="mt-auto">
+                      <div className="caption leading-snug">{stage.label}</div>
+                      {stage.note && <div className="eyebrow mt-1">{stage.note}</div>}
+                    </div>
+                  </div>
+                </div>
+
+                {i < stages.length - 1 && <Connector model={stage.edge} seconds={flowSeconds} />}
+              </React.Fragment>
+            );
+          })}
+        </div>
       </div>
 
-      <p className="caption mt-5 pt-4 border-t border-hairline leading-relaxed">{caption}</p>
-    </div>
+      <p className="caption px-4 py-3.5 border-t border-hairline leading-relaxed">{caption}</p>
+    </section>
   );
 }
 

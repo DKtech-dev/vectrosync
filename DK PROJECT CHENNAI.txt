@@ -13,7 +13,7 @@
 - **Target Formation Context:** Jodhpur Sandstone (Depth: 1,150 m TVD)
 - **Production Paradigm:** Cyclic Steam Stimulation (CSS / Huff-and-Puff) paired with Sucker Rod Pumping (SRP) Artificial Lift
 - **Control Classification:** Class II Supervisory Advisory Decision-Support Prototype (Advisory Only; Non-Actuating, Not an IEC 61511 Safety Instrumented Function)
-- **Verification Status:** 326 Automated Tests Passing (100% Pass Rate across 5 Verification Tiers: Tier 1: 186, Tier 2: 50, Tier 3: 26, Tier 4: 54, Tier 5: 10; 80.99s Execution)
+- **Verification Status:** 360 Automated Tests Passing (326 Python Backend Tests [100% Pass Rate across 5 Tiers in 76.29s] + 34 Frontend Mechanical Kinematic & Buckling Tests in 541ms; 100% Green)
 - **Public Synthetic Demonstration Deployment:** [https://catenary-ai.vercel.app](https://catenary-ai.vercel.app)
 - **Legacy Demonstration Mirror (VectroSync 1.x):** [https://vectrosync.vercel.app](https://vectrosync.vercel.app)
 - **Public Git Repository:** [https://github.com/DKtech-dev/vectrosync](https://github.com/DKtech-dev/vectrosync) *(Repository retained under legacy identifier; system product name is Catenary)*
@@ -367,7 +367,7 @@ If severe external cooling disturbances make physical operation without slack ma
 
 ## 7. The 5-Tier Verification Ladder & Benchmark Numerical Results
 
-The codebase is backed by **326 automated tests** structured into a formal 5-tier verification ladder:
+The codebase is backed by **360 automated tests** (326 Python backend & physics tests + 34 Frontend mechanical kinematics & buckling tests) structured into a formal verification ladder:
 
 ```
 Logical Verification Ladder (326 Tests Total):
@@ -388,7 +388,11 @@ Physical Directory Mapping:
 • tests/tier3_cross_feature_combinations/ (3 modules) ...  4 tests
 • tests/tier4_real_world_workload_scenarios/ (1 module) . 14 tests
 • tests/*.py Root Physics, AI & Integration (18 modules) 167 tests
-Total Executed: 96 + 45 + 4 + 14 + 167 = 326 Passing Tests
+Total Backend Executed: 96 + 45 + 4 + 14 + 167 = 326 Passing Tests (Python)
+
+Frontend Mechanical & Kinematic Suite:
+• frontend/tests/machine.test.mjs ........................ 34 tests (Node.js)
+Total Full-System Executed: 326 + 34 = 360 Passing Tests (100% Green)
 ```
 
 ### 7.1 Mathematical Verification Highlights:
@@ -445,7 +449,7 @@ Downhole Tension (kN)
 
 ### 8.2 Frontend SCADA Operator Console Features:
 - **ScadaHeader:** Displays live Edge solve latency (`EDGE: 120ms` / `2ms`), Bus communication health (`MODBUS-TCP // PORT 502`), Multi-Fidelity Solver toggle button, Dark/Light Theme toggle, and 4-Level Supervisory state badge.
-- **WellboreSimulator:** Animated 2D kinematic rig rendering. Binds rod string color directly to the backend axial stress screening levels (Safe Teal, Caution Amber, Critical Flashing Red).
+- **MachineBay & MachineTheatre (Kinematic Four-Bar & Lubinski Buckling Engine):** Replaces simplified schematic rendering with an engineering-grade, physically rigorous mechanical theatre. Implements exact API Spec 11E C-320D-256-100 four-bar linkage kinematics (Pitman arm, walking beam, horsehead wireline tangent point, non-harmonic crank motion), true multi-taper rod column (1,150 m in 3 tapers), first-principles Lubinski helical buckling physics (pitch p = sqrt(8*pi^2*E*I / F), amplitude = radial clearance 25.4 mm), downhole pump valve phasing (upstroke SV open / downstroke TV open with float travel attenuation), interactive baseline vs twin comparison mode, dynamic mechanical stress coloration, mouse parallax, and live particle fluid flow.
 - **DynacardStudio:** Renders Surface ($0\text{--}3.5\text{ m}$ vs $0\text{--}150\text{ kN}$) and Downhole ($0\text{--}3.5\text{ m}$ vs $-20\text{ to }+50\text{ kN}$) dynamometer cards with permissible operational envelopes and SVG draw-in animations.
 - **DepthStressHeatmap:** Theme-aware HTML5 canvas interpolating axial stress across depth ($0\text{--}1,150\text{ m}$) and crank angle ($0\text{--}360^\circ$), with explicit `[VISUALIZATION SURROGATE]` badge.
 - **WhyEngineConsole:** Real-time explainability feed detailing physical causal paths and MPC reasoning.
@@ -707,8 +711,8 @@ The entire platform has undergone rigorous regression testing. Below is the veri
 ```text
 ============================= TEST EXECUTION SUMMARY =============================
 Platform: Linux (x86_64) | Python: 3.11 / 3.14.3 | Node.js: 20.18.0 | Pytest: 9.1.1
-Total Test Count: 326 Passing Tests (0 Failures, 0 Errors, 0 Regressions)
-Total Test Duration: 80.99 seconds (100% Green, 0 Skips)
+Total Test Count: 360 Passing Tests (326 Python + 34 Node.js, 0 Failures, 0 Errors)
+Total Test Duration: 76.29 seconds (Python) + 0.54 seconds (Node.js) (100% Green, 0 Skips)
 ==================================================================================
 
 Directory & File Execution Breakdown:
@@ -764,9 +768,18 @@ Directory & File Execution Breakdown:
        - test_ab_shared_seed_experiment.py (3/3): Deterministic seed A/B benchmark.
        - test_state_estimator_recovery.py (2/2): Parameter recovery under noisy telemetry.
 
+[PASS] frontend/tests/machine.test.mjs (Mechanical Kinematic & Buckling Suite) (34/34 passed in 541ms)
+       - API Spec 11E C-320D-256-100 four-bar loop geometry & 100 in stroke closure.
+       - Max torque factor validation against published TF_max (47.48 in).
+       - Non-harmonic crank dynamics & asymmetric upstroke/downstroke phase angles.
+       - Multiphase 1,150 m rod string discretization across 3 API Grade D tapers.
+       - Lubinski helical buckling pitch scaling p = sqrt(8*pi^2*E*I / F) and clearance bounding.
+       - Downhole pump valve phasing (upstroke SV-open / downstroke TV-open) & float travel attenuation.
+       - Swept plunger volumetric displacement conservation.
+
 ----------------------------------------------------------------------------------
-TOTAL VERIFIED SUITE: 96 + 45 + 4 + 14 + 10 + 14 + 143 = 326 PASSING TESTS
-Result: 100% Green (0 failures, 0 errors, 1 external Starlette deprecation warning)
+TOTAL VERIFIED SUITE: 326 (Python) + 34 (Frontend Machine Tests) = 360 PASSING TESTS
+Result: 100% Green across all suites (0 failures, 0 errors, 0 skips)
 ==================================================================================
 ```
 

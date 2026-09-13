@@ -1,15 +1,20 @@
-CATENARY VERIFICATION LOG — 2026-09-12
+CATENARY VERIFICATION LOG — 2026-09-13
 =======================================
-Scope: software and selected numerical-property verification
-Environment observed: Linux, Python 3.14 virtual environment
+Scope: software, numerical-property, and kinematic verification
+Environment observed: Linux, Python 3.14 venv, Node.js 20.18.0
 
 Command: .venv/bin/python -m pytest -q
 Result: 326 passed, 1 external Starlette/httpx deprecation warning
-Duration: 80.99 seconds (final run: 0:01:20)
+Duration: 76.29 seconds (final run: 0:01:16)
+
+Command: npm test --prefix frontend
+Result: PASS — 34/34 passed in 541ms (API Spec 11E four-bar kinematics, Lubinski helical buckling, downhole valve phasing)
 
 Command: npm run build (frontend/)
-Result: PASS — 1600 modules transformed
+Result: PASS — 1624 modules transformed
 Output: dist/index.html; CSS and JS production bundles
+
+Total Verified Suite: 360 passed (326 Python + 34 Node.js)
 
 Command: .venv/bin/python -c "import app"
 Result: PASS — full Streamlit script imported; expected bare-mode warnings only

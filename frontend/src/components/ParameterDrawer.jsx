@@ -1,228 +1,325 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { X, RotateCcw, Check, SlidersHorizontal } from 'lucide-react';
 
-export function ParameterDrawer({
-  isOpen,
-  onClose,
-  params,
-  onChangeParam,
-  onApply,
-  onReset,
-  loading,
-}) {
-  const closeButtonRef = useRef(null);
+/**
+ * Case-input drawer.
+ *
+ * Slider bounds below are the ranges the backend actually validates, so the
+ * control can never post a value the API will reject:
+ *   cooling_multiplier 0.2–5.0 · elapsed_days 0–720 · target_spm 0.5–8.0
+ *   water_cut 0–1 · steam_quality 0.1–1.0 · plunger_sand_wear 0–1
+ *   stroke_length_m 1.0–4.0
+ *
+ * a11y: `aria-modal` is now backed by a real focus trap plus focus restoration
+ * to whatever opened the drawer, and the scrim uses a theme token instead of a
+ * hardcoded light-mode slate.
+ */
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const SolverNames = { surrogate: 'Fast surrogate', transient: 'Transient PDE' };
+
+/** Label / value / range row. Bounds are the server-validated bounds. */
+function SliderRow({ id, label, note, value, min, max, step, format, onChange, badge }) {
+  const safeValue = typeof value === 'number' && Number.isFinite(value) ? value : min;
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3 mb-1.5">
+        <label htmlFor={id} className="text-[12.5px] text-muted font-medium">
+          {label}
+        </label>
+        <span className="readout text-[12.5px] text-interactive font-semibold shrink-0">{format(safeValue)}</span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        className="slider"
+        min={min}
+        max={max}
+        step={step}
+        value={safeValue}
+        aria-describedby={note ? `${id}-note` : undefined}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+      />
+      <div className="flex items-center justify-between gap-2 mt-1.5">
+        <span className="eyebrow">
+          {format(min)} — {format(max)}
+        </span>
+        {badge}
+      </div>
+      {note ? (
+        <p id={`${id}-note`} className="caption mt-1.5 leading-snug">
+          {note}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Group({ title, children }) {
+  return (
+    <section className="panel-nested p-4 space-y-4">
+      <h4 className="panel-title pb-2.5 border-b border-hairline">{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+export function ParameterDrawer({ isOpen, onClose, params, onChangeParam, onApply, onReset, loading }) {
+  const dialogRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const restoreFocusRef = useRef(null);
+
+  const focusableNodes = useCallback(() => {
+    if (!dialogRef.current) return [];
+    return Array.from(dialogRef.current.querySelectorAll(FOCUSABLE)).filter(
+      (el) => el.offsetParent !== null || el === document.activeElement,
+    );
+  }, []);
+
+  // Remember the trigger, move focus in, and restore it on close.
   useEffect(() => {
     if (!isOpen) return undefined;
-    closeButtonRef.current?.focus();
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') onClose();
+
+    restoreFocusRef.current = document.activeElement;
+    const raf = requestAnimationFrame(() => closeButtonRef.current?.focus());
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      cancelAnimationFrame(raf);
+      document.body.style.overflow = previousOverflow;
+      const trigger = restoreFocusRef.current;
+      if (trigger && typeof trigger.focus === 'function' && document.contains(trigger)) {
+        trigger.focus();
+      }
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  // Escape to dismiss + Tab cycling confined to the dialog.
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose?.();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const nodes = focusableNodes();
+      if (nodes.length === 0) return;
+
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      const active = document.activeElement;
+      const inside = dialogRef.current?.contains(active);
+
+      if (event.shiftKey && (active === first || !inside)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || !inside)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [isOpen, onClose, focusableNodes]);
 
   if (!isOpen) return null;
 
+  const p = params || {};
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-[rgb(15_23_42/0.35)] backdrop-blur-sm flex justify-end p-3 sm:p-5 vs-overlay-in">
-      <div role="dialog" aria-modal="true" aria-labelledby="parameter-drawer-title" className="w-full max-w-md bg-surface-1 text-ink h-full flex flex-col justify-between rounded-[24px] border border-hairline shadow-float overflow-hidden vs-slide-in-right">
-        {/* Drawer Header */}
-        <div className="px-5 py-4 border-b border-hairline flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="icon-badge w-9 h-9 bg-interactive/10 text-interactive">
-              <SlidersHorizontal className="w-4 h-4" />
+    <div
+      className="fixed inset-0 z-50 overflow-hidden flex justify-end p-3 sm:p-5 vs-overlay-in"
+      style={{ backgroundColor: 'rgb(var(--bg-canvas) / 0.78)' }}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose?.();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="parameter-drawer-title"
+        aria-describedby="parameter-drawer-desc"
+        className="panel w-full max-w-md h-full flex flex-col overflow-hidden shadow-float vs-slide-in-right"
+      >
+        {/* Header */}
+        <div className="panel-rail shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="icon-badge tone-signal">
+              <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
             </span>
-            <div>
-              <h3 id="parameter-drawer-title" className="card-title">Case inputs</h3>
-              <p className="caption">Model assumptions</p>
+            <div className="min-w-0">
+              <h3 id="parameter-drawer-title" className="panel-title truncate">
+                Case inputs
+              </h3>
+              <p className="caption truncate">Model assumptions · re-solves on apply</p>
             </div>
           </div>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            aria-label="Close parameter drawer"
-            onClick={onClose}
-            className="btn-icon"
-          >
-            <X className="w-4 h-4" />
+          <button ref={closeButtonRef} type="button" aria-label="Close case inputs" onClick={onClose} className="btn-icon">
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Drawer Body */}
-        <div className="px-5 py-4 overflow-y-auto flex-1 space-y-4 text-[13px]">
-          <p className="caption">
-            Changes rerun an unvalidated reduced-order model only. They do not command equipment or alter a live control system.
+        {/* Body */}
+        <div className="px-4 py-4 overflow-y-auto flex-1 space-y-4">
+          <p id="parameter-drawer-desc" className="caption">
+            Every bound below is the range the API validates. Applying re-runs the reduced-order model only — no
+            setpoint is written and no bus is connected.
           </p>
-          {/* Thermal & Steam */}
-          <div className="space-y-3 card-nested p-4">
-            <div className="text-[13px] font-semibold text-ink pb-2 border-b border-hairline">
-              Thermal &amp; steam
-            </div>
 
-            <div>
-              <div className="flex justify-between text-muted font-medium mb-1">
-                <span>Cooling rate multiplier (k̂):</span>
-                <span className="readout text-interactive">{params.cooling_multiplier.toFixed(2)}x</span>
-              </div>
+          <Group title="Thermal &amp; steam">
+            <SliderRow
+              id="param-cooling"
+              label="Cooling rate multiplier k̂"
+              value={p.cooling_multiplier}
+              min={0.2}
+              max={5.0}
+              step={0.05}
+              format={(v) => `${v.toFixed(2)}×`}
+              onChange={(v) => onChangeParam('cooling_multiplier', v)}
+              note="Scales the Boberg–Lantz near-wellbore cooldown toward the 48 °C native reservoir temperature."
+            />
+            <SliderRow
+              id="param-elapsed"
+              label="CSS cycle elapsed"
+              value={p.elapsed_days}
+              min={0}
+              max={720}
+              step={0.5}
+              format={(v) => `${v.toFixed(1)} d`}
+              onChange={(v) => onChangeParam('elapsed_days', v)}
+              note="Days since the 260 °C steam injection ended."
+            />
+            <SliderRow
+              id="param-steam-quality"
+              label="Steam quality"
+              value={p.steam_quality}
+              min={0.1}
+              max={1.0}
+              step={0.01}
+              format={(v) => `${(v * 100).toFixed(0)}%`}
+              onChange={(v) => onChangeParam('steam_quality', v)}
+              badge={<span className="pill tone-caution">NOT COUPLED</span>}
+              note="Accepted and echoed back, but no downstream term consumes it: the backend lists it under model_status.uncoupled_inputs. Moving it will not change any output."
+            />
+          </Group>
+
+          <Group title="Fluid rheology &amp; erosion">
+            <SliderRow
+              id="param-water-cut"
+              label="Water cut fw"
+              value={p.water_cut}
+              min={0}
+              max={1}
+              step={0.01}
+              format={(v) => `${(v * 100).toFixed(0)}%`}
+              onChange={(v) => onChangeParam('water_cut', v)}
+              note="Drives the emulsion viscosity multiplier on top of the Arrhenius temperature term."
+            />
+            <SliderRow
+              id="param-sand-wear"
+              label="Plunger sand wear"
+              value={p.plunger_sand_wear}
+              min={0}
+              max={1}
+              step={0.01}
+              format={(v) => v.toFixed(2)}
+              onChange={(v) => onChangeParam('plunger_sand_wear', v)}
+              note="0 = new clearance, 1 = fully worn fit; reduces modelled pump fillage."
+            />
+          </Group>
+
+          <Group title="Surface kinematics">
+            <SliderRow
+              id="param-target-spm"
+              label="Requested pumping speed"
+              value={p.target_spm}
+              min={0.5}
+              max={8.0}
+              step={0.1}
+              format={(v) => `${v.toFixed(1)} SPM`}
+              onChange={(v) => onChangeParam('target_spm', v)}
+              note="The operator request. The supervisor may advise lower — its own authority band is 1.0–5.5 SPM."
+            />
+            <SliderRow
+              id="param-stroke"
+              label="Stroke length"
+              value={p.stroke_length_m}
+              min={1.0}
+              max={4.0}
+              step={0.01}
+              format={(v) => `${v.toFixed(2)} m`}
+              onChange={(v) => onChangeParam('stroke_length_m', v)}
+            />
+          </Group>
+
+          <Group title="Supervisor &amp; telemetry">
+            <div className="flex items-start justify-between gap-3">
+              <label htmlFor="param-mpc" className="text-[12.5px] text-muted font-medium cursor-pointer select-none">
+                Constraint supervisor (MPC)
+                <p className="caption mt-1">
+                  Holds minimum rod tension above the +0.50 kN anti-float floor and peak load under the 99 kN ceiling
+                  (110 kN PPRL rating). Disabling it runs the request open-loop.
+                </p>
+              </label>
               <input
-                type="range"
-                aria-label="Cooling rate multiplier"
-                min="0.5"
-                max="3.0"
-                step="0.05"
-                value={params.cooling_multiplier}
-                onChange={(e) => onChangeParam('cooling_multiplier', parseFloat(e.target.value))}
-                className="w-full accent-interactive cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-muted font-medium mb-1">
-                <span>Steam quality (reserved; not coupled):</span>
-                <span className="readout text-interactive">{(params.steam_quality * 100).toFixed(0)}%</span>
-              </div>
-              <input
-                type="range"
-                aria-label="Reserved steam quality input"
-                min="0.4"
-                max="0.95"
-                step="0.05"
-                value={params.steam_quality}
-                disabled
-                title="Reserved until a steam-energy balance is implemented"
-                onChange={(e) => onChangeParam('steam_quality', parseFloat(e.target.value))}
-                className="w-full accent-interactive cursor-not-allowed opacity-50"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-muted font-medium mb-1">
-                <span>CSS cycle elapsed:</span>
-                <span className="readout text-interactive">{params.elapsed_days.toFixed(1)} days</span>
-              </div>
-              <input
-                type="range"
-                aria-label="Synthetic CSS cycle elapsed days"
-                min="0.0"
-                max="60.0"
-                step="0.5"
-                value={params.elapsed_days}
-                onChange={(e) => onChangeParam('elapsed_days', parseFloat(e.target.value))}
-                className="w-full accent-interactive cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* Fluid & Sand Wear */}
-          <div className="space-y-3 card-nested p-4">
-            <div className="text-[13px] font-semibold text-ink pb-2 border-b border-hairline">
-              Fluid rheology &amp; erosion
-            </div>
-
-            <div>
-              <div className="flex justify-between text-muted font-medium mb-1">
-                <span>Water cut (fw):</span>
-                <span className="readout text-interactive">{(params.water_cut * 100).toFixed(0)}%</span>
-              </div>
-              <input
-                type="range"
-                aria-label="Water cut assumption"
-                min="0.05"
-                max="0.85"
-                step="0.05"
-                value={params.water_cut}
-                onChange={(e) => onChangeParam('water_cut', parseFloat(e.target.value))}
-                className="w-full accent-interactive cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-muted font-medium mb-1">
-                <span>Plunger sand wear factor:</span>
-                <span className="readout text-interactive">{params.plunger_sand_wear.toFixed(2)}</span>
-              </div>
-              <input
-                type="range"
-                aria-label="Plunger sand wear assumption"
-                min="0.0"
-                max="1.0"
-                step="0.05"
-                value={params.plunger_sand_wear}
-                onChange={(e) => onChangeParam('plunger_sand_wear', parseFloat(e.target.value))}
-                className="w-full accent-interactive cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* Kinematics */}
-          <div className="space-y-3 card-nested p-4">
-            <div className="text-[13px] font-semibold text-ink pb-2 border-b border-hairline">
-              Surface kinematics
-            </div>
-
-            <div>
-              <div className="flex justify-between text-muted font-medium mb-1">
-                <span>Target pumping speed:</span>
-                <span className="readout text-interactive">{params.target_spm.toFixed(1)} SPM</span>
-              </div>
-              <input
-                type="range"
-                aria-label="Requested pumping speed for the model"
-                min="1.0"
-                max="6.0"
-                step="0.1"
-                value={params.target_spm}
-                onChange={(e) => onChangeParam('target_spm', parseFloat(e.target.value))}
-                className="w-full accent-interactive cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-muted font-medium mb-1">
-                <span>Stroke length:</span>
-                <span className="readout text-interactive">{params.stroke_length_m.toFixed(2)} m</span>
-              </div>
-              <input
-                type="range"
-                aria-label="Assumed stroke length"
-                min="1.5"
-                max="3.2"
-                step="0.05"
-                value={params.stroke_length_m}
-                onChange={(e) => onChangeParam('stroke_length_m', parseFloat(e.target.value))}
-                className="w-full accent-interactive cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* Modbus Disconnect Simulator */}
-          <div className="p-4 bg-critical/10 rounded-[14px] border border-critical/25">
-            <label className="flex items-center gap-2.5 cursor-pointer select-none">
-              <input
+                id="param-mpc"
                 type="checkbox"
-                checked={params.modbus_severed}
-                onChange={(e) => onChangeParam('modbus_severed', e.target.checked)}
-                className="rounded border-hairline accent-critical"
+                checked={Boolean(p.mpc_enabled)}
+                onChange={(e) => onChangeParam('mpc_enabled', e.target.checked)}
+                className="mt-0.5 w-4 h-4 shrink-0 rounded-xs accent-interactive cursor-pointer"
               />
-              <span className="font-semibold text-critical text-[13px]">Simulate Modbus cable severance</span>
-            </label>
-            <p className="text-[12px] text-critical/80 mt-1.5 pl-7 leading-relaxed">
-              Configures a synthetic stale-data case (&gt;60 s) and reports the model's Level 2 fallback recommendation of 2.0 SPM; no bus is connected.
-            </p>
-          </div>
+            </div>
+
+            <div className="well tone-critical p-3">
+              <div className="flex items-start justify-between gap-3">
+                <label htmlFor="param-modbus" className="text-[12.5px] font-semibold cursor-pointer select-none">
+                  Sever Modbus telemetry
+                  <p className="caption mt-1 text-[11.5px]" style={{ color: 'rgb(var(--accent-critical) / 0.85)' }}>
+                    Simulates a stale-data condition past the 60 s timeout and reports the Level 2 protective fallback
+                    of 2.0 SPM. No bus is attached.
+                  </p>
+                </label>
+                <input
+                  id="param-modbus"
+                  type="checkbox"
+                  checked={Boolean(p.modbus_severed)}
+                  onChange={(e) => onChangeParam('modbus_severed', e.target.checked)}
+                  className="mt-0.5 w-4 h-4 shrink-0 rounded-xs accent-critical cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[12.5px] text-muted font-medium">Solver mode</span>
+              <span className="flex items-center gap-2">
+                <span className="readout text-[12.5px] text-ink">{SolverNames[p.solver_type] || SolverNames.surrogate}</span>
+                <span className="pill">{p.solver_type || 'surrogate'}</span>
+              </span>
+            </div>
+            <p className="caption -mt-2">Switched from the header rail, where it applies immediately.</p>
+          </Group>
         </div>
 
-        {/* Drawer Footer */}
-        <div className="px-5 py-4 border-t border-hairline flex items-center justify-between gap-3">
-          <button type="button" onClick={onReset} disabled={loading} className="btn btn-ghost px-4 py-2">
-            <RotateCcw className="w-3.5 h-3.5" />
-            Reset
+        {/* Footer */}
+        <div className="shrink-0 px-4 py-3 border-t border-hairline flex items-center justify-between gap-3">
+          <button type="button" onClick={onReset} disabled={loading} className="btn btn-ghost">
+            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            Reset defaults
           </button>
 
-          <button type="button" onClick={onApply} disabled={loading} className="btn btn-primary px-4 py-2">
-            <Check className="w-3.5 h-3.5" />
-            {loading ? 'Running model…' : 'Apply model inputs'}
+          <button type="button" onClick={onApply} disabled={loading} className="btn btn-primary">
+            <Check className="w-3.5 h-3.5" aria-hidden="true" />
+            {loading ? 'Re-solving…' : 'Apply inputs'}
           </button>
         </div>
       </div>

@@ -1,192 +1,219 @@
-import React, { useState } from 'react';
-import { Sparkles, ArrowUp, ShieldCheck, AlertTriangle, Quote } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { ScrollText, Copy, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { SkeletonPanel } from './Skeleton';
 
-const INTENTS = [
+/**
+ * Decision record — the backend WhyEngine's causal explanation trace.
+ *
+ * This panel used to present itself as a chat assistant ("Ask Catenary Twin",
+ * sparkles, a circular submit) while being backed by four regexes that mapped
+ * a question onto one of four precomputed strings. That overstated the
+ * mechanism, so it has been rebuilt as what it is: a read-only decision
+ * record that renders the four `diagnostics` narrative fields verbatim, in
+ * causal order, each captioned with the exact field it came from.
+ *
+ * The only interactive affordance is a *filter* over that fixed set of four
+ * fields. It is labelled as a filter, it sends nothing anywhere, and it can
+ * only ever hide or reveal text the backend already returned.
+ */
+
+const RECORDS = [
   {
-    match: (q) => /reduc|throttl|why.*speed|slow/i.test(q),
-    field: 'dispatched_action',
-    prompt: 'Why was the speed advisory reduced?',
-  },
-  {
-    match: (q) => /trigger|what.*(state|happen)|cause/i.test(q),
     field: 'trigger_event',
-    prompt: 'What triggered the current state?',
+    short: 'Trigger',
+    label: 'Trigger event',
+    hint: 'The input condition that opened this decision.',
   },
   {
-    match: (q) => /tension|floor|satisf|safe/i.test(q),
-    field: 'structural_outcome',
-    prompt: 'Is the tension floor satisfied?',
-  },
-  {
-    match: (q) => /horizon|forecast|12.?h/i.test(q),
     field: 'forward_horizon',
-    prompt: 'What does the 12-hour horizon show?',
+    short: 'Horizon',
+    label: 'Forward horizon',
+    hint: 'What the 12-hour projection implies if nothing changes.',
+  },
+  {
+    field: 'structural_outcome',
+    short: 'Structure',
+    label: 'Structural outcome',
+    hint: 'Modelled rod-string state against the +0.50 kN anti-float floor.',
+  },
+  {
+    field: 'dispatched_action',
+    short: 'Action',
+    label: 'Advisory issued',
+    hint: 'The speed advisory the constraint supervisor produced. Advisory only — nothing was written to a controller.',
   },
 ];
 
-/**
- * A grounded query surface over the model explanation trace: every answer is
- * one of the four diagnostics fields already computed by the backend
- * WhyEngine for this exact model pass, never free-form generation. The
- * source field is always cited beneath the answer so the mechanism stays
- * auditable rather than opaque.
- */
 export function WhyEngineConsole({ diagnostics, isBuckling }) {
-  const [query, setQuery] = useState('');
-  const [answer, setAnswer] = useState(null);
+  const [focus, setFocus] = useState('all');
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef(null);
+
+  const visible = useMemo(
+    () => (focus === 'all' ? RECORDS : RECORDS.filter((r) => r.field === focus)),
+    [focus],
+  );
 
   if (!diagnostics) {
-    return <SkeletonPanel title="Awaiting model explanation trace" lines={3} />;
+    return <SkeletonPanel title="Awaiting the model explanation trace" lines={4} height={260} />;
   }
 
-  const {
-    trigger_event,
-    forward_horizon,
-    dispatched_action,
-    structural_outcome,
-    provenance_tag,
-    timestamp_iso,
-  } = diagnostics;
+  const { provenance_tag, timestamp_iso } = diagnostics;
+  const outcomeTone = isBuckling ? 'critical' : 'safe';
 
-  const fieldText = {
-    trigger_event,
-    forward_horizon,
-    dispatched_action,
-    structural_outcome,
-  };
+  const handleCopy = async () => {
+    const text = [
+      'CATENARY — DECISION RECORD',
+      `pass timestamp: ${timestamp_iso || 'not reported'}`,
+      `provenance:     ${provenance_tag || 'not reported'}`,
+      '',
+      ...RECORDS.flatMap((r, i) => [
+        `${String(i + 1).padStart(2, '0')}  ${r.label.toUpperCase()}  (diagnostics.${r.field})`,
+        `    ${diagnostics[r.field] || 'not reported'}`,
+        '',
+      ]),
+    ].join('\n');
 
-  const steps = [
-    { key: 'trigger_event', label: 'Input trigger', body: trigger_event },
-    { key: 'forward_horizon', label: 'Horizon assessment', body: forward_horizon },
-    { key: 'dispatched_action', label: 'Recommendation', body: dispatched_action, tone: 'caution' },
-  ];
-
-  const handleAsk = (q) => {
-    const text = q.trim();
-    if (!text) return;
-    const intent = INTENTS.find((i) => i.match(text));
-    if (intent) {
-      setAnswer({ text: fieldText[intent.field], field: intent.field, question: text });
-    } else {
-      setAnswer({ text: null, field: null, question: text });
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
     }
   };
 
   return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2.5">
-          <span className="icon-badge w-9 h-9 bg-interactive/10 text-interactive">
-            <Sparkles className="w-4 h-4" />
+    <section className="panel registered overflow-hidden" aria-labelledby="decision-record-heading">
+      <div className="panel-rail">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="icon-badge w-6 h-6 tone-signal">
+            <ScrollText className="w-3.5 h-3.5" aria-hidden="true" />
           </span>
-          <div>
-            <h2 className="card-title">Ask Catenary Twin</h2>
-            <p className="caption">Grounded in this pass's diagnostics -- every answer cites its source field</p>
+          <div className="min-w-0">
+            <h2 id="decision-record-heading" className="panel-title truncate">
+              Decision record
+            </h2>
+            <p className="caption truncate">
+              Four narrative fields, rendered verbatim from this model pass — no text is generated in the browser
+            </p>
           </div>
         </div>
-        <span className="caption hidden sm:block readout">{timestamp_iso?.slice(11, 19)} UTC</span>
-      </div>
-
-      {/* Query bar */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleAsk(query);
-        }}
-        className="flex items-center gap-2 rounded-full border border-hairline bg-surface-2 pl-4 pr-1.5 py-1.5 focus-within:border-interactive/50 mb-3"
-      >
-        <Sparkles className="w-4 h-4 text-faint shrink-0" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Ask the Catenary twin about this model output"
-          placeholder="Ask about this model pass..."
-          className="flex-1 bg-transparent text-[13px] text-ink placeholder:text-faint outline-none min-w-0"
-        />
-        <button type="submit" aria-label="Submit question" className="btn btn-primary w-8 h-8 rounded-full p-0 shrink-0">
-          <ArrowUp className="w-4 h-4" />
-        </button>
-      </form>
-
-      <div className="flex flex-wrap gap-2 mb-4">
-        {INTENTS.map((i) => (
+        <div className="flex items-center gap-2 shrink-0">
+          {timestamp_iso ? (
+            <span className="pill" title={timestamp_iso}>
+              {timestamp_iso.slice(11, 19)} UTC
+            </span>
+          ) : null}
           <button
-            key={i.prompt}
             type="button"
-            onClick={() => {
-              setQuery(i.prompt);
-              handleAsk(i.prompt);
-            }}
-            className="pill bg-surface-2 text-muted hover:text-ink"
+            onClick={handleCopy}
+            className="btn btn-ghost px-2.5 py-1.5"
+            aria-label="Copy the decision record to the clipboard"
           >
-            {i.prompt}
-          </button>
-        ))}
-      </div>
-
-      {/* Grounded answer, if a question was asked */}
-      {answer && (
-        <div className="card-nested p-4 mb-4 border-l-2 border-l-interactive">
-          <div className="flex items-start gap-2.5">
-            <Quote className="w-4 h-4 text-interactive shrink-0 mt-0.5" />
-            <div className="min-w-0">
-              <p className="text-[13px] text-ink leading-relaxed">
-                {answer.text || "I can only answer from this model pass's diagnostics -- try one of the prompts above."}
-              </p>
-              {answer.field && (
-                <span className="chip text-interactive bg-interactive/10 mt-2 inline-flex">
-                  computed from diagnostics.{answer.field}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Full explanation trace */}
-      <div className="card-nested p-4 mb-4">
-        <div className="flex flex-col gap-3">
-          {steps.map((step) => (
-            <div key={step.label} className="flex gap-3">
-              <span
-                className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${
-                  step.tone === 'caution' ? 'bg-caution' : 'bg-faint'
-                }`}
-              />
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-ink">{step.label}</div>
-                <p className="text-[13px] text-muted leading-relaxed mt-0.5">{step.body}</p>
-              </div>
-            </div>
-          ))}
-
-          {/* Outcome */}
-          <div
-            className={`flex gap-3 rounded-xl p-3 mt-1 ${
-              isBuckling ? 'bg-critical/10' : 'bg-safe/10'
-            }`}
-          >
-            {isBuckling ? (
-              <AlertTriangle className="w-4 h-4 text-critical shrink-0 mt-0.5" />
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-safe" aria-hidden="true" />
             ) : (
-              <ShieldCheck className="w-4 h-4 text-safe shrink-0 mt-0.5" />
+              <Copy className="w-3.5 h-3.5" aria-hidden="true" />
             )}
-            <div className="min-w-0">
-              <div className={`text-[13px] font-semibold ${isBuckling ? 'text-critical' : 'text-safe'}`}>
-                Modeled constraint result
-              </div>
-              <p className="text-[13px] text-ink/80 leading-relaxed mt-0.5">{structural_outcome}</p>
-            </div>
-          </div>
+            <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+          </button>
         </div>
       </div>
 
-      <p className="caption pt-3 border-t border-hairline">
-        {provenance_tag} · explanation of software outputs only; no action was dispatched and no structural condition is confirmed.
-      </p>
-    </div>
+      {/* Filter — an explicit view control over a closed set of four fields.
+          Not a query interface; nothing leaves the page. */}
+      <div className="px-4 py-2.5 border-b border-hairline flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="eyebrow" id="record-filter-label">
+          FILTER TO FIELD
+        </span>
+        <div className="segmented" role="group" aria-labelledby="record-filter-label">
+          <button
+            type="button"
+            aria-pressed={focus === 'all'}
+            onClick={() => setFocus('all')}
+            className="segmented-item"
+          >
+            All 4
+          </button>
+          {RECORDS.map((r) => (
+            <button
+              key={r.field}
+              type="button"
+              aria-pressed={focus === r.field}
+              onClick={() => setFocus(r.field)}
+              className="segmented-item"
+            >
+              {r.short}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* The trace itself */}
+      <ol className="p-4 space-y-2.5 list-none">
+        {visible.map((record) => {
+          const body = diagnostics[record.field];
+          const isOutcome = record.field === 'structural_outcome';
+          const index = RECORDS.findIndex((r) => r.field === record.field) + 1;
+
+          return (
+            <li
+              key={record.field}
+              className={`panel-nested p-3.5 flex gap-3 ${isOutcome ? `tone-${outcomeTone}` : ''}`}
+            >
+              <span className="flex flex-col items-center gap-1.5 shrink-0">
+                <span className="readout text-[10px] font-bold text-faint tabular-nums">
+                  {String(index).padStart(2, '0')}
+                </span>
+                {isOutcome ? (
+                  isBuckling ? (
+                    <AlertTriangle className="w-3.5 h-3.5 text-critical" aria-hidden="true" />
+                  ) : (
+                    <ShieldCheck className="w-3.5 h-3.5 text-safe" aria-hidden="true" />
+                  )
+                ) : (
+                  <span className="w-px flex-1 bg-hairline" aria-hidden="true" />
+                )}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3
+                    className={`panel-title ${
+                      isOutcome ? (isBuckling ? 'text-critical' : 'text-safe') : ''
+                    }`}
+                  >
+                    {record.label}
+                  </h3>
+                  <span className="pill">diagnostics.{record.field}</span>
+                </div>
+
+                <p className="text-[13px] text-ink leading-relaxed mt-1.5">
+                  {body || (
+                    <span className="text-faint">
+                      <span aria-hidden="true">—</span>
+                      <span className="sr-only">not reported by the backend for this pass</span>
+                    </span>
+                  )}
+                </p>
+
+                <p className="caption mt-1.5">{record.hint}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="px-4 py-3 border-t border-hairline flex flex-wrap items-center gap-2">
+        {provenance_tag ? <span className="pill tone-thermal">{provenance_tag}</span> : null}
+        <span className="caption">
+          Emitted by the backend WhyEngine alongside this pass and hashed into the audit ledger. The record explains a
+          software decision; it does not confirm a physical condition downhole.
+        </span>
+      </div>
+    </section>
   );
 }
 

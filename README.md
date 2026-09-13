@@ -3,7 +3,7 @@
 
 [![Live synthetic demo](https://img.shields.io/badge/Live-synthetic_demo-0ea5e9?style=for-the-badge)](https://catenary-ai.vercel.app)
 [![Mirror](https://img.shields.io/badge/Live-mirror-64748b?style=for-the-badge)](https://vectrosync.vercel.app)
-[![Verification](https://img.shields.io/badge/tests-326_passing-16a34a?style=for-the-badge)](#verification)
+[![Verification](https://img.shields.io/badge/tests-360_passing-16a34a?style=for-the-badge)](#verification)
 [![Control authority](https://img.shields.io/badge/control-advisory_only-f59e0b?style=for-the-badge)](#safety-and-evidence-boundary)
 [![Python](https://img.shields.io/badge/Python-3.11_%7C_3.14-3776ab?style=for-the-badge&logo=python&logoColor=white)](#local-setup)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react&logoColor=black)](#operator-console)
@@ -48,7 +48,7 @@ flowchart LR
    - Baseline (fixed 4.7 SPM) experiences 19 severe float events (downhole compression down to $-16.45\text{ kN}$).
    - Coupled Twin holds positive downhole tension ($+1.58$ to $+5.51\text{ kN}$) with zero float incidents.
 4. **Traceable 4-Tier Verification Ladder:**
-   - 325 automated tests covering Method of Manufactured Solutions (MMS), CFL numerical stability, energy conservation, taper interface force continuity, cross-solver PPRL agreement, EKF parameter recovery, AI layer diagnostics, Modbus dropout, and real-world production campaigns.
+   - 360 automated tests (326 Python backend + 34 Node.js machine kinematics) covering Method of Manufactured Solutions (MMS), CFL numerical stability, energy conservation, taper interface force continuity, cross-solver PPRL agreement, EKF parameter recovery, AI layer diagnostics, Modbus dropout, and real-world production campaigns.
 
 ---
 
@@ -226,6 +226,10 @@ pytest tests/
    - Multiclass classification across 5 operating regimes with SPE interpretability.
    - Physics-Trained Neural Operating-Point Surrogate load extrema bounds and microsecond edge speed.
    - Unsupervised Telemetry Autoencoder reconstruction residual scoring on thermo-mechanical decoupling.
+6. **Machine Kinematics & Helical Buckling Suite (34 tests via `npm test --prefix frontend`):**
+   - API Spec 11E C-320D-256-100 four-bar loop geometry & 100 in stroke closure.
+   - First-principles Lubinski helical buckling physics where pitch p = sqrt(8*pi^2*E*I / F).
+   - Downhole pump valve phasing (upstroke SV-open / downstroke TV-open) and float travel attenuation.
 
 ---
 

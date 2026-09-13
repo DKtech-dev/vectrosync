@@ -1,19 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 
+const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
+
 /**
  * Tracks the user's `prefers-reduced-motion` setting so animations can be
- * disabled globally at the JS layer (count-up tweens, etc.).
+ * disabled at the JS layer too (count-up tweens, staggered reveals, etc.).
+ * The CSS layer handles the declarative half in index.css.
  */
 export function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return window.matchMedia(REDUCE_QUERY).matches;
   });
 
   useEffect(() => {
-    if (!window.matchMedia) return undefined;
-    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+    const mql = window.matchMedia(REDUCE_QUERY);
     const onChange = (event) => setReduced(event.matches);
+    // Re-sync on mount in case the setting changed before hydration.
+    setReduced(mql.matches);
     mql.addEventListener?.('change', onChange);
     return () => mql.removeEventListener?.('change', onChange);
   }, []);
@@ -24,9 +29,10 @@ export function usePrefersReducedMotion() {
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
 /**
- * Tweens a numeric value toward `value` over `duration` ms (easeOutCubic).
- * Returns the current animated value. Snaps instantly under reduced-motion.
- * This is the core of the "expensive dashboard" feel: numbers move.
+ * Tweens a numeric value toward `value` over `duration` ms (easeOutCubic) and
+ * returns the current animated value. Snaps instantly under reduced-motion.
+ * Instrument readouts should move, not jump — but never at the cost of
+ * accessibility or of showing a number that was never computed.
  */
 export function useCountUp(value, { duration = 350 } = {}) {
   const numericTarget = typeof value === 'number' && Number.isFinite(value) ? value : 0;
@@ -37,6 +43,7 @@ export function useCountUp(value, { duration = 350 } = {}) {
 
   useEffect(() => {
     if (reduced || !Number.isFinite(numericTarget)) {
+      cancelAnimationFrame(rafRef.current);
       fromRef.current = numericTarget;
       setDisplay(numericTarget);
       return undefined;
@@ -65,5 +72,10 @@ export function useCountUp(value, { duration = 350 } = {}) {
     return () => cancelAnimationFrame(rafRef.current);
   }, [numericTarget, duration, reduced]);
 
+  // Unmount safety: never leave a frame queued against a dead component.
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
+
   return display;
 }
+
+export default useCountUp;
