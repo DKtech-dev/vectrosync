@@ -67,20 +67,32 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
   /* --- Build the two force profiles ------------------------------------- */
   const fit = useMemo(() => {
     const card = dyn?.downhole_load_kn;
-    // Fit ONCE, at the solver's own operating point: k at surface against
-    // `pprl_kn`, lambda at 750 m against `min_tension_kn`. Both branches then
-    // reuse those constants -- same fluid, same well, same formation
-    // temperature. Refitting per branch would make the comparison
-    // unfalsifiable, because each branch could absorb its own result.
+    const baseCard = dyn?.baseline_downhole_load_kn || card;
+    const basePprl = Number.isFinite(dyn?.baseline_pprl_kn)
+      ? dyn.baseline_pprl_kn
+      : dyn?.pprl_kn;
+    const baseMinKn = Number.isFinite(dyn?.baseline_min_tension_kn)
+      ? dyn.baseline_min_tension_kn
+      : Number.isFinite(simState?.baseline_min_tension_kn)
+        ? simState.baseline_min_tension_kn
+        : Array.isArray(dyn?.baseline_downhole_load_kn) && dyn.baseline_downhole_load_kn.length > 0
+          ? Math.min(...dyn.baseline_downhole_load_kn)
+          : simState?.actual_min_tension_kn;
+
+    // Anchor physical calibration (viscosity k and drag shape lambda) to the
+    // unmitigated baseline operating point. This is the authentic physical state
+    // of the well before/without governor intervention, sampled across the full
+    // baseline velocity range. Both branches then evaluate against this shared
+    // physical foundation — same fluid, same well, same formation temperature.
     const fitted = makeCalibratedProfile({
-      pumpCardKn: card,
-      pprlKn: dyn?.pprl_kn,
-      targetMinKn: simState?.actual_min_tension_kn,
-      velocityAt: (p) => surfaceState(p, solverSpm, strokeM).velocityMps,
+      pumpCardKn: baseCard,
+      pprlKn: basePprl,
+      targetMinKn: baseMinKn,
+      velocityAt: (p) => surfaceState(p, baselineSpm, strokeM).velocityMps,
     });
     const buildAt = (spm) =>
       makeCalibratedProfile({
-        pumpCardKn: card,
+        pumpCardKn: baseCard,
         velocityAt: (p) => surfaceState(p, spm, strokeM).velocityMps,
         fixedViscosityPas: fitted.effectiveViscosityPas,
         fixedLambda: fitted.lambda,
@@ -105,11 +117,13 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
       baseline: b,
       advisedSpm: advised,
       advisorySource: source,
-      solverBaselineMinKn: Array.isArray(dyn?.baseline_downhole_load_kn)
-        ? Math.min(...dyn.baseline_downhole_load_kn)
-        : NaN,
+      solverBaselineMinKn: Number.isFinite(dyn?.baseline_min_tension_kn)
+        ? dyn.baseline_min_tension_kn
+        : Array.isArray(dyn?.baseline_downhole_load_kn)
+          ? Math.min(...dyn.baseline_downhole_load_kn)
+          : NaN,
     };
-  }, [dyn, solverSpm, baselineSpm, strokeM, simState?.actual_min_tension_kn]);
+  }, [dyn, solverSpm, baselineSpm, strokeM, simState?.actual_min_tension_kn, simState?.baseline_min_tension_kn]);
 
   const { governed, baseline, advisedSpm, advisorySource, solverBaselineMinKn } = fit;
   const governedSpm = advisedSpm;
@@ -265,7 +279,7 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
       : [`The governor's own anti-float floor is violated here too, by ${fmt(Math.abs(governedTaper))} kN — see the technical notes for why.`];
 
   return (
-    <section className="panel registered overflow-hidden" aria-labelledby="theatre-title">
+    <section id="theatre" className="panel registered overflow-hidden" aria-labelledby="theatre-title">
       {/* ---------------- rail ---------------- */}
       <div className="panel-rail flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
@@ -539,7 +553,7 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
               )}
               {Number.isFinite(solverBaselineMinKn) && (
                 <p className="caption">
-                  Corroboration: the solver's own uncontrolled reference card, computed independently at the 48 °C cold limit,
+                  Corroboration: the solver's own uncontrolled reference card, computed independently at the {Math.round(tempC)} °C sandface,
                   bottoms out at {fmt(solverBaselineMinKn)} kN — the same failure, reached by a different route.
                 </p>
               )}

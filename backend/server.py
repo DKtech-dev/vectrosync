@@ -162,6 +162,8 @@ class DynacardData(BaseModel):
     pprl_kn: float
     mprl_kn: float
     min_tension_kn: float
+    baseline_pprl_kn: Optional[float] = None
+    baseline_min_tension_kn: Optional[float] = None
     oil_production_bopd: float
     liquid_production_bopd: float
     power_kw: float = 0.0
@@ -229,6 +231,7 @@ class SimulationResponse(BaseModel):
     is_buckling_active: bool
     is_modbus_severed: bool
     actual_min_tension_kn: float
+    baseline_min_tension_kn: Optional[float] = None
     dynacard: DynacardData
     forecast_12h: List[ForecastPoint]
     stress_heatmap: StressHeatmapData
@@ -388,7 +391,7 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
         solve_time_ms = wave_solve_time_ms
         baseline_card = local_wave_solver.simulate_transient(
             spm=params.target_spm,
-            temp_c=48.0,
+            temp_c=t_res_c,
             water_cut=params.water_cut,
             sand_wear=params.plunger_sand_wear,
             n_strokes=2,
@@ -403,7 +406,7 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
         )
         baseline_card = local_wave_solver.simulate_card(
             spm=params.target_spm,
-            temp_c=48.0,
+            temp_c=t_res_c,
             water_cut=params.water_cut,
             sand_wear=params.plunger_sand_wear,
             n_strokes=3,
@@ -574,6 +577,7 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
         "is_buckling_active": is_buckling_active,
         "is_modbus_severed": params.modbus_severed,
         "actual_min_tension_kn": round(actual_min_tension, 2),
+        "baseline_min_tension_kn": round(float(baseline_card.min_downhole_tension_kn), 2),
         "dynacard": DynacardData(
             surface_position_m=[round(x, 4) for x in twin_card.surface_position_m],
             surface_load_kn=[round(y, 2) for y in twin_card.surface_load_kn],
@@ -582,6 +586,8 @@ def run_physics_pass(params: SimulationParams) -> Dict[str, Any]:
             pprl_kn=round(float(twin_card.pprl_kn), 2),
             mprl_kn=round(float(twin_card.mprl_kn), 2),
             min_tension_kn=round(actual_min_tension, 2),
+            baseline_pprl_kn=round(float(baseline_card.pprl_kn), 2),
+            baseline_min_tension_kn=round(float(baseline_card.min_downhole_tension_kn), 2),
             oil_production_bopd=round(float(twin_card.oil_production_bopd), 1),
             liquid_production_bopd=round(float(twin_card.liquid_production_bopd), 1),
             power_kw=round(float(getattr(twin_card, "power_kw", 0.0)), 3),
