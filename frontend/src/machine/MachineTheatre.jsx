@@ -10,6 +10,7 @@ import {
   TriangleAlert,
   ShieldCheck,
   ChevronDown,
+  Activity,
 } from 'lucide-react';
 import { MachineBay } from './MachineBay.jsx';
 import { useMachineClock, useReducedMotion, useParallax, TAU } from './runtime.js';
@@ -378,19 +379,23 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
       <div ref={hostRef} className={`grid gap-px bg-hairline ${mode === 'compare' ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
         {showA && (
           <BayFrame
-            tone="critical"
+            tone={partedA || baselineTaper < 0 ? 'critical' : baselineTaper < FLOOR_KN ? 'caution' : 'safe'}
             eyebrow="Branch A"
             title="Ungoverned"
             subtitle={`Operator request held at ${fmt(baselineSpm, 2)} SPM. No forward thermal coupling.`}
             state={a}
             profile={baseline}
             spm={baselineSpm}
-            icon={<TriangleAlert className="w-3.5 h-3.5" />}
+            icon={partedA || baselineTaper < FLOOR_KN ? <TriangleAlert className="w-3.5 h-3.5" /> : <Activity className="w-3.5 h-3.5" />}
             gaugeDomain={gaugeDomain}
             gaugeFloor={FLOOR_KN}
             parted={partedA}
           >
-            <VerdictPanel tone="critical" title="What fails here" lines={failureLines} />
+            <VerdictPanel
+              tone={partedA || baselineTaper < 0 ? 'critical' : 'safe'}
+              title={partedA || baselineTaper < 0 ? 'What fails here' : 'Branch A status'}
+              lines={failureLines}
+            />
             <MachineBay
               ref={bayA}
               clock={clock}
@@ -399,7 +404,7 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
               strokeM={strokeM}
               profile={baseline}
               temperatureC={tempC}
-              tone="critical"
+              tone={partedA || baselineTaper < 0 ? 'critical' : 'safe'}
               reduced={reduced}
               parallax={offset}
               showParticles={particles}
@@ -554,8 +559,19 @@ export function MachineTheatre({ simState, simParams, isPlaying, onTogglePlay, s
 /* -------------------------------------------------------------------------- */
 
 function BayFrame({ tone, eyebrow, title, subtitle, state, profile, spm, icon, children, gaugeDomain, gaugeFloor, parted }) {
-  const compressed = state?.compressed;
-  const toneClass = tone === 'critical' ? 'tone-critical' : 'tone-safe';
+  const taperMin = profile?.predictedTaperTensionKn;
+  const isNegative = Number.isFinite(taperMin) ? taperMin < 0 : false;
+  const isCompressed = !parted && (isNegative || !!state?.compressed);
+  const isLowMargin = !parted && !isCompressed && Number.isFinite(taperMin) ? taperMin < gaugeFloor : false;
+  const effectiveTone = parted || isCompressed ? 'critical' : isLowMargin ? 'caution' : tone ?? 'safe';
+  const toneClass = effectiveTone === 'critical' ? 'tone-critical' : effectiveTone === 'caution' ? 'tone-caution' : 'tone-safe';
+  const pillLabel = parted
+    ? 'String parted'
+    : isCompressed
+      ? 'Compression'
+      : isLowMargin
+        ? 'Low margin'
+        : 'Tension held';
   return (
     <div className={`bg-surface-1 min-w-0 ${parted ? 'ring-1 ring-inset ring-critical' : ''}`}>
       <header className="px-4 pt-3.5 pb-3 border-b border-hairline">
@@ -568,9 +584,9 @@ function BayFrame({ tone, eyebrow, title, subtitle, state, profile, spm, icon, c
             </h3>
             <p className="caption mt-1">{subtitle}</p>
           </div>
-          <span className={`pill ${parted ? 'tone-critical' : compressed ? 'tone-critical' : toneClass} shrink-0`}>
+          <span className={`pill ${toneClass} shrink-0`}>
             <span className="chip-dot" />
-            {parted ? 'String parted' : compressed ? 'Compression' : 'Tension held'}
+            {pillLabel}
           </span>
         </div>
 
@@ -601,7 +617,7 @@ function BayFrame({ tone, eyebrow, title, subtitle, state, profile, spm, icon, c
             value={profile?.predictedTaperTensionKn}
             domain={gaugeDomain}
             floor={gaugeFloor}
-            compressed={compressed}
+            compressed={isCompressed}
           />
         )}
         {parted && (
